@@ -1,0 +1,107 @@
+<!-- =========================================
+     PAGE
+========================================= -->
+
+<div class="page">
+  <!-- =====================================
+         PAGE HEADER
+    ====================================== -->
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Master Penginapan</h1>
+
+      <p class="page-description">
+        Kelola seluruh data penginapan yang bergabung dalam sistem.
+      </p>
+    </div>
+
+    <button class="btn btn-primary" onclick="Penginapan.openForm()">
+      <i data-lucide="plus"></i>
+
+      <span>Tambah Penginapan</span>
+    </button>
+  </div>
+
+  <!-- =====================================
+         SUMMARY
+    ====================================== -->
+
+  <div class="grid grid-3">
+    <div class="card card-simple">
+      <div class="summary-card">
+        <div class="summary-info">
+          <span class="summary-label"> Total Penginapan </span>
+
+          <h2 id="totalPenginapan" class="summary-value">0</h2>
+        </div>
+
+        <div class="summary-icon">
+          <i data-lucide="hotel"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-simple">
+      <div class="summary-card">
+        <div class="summary-info">
+          <span class="summary-label"> Total Kamar </span>
+
+          <h2 id="totalKamar" class="summary-value">-</h2>
+        </div>
+
+        <div class="summary-icon">
+          <i data-lucide="bed-double"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="card card-simple">
+      <div class="summary-card">
+        <div class="summary-info">
+          <span class="summary-label"> Penginapan Aktif </span>
+
+          <h2 id="penginapanAktif" class="summary-value">0</h2>
+        </div>
+
+        <div class="summary-icon">
+          <i data-lucide="badge-check"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+     TOOLBAR
+===================================== -->
+
+  <div class="card">
+    <div class="card-body">
+      <div class="toolbar">
+        <div class="search-box">
+          <i data-lucide="search"></i>
+
+          <input
+            id="searchPenginapan"
+            type="search"
+            class="search-input"
+            placeholder="Cari nama penginapan..."
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+     TABLE
+====================================== -->
+
+  <div class="card">
+    <div class="card-body">
+      <div id="tablePenginapan"></div>
+    </div>
+    <div class="card-footer">
+      <div id="paginationPenginapan"></div>
+    </div>
+  </div>
+</div>

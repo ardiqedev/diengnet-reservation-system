@@ -1,0 +1,36 @@
+.search-box {
+  position: relative;
+}
+
+.search-box .search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  width: 28px;
+  height: 28px;
+
+  display: none;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+
+  cursor: pointer;
+}
+
+.search-box .search-clear.show {
+  display: flex;
+}
+
+.search-box .search-clear:hover {
+  color: #2563eb;
+}
+
+.search-box .search-clear svg {
+  width: 16px;
+  height: 16px;
+}

@@ -1,0 +1,131 @@
+<!-- =========================================
+     RESERVASI
+========================================= -->
+
+<div class="page">
+  <!-- =====================================
+         HEADER
+    ====================================== -->
+
+  <div class="page-header">
+    <div>
+      <h1>Reservasi</h1>
+
+      <p>Kelola seluruh transaksi reservasi penginapan.</p>
+    </div>
+
+    <div class="page-header-action">
+      <button class="btn btn-outline">
+        <i data-lucide="download"></i>
+
+        Export
+      </button>
+
+      <button class="btn btn-primary" onclick="Reservasi.openWizard()">
+        <i data-lucide="plus"></i>
+
+        Reservasi Baru
+      </button>
+    </div>
+  </div>
+
+  <!-- =====================================
+         SUMMARY
+    ====================================== -->
+
+  <div class="reservasi-summary">
+    <div class="reservasi-summary-grid">
+      <div class="reservasi-summary-card">
+        <div class="reservasi-summary-content">
+          <div class="reservasi-summary-label">Total Reservasi</div>
+
+          <div id="totalReservasi" class="reservasi-summary-value">0</div>
+        </div>
+
+        <div class="reservasi-summary-icon">
+          <i data-lucide="calendar-days"></i>
+        </div>
+      </div>
+
+      <div class="reservasi-summary-card">
+        <div class="reservasi-summary-content">
+          <div class="reservasi-summary-label">Check-in Hari Ini</div>
+
+          <div id="checkinHariIni" class="reservasi-summary-value">0</div>
+        </div>
+
+        <div class="reservasi-summary-icon">
+          <i data-lucide="log-in"></i>
+        </div>
+      </div>
+
+      <div class="reservasi-summary-card">
+        <div class="reservasi-summary-content">
+          <div class="reservasi-summary-label">Check-out Hari Ini</div>
+
+          <div id="checkoutHariIni" class="reservasi-summary-value">0</div>
+        </div>
+
+        <div class="reservasi-summary-icon">
+          <i data-lucide="log-out"></i>
+        </div>
+      </div>
+
+      <div class="reservasi-summary-card">
+        <div class="reservasi-summary-content">
+          <div class="reservasi-summary-label">Tamu Menginap</div>
+
+          <div id="tamuMenginap" class="reservasi-summary-value">0</div>
+        </div>
+
+        <div class="reservasi-summary-icon">
+          <i data-lucide="users"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+         FILTER
+    ====================================== -->
+
+  <div class="card">
+    <div class="toolbar">
+      <div class="search-box">
+        <i data-lucide="search"></i>
+
+        <input
+          id="searchReservasi"
+          type="text"
+          placeholder="Cari reservasi..."
+        />
+      </div>
+
+      <input id="tanggal" type="date" class="form-control" />
+
+      <select id="status" class="form-control">
+        <option value="">Semua Status</option>
+      </select>
+
+      <select id="channel" class="form-control">
+        <option value="">Semua Channel</option>
+      </select>
+
+      <button class="btn btn-outline">
+        <i data-lucide="filter"></i>
+
+        Filter
+      </button>
+    </div>
+  </div>
+
+  <!-- =====================================
+         TABLE
+    ====================================== -->
+
+  <div class="card">
+    <div id="tableReservasi"></div>
+
+    <div id="paginationReservasi" class="pagination-wrapper"></div>
+  </div>
+</div>

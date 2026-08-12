@@ -1,0 +1,105 @@
+<!-- =========================================
+     MASTER HARGA MUSIM
+========================================= -->
+
+<div class="page">
+  <!-- =====================================
+         HEADER
+    ====================================== -->
+
+  <div class="page-header">
+    <div>
+      <h1>Master Harga Musim</h1>
+
+      <p>Kelola harga kamar berdasarkan musim, periode, dan tipe kamar.</p>
+    </div>
+
+    <button class="btn btn-primary" onclick="HargaMusim.openForm()">
+      <i data-lucide="plus"></i>
+
+      Tambah Harga Musim
+    </button>
+  </div>
+
+  <!-- =====================================
+         SUMMARY
+    ====================================== -->
+
+  <div class="stats-grid">
+    <!-- =====================================
+       TOTAL HARGA MUSIM
+  ====================================== -->
+
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Total Harga Musim</div>
+
+        <div id="totalHargaMusim" class="stat-value">0</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="calendar-range"></i>
+      </div>
+    </div>
+
+    <!-- =====================================
+       HARGA AKTIF
+  ====================================== -->
+
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Harga Aktif</div>
+
+        <div id="totalAktif" class="stat-value">0</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="badge-check"></i>
+      </div>
+    </div>
+
+    <!-- =====================================
+       TOTAL CHANNEL
+  ====================================== -->
+
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Total Channel</div>
+
+        <div id="totalChannel" class="stat-value">0</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="network"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+         TOOLBAR
+    ====================================== -->
+
+  <div class="card">
+    <div class="toolbar">
+      <div class="search-box">
+        <i data-lucide="search"></i>
+
+        <input
+          id="searchHargaMusim"
+          type="text"
+          placeholder="Cari harga musim..."
+        />
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+         TABLE
+    ====================================== -->
+
+  <div class="card">
+    <div id="tableHargaMusim"></div>
+
+    <div id="paginationHargaMusim" class="pagination-wrapper"></div>
+  </div>
+</div>

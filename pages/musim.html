@@ -1,0 +1,91 @@
+<!-- =========================================
+     MASTER MUSIM
+========================================= -->
+
+<div class="page">
+  <!-- =====================================
+         HEADER
+    ====================================== -->
+
+  <div class="page-header">
+    <div>
+      <h1>Master Musim</h1>
+
+      <p>
+        Kelola seluruh musim yang digunakan untuk penentuan tarif penginapan.
+      </p>
+    </div>
+
+    <button class="btn btn-primary" onclick="Musim.openForm()">
+      <i data-lucide="plus"></i>
+
+      Tambah Musim
+    </button>
+  </div>
+
+  <!-- =====================================
+         SUMMARY
+    ====================================== -->
+
+  <div class="stats-grid">
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Total Musim</div>
+
+        <div id="totalMusim" class="stat-value">0</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="calendar-range"></i>
+      </div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Musim Aktif</div>
+
+        <div id="totalAktif" class="stat-value">0</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="circle-check"></i>
+      </div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Musim Non Aktif</div>
+
+        <div id="totalNonAktif" class="stat-value">0</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="circle-off"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+         TOOLBAR
+    ====================================== -->
+
+  <div class="card">
+    <div class="toolbar">
+      <div class="search-box">
+        <i data-lucide="search"></i>
+
+        <input id="searchMusim" type="text" placeholder="Cari musim..." />
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+         TABLE
+    ====================================== -->
+
+  <div class="card">
+    <div id="tableMusim"></div>
+
+    <div id="paginationMusim" class="pagination-wrapper"></div>
+  </div>
+</div>

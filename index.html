@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta name="description" content="Dieng.NET Property Management System" />
+
+    <title>DiengNET PMS</title>
+
+    <!-- Font -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="assets/css/style.css" />
+
+    <!-- Lucide -->
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- CSS -->
+  </head>
+
+  <body>
+    <!-- Loading -->
+
+    <div id="loading"></div>
+
+    <!-- Toast -->
+
+    <div id="toast"></div>
+
+    <!-- Modal -->
+
+    <div id="modalContainer"></div>
+
+    <!-- App -->
+
+    <div class="app">
+      <!-- Sidebar -->
+
+      <aside id="sidebar" class="sidebar"></aside>
+
+      <!-- Main -->
+
+      <div class="main">
+        <!-- Navbar -->
+
+        <header id="navbar" class="navbar"></header>
+
+        <!-- Content -->
+
+        <main id="content" class="content"></main>
+      </div>
+    </div>
+
+    <!-- Javascript -->
+
+    <!-- ======================================
+     CORE
+====================================== -->
+
+    <script src="assets/js/core/router.js"></script>
+
+    <script src="assets/js/core/sidebar.js"></script>
+
+    <script src="assets/js/core/engine-modal.js"></script>
+
+    <script src="assets/js/core/engine-upload.js"></script>
+
+    <script src="assets/js/core/engine-validator.js"></script>
+
+    <script src="assets/js/core/engine-form.js"></script>
+
+    <script src="assets/js/core/engine-table.js"></script>
+
+    <script src="assets/js/core/engine-detail.js"></script>
+
+    <script src="assets/js/core/engine-pagination.js"></script>
+
+    <script src="assets/js/core/engine-badge.js"></script>
+
+    <script src="assets/js/core/engine-toast.js"></script>
+
+    <script src="assets/js/core/engine-confirm.js"></script>
+
+    <script src="assets/js/core/engine-loading.js"></script>
+
+    <script src="assets/js/core/engine-skeleton.js"></script>
+
+    <script src="assets/js/core/engine-dropdown.js"></script>
+
+    <script src="assets/js/core/engine-Search.js"></script>
+
+    <script src="assets/js/core/engine-asset.js"></script>
+
+    <!-- ======================================
+     DUMMY
+    ====================================== -->
+
+    <script src="assets/js/dummy/penginapan.dummy.js"></script>
+    <script src="assets/js/dummy/tipe-kamar.dummy.js"></script>
+    <script src="assets/js/dummy/musim.dummy.js"></script>
+    <script src="assets/js/dummy/harga-musim.dummy.js"></script>
+    <script src="assets/js/dummy/reservasi.dummy.js"></script>
+
+    <!-- ======================================
+     SERVICES
+    ====================================== -->
+
+    <script src="assets/js/services/penginapan.service.js"></script>
+    <script src="assets/js/services/tipe-kamar.service.js"></script>
+    <script src="assets/js/services/musim.service.js"></script>
+    <script src="assets/js/services/harga-musim.service.js"></script>
+    <script src="assets/js/services/reservasi.service.js"></script>
+
+    <!-- ======================================
+     MODULES
+    ====================================== -->
+
+    <script src="assets/js/modules/penginapan.js"></script>
+
+    <script src="assets/js/modules/tipe-kamar.js"></script>
+
+    <script src="assets/js/modules/musim.js"></script>
+
+    <script src="assets/js/modules/harga-musim.js"></script>
+    <script src="assets/js/modules/channel-service.js"></script>
+
+    <!-- ======================================
+     RESERVASI
+  ====================================== -->
+
+    <script src="assets/js/modules/reservasi/reservasi.helper.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.validator.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.pricing.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.availability.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.step1.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.step2.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.step3.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.step4.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.list.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.view.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.constant.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.action.js"></script>
+
+    <script src="assets/js/modules/reservasi/reservasi.detail.js"></script>
+
+    <!-- ========================================
+     PAYMENT
+    ======================================== -->
+
+    <script src="assets/js/modules/payment/payment.constant.js"></script>
+
+    <script src="assets/js/modules/payment/payment.dummy.js"></script>
+
+    <script src="assets/js/modules/payment/payment.service.js"></script>
+
+    <script src="assets/js/modules/payment/payment.helper.js"></script>
+
+    <script src="assets/js/modules/payment/payment.view.js"></script>
+
+    <script src="assets/js/modules/payment/payment.form.js"></script>
+
+    <script src="assets/js/modules/payment/payment.js"></script>
+
+    <script src="assets/js/modules/payment/payment.validator.js"></script>
+
+    <!-- ==========================================================
+     INVOICE MODULE
+========================================================== -->
+
+    <script src="assets/js/modules/invoice/invoice.constant.js"></script>
+
+    <script src="assets/js/modules/invoice/invoice.dummy.js"></script>
+
+    <script src="assets/js/modules/invoice/invoice.helper.js"></script>
+
+    <script src="assets/js/modules/invoice/invoice.service.js"></script>
+
+    <script src="assets/js/modules/invoice/invoice.view.js"></script>
+
+    <script src="assets/js/modules/invoice/invoice.js"></script>
+
+    <!-- CONFIG -->
+    <script src="assets/js/core/config.js"></script>
+
+    <!-- STORAGE -->
+    <script src="assets/js/core/storage.js"></script>
+
+    <!-- STATE -->
+    <script src="assets/js/core/state.js"></script>
+
+    <!-- API -->
+    <script src="assets/js/core/api.js"></script>
+
+    <!-- AUTH -->
+    <script src="assets/js/core/auth.js"></script>
+
+    <!-- APP -->
+    <script src="assets/js/core/app.js"></script>
+  </body>
+</html>

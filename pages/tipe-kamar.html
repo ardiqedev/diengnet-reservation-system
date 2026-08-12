@@ -1,0 +1,99 @@
+<!-- =========================================
+     MASTER TIPE KAMAR
+========================================= -->
+
+<div class="page">
+  <!-- =====================================
+         HEADER
+    ====================================== -->
+
+  <div class="page-header">
+    <div>
+      <h1>Master Tipe Kamar</h1>
+
+      <p>Kelola seluruh tipe kamar pada setiap penginapan.</p>
+    </div>
+
+    <button class="btn btn-primary" onclick="TipeKamar.openForm()">
+      <i data-lucide="plus"></i>
+
+      Tambah Tipe Kamar
+    </button>
+  </div>
+
+  <!-- =====================================
+         SUMMARY
+    ====================================== -->
+
+  <div class="stats-grid">
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Total Tipe Kamar</div>
+
+        <div id="totalTipeKamar" class="stat-value">0</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="bed-double"></i>
+      </div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Total Kapasitas</div>
+
+        <div id="totalKapasitas" class="stat-value">0 Orang</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="users"></i>
+      </div>
+    </div>
+
+    <div class="card stat-card">
+      <div class="stat-content">
+        <div class="stat-title">Tipe Aktif</div>
+
+        <div id="totalAktif" class="stat-value">0</div>
+      </div>
+
+      <div class="stat-icon">
+        <i data-lucide="circle-check"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+         TOOLBAR
+    ====================================== -->
+
+  <div class="search-box">
+    <i data-lucide="search"></i>
+
+    <input
+      id="searchTipeKamar"
+      type="text"
+      class="form-control"
+      placeholder="Cari tipe kamar..."
+    />
+
+    <button
+      type="button"
+      id="clearSearchTipeKamar"
+      class="search-clear"
+      aria-label="Hapus pencarian"
+    >
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+
+  <!-- =====================================
+         TABLE
+    ====================================== -->
+
+  <div class="card">
+    <div id="tableTipeKamar"></div>
+
+    <div id="paginationTipeKamar" class="pagination-wrapper"></div>
+  </div>
+</div>

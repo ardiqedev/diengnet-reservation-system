@@ -1,0 +1,337 @@
+/* =========================================
+   INVOICE
+========================================= */
+
+.invoice {
+  width: 210mm;
+
+  min-height: 297mm;
+
+  margin: 0 auto;
+
+  padding: 15mm;
+
+  background: #ffffff;
+
+  color: #111827;
+
+  font-family: Arial, Helvetica, sans-serif;
+
+  font-size: 12px;
+
+  line-height: 1.6;
+
+  box-sizing: border-box;
+}
+
+/* =========================================
+   HEADER
+========================================= */
+
+.invoice-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-start;
+
+  gap: 24px;
+
+  padding-bottom: 16px;
+
+  margin-bottom: 24px;
+
+  border-bottom: 2px solid #111827;
+}
+
+/* =========================================
+   COMPANY
+========================================= */
+
+.invoice-company {
+  flex: 1;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+}
+
+/* =========================================
+   LOGO
+========================================= */
+
+.invoice-logo {
+  display: flex;
+
+  align-items: center;
+
+  min-height: 56px;
+
+  font-size: 24px;
+
+  font-weight: 700;
+
+  letter-spacing: 1px;
+
+  color: #111827;
+
+  text-transform: uppercase;
+}
+
+.invoice-logo img {
+  display: block;
+
+  max-height: 56px;
+
+  max-width: 180px;
+
+  object-fit: contain;
+}
+
+/* =========================================
+   COMPANY INFO
+========================================= */
+
+.invoice-company-info {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+
+  font-size: 12px;
+
+  line-height: 1.5;
+
+  color: #4b5563;
+}
+
+/* =========================================
+   DOCUMENT
+========================================= */
+
+.invoice-document {
+  width: 280px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 12px;
+
+  flex-shrink: 0;
+}
+
+/* =========================================
+   DOCUMENT TITLE
+========================================= */
+
+.invoice-document h1 {
+  margin: 0;
+
+  padding: 0;
+
+  font-size: 28px;
+
+  font-weight: 700;
+
+  letter-spacing: 2px;
+
+  text-transform: uppercase;
+
+  text-align: right;
+
+  color: #111827;
+
+  line-height: 1;
+}
+
+/* =========================================
+   DOCUMENT INFO
+========================================= */
+
+.invoice-document-info {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+
+  width: 100%;
+}
+
+/* =========================================
+   SECTION
+========================================= */
+
+.invoice-section {
+  margin-top: 24px;
+}
+
+/* =========================================
+   SECTION TITLE
+========================================= */
+
+.invoice-section-title {
+  margin-bottom: 12px;
+
+  padding-bottom: 6px;
+
+  border-bottom: 1px solid #d1d5db;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.5px;
+
+  color: #111827;
+}
+
+/* =========================================
+   GRID
+========================================= */
+
+.invoice-grid {
+  display: grid;
+
+  grid-template-columns: repeat(2, 1fr);
+
+  gap: 24px;
+
+  margin-top: 24px;
+}
+
+/* =========================================
+   TABLE
+========================================= */
+
+.invoice-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  margin-top: 12px;
+}
+
+.invoice-table th,
+.invoice-table td {
+  padding: 8px 10px;
+
+  border-bottom: 1px solid #d1d5db;
+
+  font-size: 12px;
+}
+
+.invoice-table th {
+  text-align: left;
+
+  font-weight: 700;
+}
+
+.invoice-table td {
+  text-align: left;
+}
+
+.invoice-table th:nth-child(3),
+.invoice-table th:nth-child(4),
+.invoice-table td:nth-child(3),
+.invoice-table td:nth-child(4) {
+  text-align: right;
+}
+
+.invoice-table tfoot th {
+  padding-top: 12px;
+
+  border-top: 2px solid #111827;
+
+  font-weight: 700;
+}
+
+.invoice-table tfoot th:first-child {
+  text-align: right;
+}
+
+.invoice-table tfoot th:last-child {
+  text-align: right;
+}
+
+/* =========================================
+   ROW
+========================================= */
+
+.invoice-row {
+  display: grid;
+
+  grid-template-columns: 120px 1fr;
+
+  gap: 12px;
+
+  padding: 4px 0;
+}
+
+.invoice-row span {
+  color: #6b7280;
+
+  font-weight: 500;
+}
+
+.invoice-row strong {
+  font-weight: 600;
+
+  color: #111827;
+}
+
+.invoice-row span::after {
+  content: ":";
+
+  float: right;
+
+  margin-right: 8px;
+}
+
+/* =========================================
+   SIGNATURE
+========================================= */
+
+.invoice-signature {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 80px;
+
+  margin-top: 48px;
+}
+
+.invoice-signature-item {
+  flex: 1;
+
+  text-align: center;
+}
+
+.invoice-signature-title {
+  font-size: 12px;
+
+  font-weight: 600;
+
+  color: #374151;
+}
+
+.invoice-signature-space {
+  height: 80px;
+}
+
+.invoice-signature-name {
+  padding-top: 8px;
+
+  border-top: 1px solid #111827;
+
+  font-weight: 600;
+
+  color: #111827;
+}
