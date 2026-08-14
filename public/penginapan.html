@@ -71,6 +71,7 @@
             class="mobile-menu-btn"
             id="mobileMenuBtn"
             aria-label="Buka menu"
+            aria-expanded="false"
           >
             ☰
           </button>
@@ -179,6 +180,10 @@
 
       <section class="listing-section">
         <div class="container">
+          <!-- =====================================
+               LISTING HEADER
+          ====================================== -->
+
           <div class="listing-heading">
             <div>
               <span class="eyebrow eyebrow-dark"> DIENG STAYS </span>
@@ -191,11 +196,99 @@
             </div>
           </div>
 
-          <!-- DYNAMIC -->
+          <!-- =====================================
+               LISTING CONTENT
+          ====================================== -->
 
           <div class="listing-grid" id="stayList"></div>
 
-          <!-- EMPTY -->
+          <!-- =====================================
+               LISTING LOADING / SKELETON
+          ====================================== -->
+
+          <div
+            class="listing-loading"
+            id="listingLoading"
+            hidden
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <!-- SKELETON CARD 1 -->
+
+            <article class="listing-skeleton-card">
+              <div class="listing-skeleton-image"></div>
+
+              <div class="listing-skeleton-body">
+                <div class="listing-skeleton-line location"></div>
+
+                <div class="listing-skeleton-line title"></div>
+
+                <div class="listing-skeleton-line description"></div>
+
+                <div class="listing-skeleton-line description short"></div>
+
+                <div class="listing-skeleton-divider"></div>
+
+                <div class="listing-skeleton-line type"></div>
+
+                <div class="listing-skeleton-line action"></div>
+              </div>
+            </article>
+
+            <!-- SKELETON CARD 2 -->
+
+            <article class="listing-skeleton-card">
+              <div class="listing-skeleton-image"></div>
+
+              <div class="listing-skeleton-body">
+                <div class="listing-skeleton-line location"></div>
+
+                <div class="listing-skeleton-line title"></div>
+
+                <div class="listing-skeleton-line description"></div>
+
+                <div class="listing-skeleton-line description short"></div>
+
+                <div class="listing-skeleton-divider"></div>
+
+                <div class="listing-skeleton-line type"></div>
+
+                <div class="listing-skeleton-line action"></div>
+              </div>
+            </article>
+
+            <!-- SKELETON CARD 3 -->
+
+            <article class="listing-skeleton-card">
+              <div class="listing-skeleton-image"></div>
+
+              <div class="listing-skeleton-body">
+                <div class="listing-skeleton-line location"></div>
+
+                <div class="listing-skeleton-line title"></div>
+
+                <div class="listing-skeleton-line description"></div>
+
+                <div class="listing-skeleton-line description short"></div>
+
+                <div class="listing-skeleton-divider"></div>
+
+                <div class="listing-skeleton-line type"></div>
+
+                <div class="listing-skeleton-line action"></div>
+              </div>
+            </article>
+          </div>
+
+          <!-- =====================================
+               PAGINATION
+          ====================================== -->
+
+          <div id="paginationPenginapan"></div>
+
+          <!-- =====================================
+               EMPTY STATE
+          ====================================== -->
 
           <div class="listing-empty" id="listingEmpty" hidden>
             <div class="listing-empty-icon">⌂</div>
@@ -203,14 +296,6 @@
             <h3>No stays found.</h3>
 
             <p>Try changing your search or filter.</p>
-          </div>
-
-          <!-- LOADING -->
-
-          <div class="listing-loading" id="listingLoading" hidden>
-            <span class="listing-loading-spinner"></span>
-
-            <p>Finding stays...</p>
           </div>
         </div>
       </section>
@@ -265,7 +350,7 @@
 
             <a href="./penginapan.html"> Penginapan </a>
 
-            <a href="#"> Find a stay </a>
+            <a href="./penginapan.html"> Find a stay </a>
           </div>
 
           <!-- EXPLORE -->
@@ -301,11 +386,22 @@
       </div>
     </footer>
 
+    <!-- =========================================
+         CORE
+    ========================================== -->
+
     <script src="../assets/js/core/config.js"></script>
+
     <script src="../assets/js/core/api.js"></script>
 
-    <script src="../assets/js/public/penginapan.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 
-    <!-- <script type="module" src="../assets/js/public/penginapan.js"></script> -->
+    <script src="../assets/js/core/engine-pagination.js"></script>
+
+    <!-- =========================================
+         PUBLIC
+    ========================================== -->
+
+    <script src="../assets/js/public/penginapan.js"></script>
   </body>
 </html>

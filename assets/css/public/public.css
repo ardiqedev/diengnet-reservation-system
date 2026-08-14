@@ -221,6 +221,41 @@ p {
   letter-spacing: -0.02em;
 }
 
+/* =========================================
+   PUBLIC NAVBAR — DARK
+========================================= */
+
+.public-navbar-dark {
+  background: #0b2f27;
+  color: #ffffff;
+}
+
+.public-navbar-dark .brand {
+  color: #ffffff;
+}
+
+.public-navbar-dark .brand-mark {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.public-navbar-dark .brand-name {
+  color: #ffffff;
+}
+
+.public-navbar-dark .desktop-nav a {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.public-navbar-dark .desktop-nav a:hover {
+  color: #ffffff;
+}
+
+.public-navbar-dark .mobile-menu-btn {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
 /* =========================================================
    06. PUBLIC NAVBAR
 ========================================================= */

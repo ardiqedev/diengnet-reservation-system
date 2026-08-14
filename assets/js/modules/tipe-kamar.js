@@ -64,6 +64,14 @@ const TipeKamar = {
   },
 
   /* =====================================
+   REMOVE PHOTO PREVIEW
+===================================== */
+
+  removePhotoPreview() {
+    Upload.remove("fotoTipeKamar");
+  },
+
+  /* =====================================
    UPDATE SEARCH CLEAR
 ===================================== */
 
@@ -239,36 +247,83 @@ const TipeKamar = {
 
     await this.loadPenginapan();
 
+    /* ===============================
+     UPLOAD
+  =============================== */
+
+    Upload.init({
+      id: "fotoTipeKamar",
+
+      accept: "image/*",
+
+      maxSize: 5,
+
+      maxWidth: 1600,
+
+      quality: 0.8,
+
+      format: "webp",
+
+      multiple: false,
+    });
+
     if (data) {
       Form.setData(
         {
           penginapan: data.penginapanId,
-
           nama: data.nama,
-
           kapasitasDewasa: data.kapasitasDewasa,
-
           kapasitasAnak: data.kapasitasAnak,
-
           jumlahBed: data.jumlahBed,
-
           jenisBed: data.jenisBed,
-
           luas: data.luas,
-
           status: data.status,
-
           fasilitas: data.fasilitas,
-
           deskripsi: data.deskripsi,
         },
         "#formTipeKamar",
       );
+
+      /* ===============================
+       LOAD FOTO LAMA
+    =============================== */
+
+      if (data.fotoUrl) {
+        Upload.load("fotoTipeKamar", {
+          url: data.fotoUrl,
+
+          name: data.fotoName || "Foto Tipe Kamar",
+
+          type: "image/webp",
+
+          size: data.fotoSize || 0,
+        });
+      }
     } else {
       this.editingId = null;
     }
   },
 
+  /* =====================================
+   RENDER EXISTING PHOTO
+===================================== */
+
+  renderExistingPhoto(data) {
+    if (!data || !data.fotoUrl) {
+      return;
+    }
+
+    Upload.load("fotoTipeKamar", {
+      url: data.fotoUrl,
+      name: data.fotoName || "Foto Tipe Kamar",
+      type: "image/*",
+      size: 0,
+    });
+  },
+
+  removePhotoPreview() {
+    Upload.remove("fotoTipeKamar");
+  },
   /* =====================================
      LOAD PENGINAPAN
 ===================================== */
@@ -514,6 +569,89 @@ const TipeKamar = {
 
         </div>
 
+        <!-- =====================================
+            FOTO TIPE KAMAR
+        ====================================== -->
+
+        <div class="form-row full">
+
+          <label class="form-label">
+            Foto Tipe Kamar
+          </label>
+
+          <div
+            class="upload-component"
+            data-upload="fotoTipeKamar"
+          >
+
+            <div class="upload-box">
+
+              <div class="upload-icon">
+                📷
+              </div>
+
+              <strong>
+                Foto Tipe Kamar
+              </strong>
+
+              <small>
+                JPG / PNG / WEBP • Maksimal 5 MB
+              </small>
+
+              <button
+                type="button"
+                class="btn btn-outline"
+                onclick="Upload.change('fotoTipeKamar')"
+              >
+                Pilih Foto
+              </button>
+
+            </div>
+
+
+            <div class="upload-preview">
+
+              <img
+                class="upload-image"
+                alt="Preview foto tipe kamar"
+              >
+
+              <div class="upload-info">
+
+                <strong class="upload-name"></strong>
+
+                <small class="upload-size"></small>
+
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-outline"
+                onclick="Upload.change('fotoTipeKamar')"
+              >
+                Ganti Foto
+              </button>
+
+              <button
+                type="button"
+                class="btn btn-danger"
+                onclick="Upload.remove('fotoTipeKamar')"
+              >
+                Hapus
+              </button>
+
+            </div>
+
+
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+            >
+
+          </div>
+
+        </div>
+
         <div class="form-grid">
 
           <div class="form-row full">
@@ -610,15 +748,25 @@ const TipeKamar = {
      GET FORM
   ============================== */
 
-    /* ===============================
-     MAPPING
-  ============================== */
-
     const form = Form.getData("#formTipeKamar");
+
+    /* ===============================
+     GET PENGINAPAN
+  ============================== */
 
     const resultPenginapan = await PenginapanService.getById(form.penginapan);
 
     const penginapan = resultPenginapan.success ? resultPenginapan.data : null;
+
+    /* ===============================
+     FOTO
+  ============================== */
+
+    const foto = await Upload.serialize("fotoTipeKamar");
+
+    /* ===============================
+     DATA
+  ============================== */
 
     const data = {
       id: this.editingId || this.generateId(),
@@ -644,6 +792,12 @@ const TipeKamar = {
       deskripsi: form.deskripsi,
 
       status: form.status,
+
+      /* ===============================
+     FOTO
+  =============================== */
+
+      foto: foto,
     };
 
     Loading.show();
@@ -691,7 +845,6 @@ const TipeKamar = {
 
       if (!result.success) {
         Toast.error(result.message);
-
         return;
       }
 
@@ -701,6 +854,27 @@ const TipeKamar = {
         title: "Detail Tipe Kamar",
 
         sections: [
+          /* =====================================
+           FOTO TIPE KAMAR
+        ===================================== */
+
+          {
+            title: "Foto Tipe Kamar",
+
+            fields: [
+              {
+                label: "",
+                value: d.fotoUrl || "",
+                type: "image",
+                full: true,
+              },
+            ],
+          },
+
+          /* =====================================
+           INFORMASI
+        ===================================== */
+
           {
             title: "Informasi",
 
@@ -722,6 +896,10 @@ const TipeKamar = {
             ],
           },
 
+          /* =====================================
+           SPESIFIKASI
+        ===================================== */
+
           {
             title: "Spesifikasi",
 
@@ -742,6 +920,10 @@ const TipeKamar = {
               },
             ],
           },
+
+          /* =====================================
+           INFORMASI TAMBAHAN
+        ===================================== */
 
           {
             title: "Informasi Tambahan",
@@ -769,10 +951,6 @@ const TipeKamar = {
       Loading.hide();
     }
   },
-
-  /* =====================================
-       EDIT
-    ===================================== */
 
   /* =====================================
    EDIT

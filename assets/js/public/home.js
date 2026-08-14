@@ -5,58 +5,54 @@
 
 const PublicHome = (() => {
   /* =========================================
-       CONFIG
-    ========================================= */
+     CONFIG
+  ========================================= */
 
   const CONFIG = {
-    limit: 6,
+    limit: 3,
     status: "Aktif",
   };
 
   /* =========================================
-       STATE
-    ========================================= */
+     STATE
+  ========================================= */
 
-  let state = {
+  const state = {
     rows: [],
     loading: false,
   };
 
   /* =========================================
-       ELEMENT
-    ========================================= */
+     ELEMENT
+  ========================================= */
 
   function getStayList() {
-    return document.getElementById("homeStayList");
+    return document.getElementById("stayList");
   }
 
   /* =========================================
-       INIT
-    ========================================= */
+     INIT
+  ========================================= */
 
   async function init() {
-    console.log("[PublicPenginapan] Init");
+    console.log("[PublicHome] Init");
 
-    const list = getListElement();
+    const list = getStayList();
 
     if (!list) {
-      console.warn("[PublicPenginapan] #stayList tidak ditemukan.");
+      console.warn("[PublicHome] #stayList tidak ditemukan.");
 
       return;
     }
 
     renderLoading();
 
-    bindFilterEvents();
-
-    await loadDesa();
-
     await load();
   }
 
   /* =========================================
-       LOAD
-    ========================================= */
+     LOAD STAY
+  ========================================= */
 
   async function load() {
     if (state.loading) {
@@ -71,24 +67,45 @@ const PublicHome = (() => {
       console.log("[PublicHome] Load penginapan");
 
       const result = await API.post("penginapan.list", {
-        page: state.page,
-        limit: state.limit,
-        keyword: state.keyword,
-        status: state.status,
-        desa: state.desa,
+        page: 1,
+        limit: CONFIG.limit,
+        keyword: "",
+        status: CONFIG.status,
       });
 
-      console.log("[PublicHome] Result", result);
+      console.log("[PublicHome] Result:", result);
+
+      /*
+       * Response backend:
+       *
+       * {
+       *   success: true,
+       *   data: {
+       *     rows: [],
+       *     page: 1,
+       *     limit: 3,
+       *     total: ...
+       *   }
+       * }
+       */
+
+      if (!result || result.success === false) {
+        throw new Error(result?.message || "Gagal memuat data penginapan.");
+      }
 
       const data = result?.data || {};
 
-      state.rows = Array.isArray(data.rows) ? data.rows : [];
+      state.rows = Array.isArray(data.rows)
+        ? data.rows.slice(0, CONFIG.limit)
+        : [];
 
-      console.log("[PublicHome] Rows", state.rows);
+      console.log("[PublicHome] Rows:", state.rows);
 
       render();
     } catch (error) {
-      console.error("[PublicHome] Load error", error);
+      console.error("[PublicHome] Load error:", error);
+
+      state.rows = [];
 
       renderError(error?.message || "Gagal memuat penginapan.");
     } finally {
@@ -97,8 +114,8 @@ const PublicHome = (() => {
   }
 
   /* =========================================
-       RENDER
-    ========================================= */
+     RENDER
+  ========================================= */
 
   function render() {
     const container = getStayList();
@@ -117,107 +134,156 @@ const PublicHome = (() => {
   }
 
   /* =========================================
-       CARD
-    ========================================= */
+     CARD
+  ========================================= */
 
   function renderCard(item = {}) {
+    const id = item.id || "";
+
     const name = escapeHtml(item.nama || "Penginapan Dieng");
 
-    const location = escapeHtml(
-      item.alamat || item.lokasi || "Dieng, Wonosobo",
-    );
+    const location = escapeHtml(formatLocation(item));
 
     const description = escapeHtml(
-      item.deskripsi || "Nikmati pengalaman menginap di Dieng.",
+      item.deskripsi || "Temukan tempat menginap yang nyaman di kawasan Dieng.",
     );
 
     const image = getImageUrl(item);
 
-    const detailUrl = getDetailUrl(item);
+    /*
+     * Untuk sekarang semua card
+     * menuju halaman listing penginapan.
+     *
+     * Detail page tidak kita aktifkan
+     * dari homepage dulu.
+     */
+
+    const detailUrl = "penginapan.html";
 
     return `
-            <article class="stay-card">
+      <article
+        class="stay-card"
+        data-id="${escapeAttribute(id)}"
+      >
 
-                <a
-                    href="${detailUrl}"
-                    class="stay-image"
-                    aria-label="Lihat ${name}"
-                >
+        <!-- =====================================
+             IMAGE
+        ====================================== -->
 
-                    ${
-                      image
-                        ? `
-                                <img
-                                    src="${image}"
-                                    alt="${name}"
-                                    loading="lazy"
-                                >
-                            `
-                        : `
-                                <div
-                                    class="stay-image-placeholder"
-                                    aria-hidden="true"
-                                ></div>
-                            `
-                    }
+        <a
+          href="${detailUrl}"
+          class="stay-image"
+          aria-label="Lihat ${name}"
+        >
 
-                </a>
+          ${
+            image
+              ? `
+                <img
+                  src="${escapeAttribute(image)}"
+                  alt="${name}"
+                  loading="lazy"
+                />
+              `
+              : `
+                <div
+                  class="stay-image-placeholder"
+                  aria-hidden="true"
+                ></div>
+              `
+          }
 
-
-                <div class="stay-content">
-
-                    <span class="stay-location">
-                        ${location}
-                    </span>
-
-
-                    <h3>
-                        ${name}
-                    </h3>
+        </a>
 
 
-                    ${
-                      description
-                        ? `
-                                <p>
-                                    ${description}
-                                </p>
-                            `
-                        : ""
-                    }
+        <!-- =====================================
+             CONTENT
+        ====================================== -->
+
+        <div class="stay-content">
+
+          <span class="stay-location">
+            ${location}
+          </span>
 
 
-                    <a
-                        href="${detailUrl}"
-                        class="text-link"
-                    >
-                        Explore stay
-                        <span>→</span>
-                    </a>
+          <h3>
+            ${name}
+          </h3>
 
-                </div>
 
-            </article>
-        `;
+          <p>
+            ${description}
+          </p>
+
+
+          <a
+            href="${detailUrl}"
+            class="text-link"
+          >
+            Explore stay
+            <span>→</span>
+          </a>
+
+        </div>
+
+      </article>
+    `;
   }
 
   /* =========================================
-       IMAGE
-    ========================================= */
+     LOCATION
+  ========================================= */
+
+  function formatLocation(item = {}) {
+    const parts = [];
+
+    if (item.desa) {
+      parts.push(item.desa);
+    }
+
+    if (item.kecamatan) {
+      parts.push(item.kecamatan);
+    }
+
+    if (!parts.length && item.kabupaten) {
+      parts.push(item.kabupaten);
+    }
+
+    if (!parts.length && item.provinsi) {
+      parts.push(item.provinsi);
+    }
+
+    if (!parts.length) {
+      return "Dieng, Wonosobo";
+    }
+
+    return parts.join(", ");
+  }
+
   /* =========================================
-   IMAGE
-========================================= */
+     IMAGE
+  ========================================= */
 
   function getImageUrl(item = {}) {
     const candidates = [
       item.coverUrl,
       item.cover_url,
+
       item.imageUrl,
       item.image_url,
+
       item.fotoUrl,
       item.foto_url,
+
       item.thumbnailUrl,
       item.thumbnail_url,
+
+      item.cover?.url,
+      item.cover?.downloadUrl,
+
+      item.logoUrl,
+      item.logo?.url,
     ];
 
     const source = candidates.find(
@@ -232,198 +298,32 @@ const PublicHome = (() => {
   }
 
   /* =========================================
-   NORMALIZE IMAGE URL
-========================================= */
+     NORMALIZE IMAGE URL
+  ========================================= */
 
   function normalizeImageUrl(url) {
-    const value = String(url).trim();
+    const value = String(url || "").trim();
 
     if (!value) {
       return "";
     }
 
-    /* =====================================
-     GOOGLE DRIVE - QUERY ID
-     
-     Contoh:
-     https://drive.google.com/uc?export=view&id=XXXXX
-  ===================================== */
-
-    try {
-      const parsed = new URL(value);
-
-      const driveId = parsed.searchParams.get("id");
-
-      if (driveId) {
-        return (
-          "https://drive.google.com/thumbnail" +
-          "?id=" +
-          encodeURIComponent(driveId) +
-          "&sz=w1200"
-        );
-      }
-    } catch (error) {
-      console.warn("[PublicPenginapan] URL tidak valid:", value);
-    }
-
-    /* =====================================
-     GOOGLE DRIVE - FILE ID
-     
-     Contoh:
-     https://drive.google.com/file/d/XXXXX/view
-  ===================================== */
-
-    const fileMatch = value.match(/drive\.google\.com\/file\/d\/([^/]+)/);
-
-    if (fileMatch) {
-      return (
-        "https://drive.google.com/thumbnail" +
-        "?id=" +
-        encodeURIComponent(fileMatch[1]) +
-        "&sz=w1200"
-      );
-    }
-
-    /* =====================================
-     GOOGLE DRIVE - OPEN
-     
-     Contoh:
-     https://drive.google.com/open?id=XXXXX
-  ===================================== */
-
-    const openMatch = value.match(/drive\.google\.com\/open\?id=([^&]+)/);
-
-    if (openMatch) {
-      return (
-        "https://drive.google.com/thumbnail" +
-        "?id=" +
-        encodeURIComponent(openMatch[1]) +
-        "&sz=w1200"
-      );
-    }
-
-    /* =====================================
-     SUDAH THUMBNAIL
-  ===================================== */
+    /*
+     * Sudah thumbnail Google Drive
+     */
 
     if (value.includes("drive.google.com/thumbnail")) {
       return value;
     }
 
-    /* =====================================
-     URL BIASA
-  ===================================== */
+    /*
+     * Google Drive URL
+     *
+     * Contoh:
+     * drive.google.com/file/d/FILE_ID/view
+     */
 
-    return value;
-  }
-  /* =========================================
-   NORMALIZE IMAGE URL
-========================================= */
-
-  function normalizeImageUrl(url) {
-    const value = String(url).trim();
-
-    if (!value) {
-      return "";
-    }
-
-    /* =====================================
-     GOOGLE DRIVE - QUERY ID
-     
-     Contoh:
-     https://drive.google.com/uc?export=view&id=XXXXX
-  ===================================== */
-
-    try {
-      const parsed = new URL(value);
-
-      const driveId = parsed.searchParams.get("id");
-
-      if (driveId) {
-        return (
-          "https://drive.google.com/thumbnail" +
-          "?id=" +
-          encodeURIComponent(driveId) +
-          "&sz=w1200"
-        );
-      }
-    } catch (error) {
-      console.warn("[PublicPenginapan] URL tidak valid:", value);
-    }
-
-    /* =====================================
-     GOOGLE DRIVE - FILE ID
-     
-     Contoh:
-     https://drive.google.com/file/d/XXXXX/view
-  ===================================== */
-
-    const fileMatch = value.match(/drive\.google\.com\/file\/d\/([^/]+)/);
-
-    if (fileMatch) {
-      return (
-        "https://drive.google.com/thumbnail" +
-        "?id=" +
-        encodeURIComponent(fileMatch[1]) +
-        "&sz=w1200"
-      );
-    }
-
-    /* =====================================
-     GOOGLE DRIVE - OPEN
-     
-     Contoh:
-     https://drive.google.com/open?id=XXXXX
-  ===================================== */
-
-    const openMatch = value.match(/drive\.google\.com\/open\?id=([^&]+)/);
-
-    if (openMatch) {
-      return (
-        "https://drive.google.com/thumbnail" +
-        "?id=" +
-        encodeURIComponent(openMatch[1]) +
-        "&sz=w1200"
-      );
-    }
-
-    /* =====================================
-     SUDAH THUMBNAIL
-  ===================================== */
-
-    if (value.includes("drive.google.com/thumbnail")) {
-      return value;
-    }
-
-    /* =====================================
-     URL BIASA
-  ===================================== */
-
-    return value;
-  }
-
-  /* =========================================
-   NORMALIZE IMAGE URL
-========================================= */
-
-  function normalizeImageUrl(url) {
-    const value = String(url).trim();
-
-    if (!value) {
-      return "";
-    }
-
-    /* =====================================
-     GOOGLE DRIVE
-  ===================================== */
-
-    let match;
-
-    /* -------------------------------------
-     drive.google.com/file/d/FILE_ID/view
-  ------------------------------------- */
-
-    match = value.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+    let match = value.match(/drive\.google\.com\/file\/d\/([^/]+)/);
 
     if (match) {
       return (
@@ -433,9 +333,9 @@ const PublicHome = (() => {
       );
     }
 
-    /* -------------------------------------
-     drive.google.com/open?id=FILE_ID
-  ------------------------------------- */
+    /*
+     * Google Drive open?id=
+     */
 
     match = value.match(/drive\.google\.com\/open\?id=([^&]+)/);
 
@@ -447,9 +347,9 @@ const PublicHome = (() => {
       );
     }
 
-    /* -------------------------------------
-     drive.google.com/uc?id=FILE_ID
-  ------------------------------------- */
+    /*
+     * Google Drive uc?id=
+     */
 
     match = value.match(/drive\.google\.com\/uc\?(?:[^#]*&)?id=([^&]+)/);
 
@@ -461,38 +361,39 @@ const PublicHome = (() => {
       );
     }
 
-    /* -------------------------------------
-     Sudah thumbnail Drive
-  ------------------------------------- */
+    /*
+     * Google Drive URL dengan query ?id=
+     */
 
-    if (value.includes("drive.google.com/thumbnail")) {
-      return value;
+    try {
+      const parsed = new URL(value);
+
+      const driveId = parsed.searchParams.get("id");
+
+      if (driveId && parsed.hostname.includes("drive.google.com")) {
+        return (
+          "https://drive.google.com/thumbnail?id=" +
+          encodeURIComponent(driveId) +
+          "&sz=w1200"
+        );
+      }
+    } catch (error) {
+      /*
+       * Bukan URL absolut.
+       * Kita biarkan sebagai URL biasa.
+       */
     }
 
-    /* =====================================
-     URL BIASA
-  ===================================== */
+    /*
+     * URL biasa
+     */
 
     return value;
   }
 
   /* =========================================
-       DETAIL URL
-    ========================================= */
-
-  function getDetailUrl(item = {}) {
-    const slug = item.slug || item.id || "";
-
-    if (!slug) {
-      return "penginapan.html";
-    }
-
-    return "penginapan-detail.html?slug=" + encodeURIComponent(slug);
-  }
-
-  /* =========================================
-       LOADING
-    ========================================= */
+     LOADING
+  ========================================= */
 
   function renderLoading() {
     const container = getStayList();
@@ -502,23 +403,24 @@ const PublicHome = (() => {
     }
 
     container.innerHTML = `
+      <div
+        class="stay-loading"
+        aria-label="Memuat penginapan"
+      >
 
-            <div class="stay-loading">
+        <div class="stay-loading-card"></div>
 
-                <div class="stay-loading-card"></div>
+        <div class="stay-loading-card"></div>
 
-                <div class="stay-loading-card"></div>
+        <div class="stay-loading-card"></div>
 
-                <div class="stay-loading-card"></div>
-
-            </div>
-
-        `;
+      </div>
+    `;
   }
 
   /* =========================================
-       EMPTY
-    ========================================= */
+     EMPTY
+  ========================================= */
 
   function renderEmpty() {
     const container = getStayList();
@@ -528,26 +430,24 @@ const PublicHome = (() => {
     }
 
     container.innerHTML = `
+      <div class="stay-empty">
 
-            <div class="stay-empty">
+        <h3>
+          No stays available
+        </h3>
 
-                <h3>
-                    No stays available
-                </h3>
+        <p>
+          Belum ada penginapan yang
+          tersedia saat ini.
+        </p>
 
-                <p>
-                    Belum ada penginapan yang
-                    tersedia saat ini.
-                </p>
-
-            </div>
-
-        `;
+      </div>
+    `;
   }
 
   /* =========================================
-       ERROR
-    ========================================= */
+     ERROR
+  ========================================= */
 
   function renderError(message) {
     const container = getStayList();
@@ -557,27 +457,25 @@ const PublicHome = (() => {
     }
 
     container.innerHTML = `
+      <div class="stay-error">
 
-            <div class="stay-error">
+        <h3>
+          Penginapan belum dapat dimuat
+        </h3>
 
-                <h3>
-                    Penginapan belum dapat dimuat
-                </h3>
+        <p>
+          ${escapeHtml(message)}
+        </p>
 
-                <p>
-                    ${escapeHtml(message)}
-                </p>
+        <button
+          type="button"
+          class="stay-retry-btn"
+        >
+          Coba Lagi
+        </button>
 
-                <button
-                    type="button"
-                    class="stay-retry-btn"
-                >
-                    Coba Lagi
-                </button>
-
-            </div>
-
-        `;
+      </div>
+    `;
 
     const retryButton = container.querySelector(".stay-retry-btn");
 
@@ -587,41 +485,39 @@ const PublicHome = (() => {
   }
 
   /* =========================================
-       ESCAPE HTML
-    ========================================= */
+     ESCAPE HTML
+  ========================================= */
 
   function escapeHtml(value) {
     return String(value ?? "")
       .replaceAll("&", "&amp;")
-
       .replaceAll("<", "&lt;")
-
       .replaceAll(">", "&gt;")
-
       .replaceAll('"', "&quot;")
-
       .replaceAll("'", "&#039;");
   }
 
   /* =========================================
-       ESCAPE ATTRIBUTE
-    ========================================= */
+     ESCAPE ATTRIBUTE
+  ========================================= */
 
   function escapeAttribute(value) {
     return escapeHtml(value);
   }
 
   /* =========================================
-       REFRESH
-    ========================================= */
+     REFRESH
+  ========================================= */
 
   async function refresh() {
+    state.rows = [];
+
     await load();
   }
 
   /* =========================================
-       PUBLIC API
-    ========================================= */
+     PUBLIC API
+  ========================================= */
 
   return {
     init,
@@ -630,10 +526,12 @@ const PublicHome = (() => {
 
     refresh,
 
-    getState: () => ({
-      ...state,
-      rows: [...state.rows],
-    }),
+    getState() {
+      return {
+        ...state,
+        rows: [...state.rows],
+      };
+    },
   };
 })();
 

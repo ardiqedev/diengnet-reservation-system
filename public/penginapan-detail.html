@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta name="description" content="Detail penginapan di Dieng." />
+
+    <title>Dieng Net — Penginapan</title>
+
+    <!-- =========================================
+         FONTS
+    ========================================== -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- =========================================
+         PUBLIC CSS
+    ========================================== -->
+
+    <link rel="stylesheet" href="../assets/css/public/public.css" />
+
+    <link rel="stylesheet" href="../assets/css/public/penginapan-detail.css" />
+  </head>
+
+  <body>
+    <!-- =========================================
+         NAVBAR
+    ========================================== -->
+
+    <header class="public-navbar public-navbar-light">
+      <div class="container navbar-inner">
+        <!-- BRAND -->
+
+        <a href="./index.html" class="brand">
+          <span class="brand-mark"> DN </span>
+
+          <span class="brand-name"> Dieng Net </span>
+        </a>
+
+        <!-- DESKTOP NAV -->
+
+        <nav class="desktop-nav">
+          <a href="./index.html#stay"> Stay </a>
+
+          <a href="./index.html#explore"> Explore </a>
+
+          <a href="./index.html#experience"> Experience </a>
+        </nav>
+
+        <!-- ACTION -->
+
+        <div class="navbar-actions">
+          <a href="./index.html#booking" class="btn btn-dark">
+            Book Your Stay
+          </a>
+
+          <button
+            type="button"
+            class="mobile-menu-btn"
+            id="mobileMenuBtn"
+            aria-label="Buka menu"
+            aria-expanded="false"
+          >
+            ☰
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- =========================================
+         MOBILE MENU
+    ========================================== -->
+
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="./index.html#stay"> Stay </a>
+
+      <a href="./index.html#explore"> Explore </a>
+
+      <a href="./index.html#experience"> Experience </a>
+
+      <a href="./index.html#booking" class="btn btn-dark"> Book Your Stay </a>
+    </div>
+
+    <!-- =========================================
+         MAIN
+    ========================================== -->
+
+    <main>
+      <!-- =========================================
+           PROPERTY DETAIL
+      ========================================== -->
+
+      <section class="stay-detail">
+        <div class="container">
+          <!-- =====================================
+               BACK
+          ====================================== -->
+
+          <a href="./penginapan.html" class="stay-detail-back">
+            <span aria-hidden="true"> ← </span>
+
+            <span> Back to stays </span>
+          </a>
+
+          <!-- =====================================
+               LOADING
+          ====================================== -->
+
+          <div id="detailLoading" class="detail-loading">
+            <div class="detail-loading-spinner" aria-hidden="true"></div>
+
+            <p>Finding stay...</p>
+          </div>
+
+          <!-- =====================================
+               CONTENT
+          ====================================== -->
+
+          <div id="detailContent" hidden>
+            <!-- ===================================
+                 COVER
+            ==================================== -->
+
+            <div id="detailCover" class="stay-detail-cover"></div>
+
+            <!-- ===================================
+                 PROPERTY INFORMATION
+            ==================================== -->
+
+            <div class="stay-detail-info">
+              <!-- LOCATION -->
+
+              <span id="detailLocation" class="stay-detail-location"></span>
+
+              <!-- TITLE -->
+
+              <h1 id="detailTitle" class="stay-detail-title"></h1>
+
+              <!-- TYPE -->
+
+              <span id="detailType" class="stay-detail-type"></span>
+
+              <!-- DESCRIPTION -->
+
+              <p id="detailDescription" class="stay-detail-description"></p>
+
+              <!-- =================================
+                   PROPERTY META
+              ================================== -->
+
+              <div id="detailMeta" class="stay-detail-meta"></div>
+
+              <!-- =================================
+                   ACCOMMODATION
+              ================================== -->
+
+              <section class="stay-detail-stay">
+                <!-- =================================
+                     SECTION HEADER
+                ================================== -->
+
+                <div class="stay-detail-section-heading">
+                  <span class="eyebrow eyebrow-dark"> ACCOMMODATION </span>
+
+                  <h2>Choose your room.</h2>
+
+                  <p>
+                    Select a room and choose your dates to see the current
+                    price.
+                  </p>
+                </div>
+
+                <!-- =================================
+                     ROOM LIST
+                ================================== -->
+
+                <div id="roomList" class="room-grid"></div>
+              </section>
+            </div>
+          </div>
+
+          <!-- =====================================
+               ERROR
+          ====================================== -->
+
+          <div id="detailError" class="detail-error" hidden>
+            <h1>Stay not found.</h1>
+
+            <p id="detailErrorMessage">Penginapan tidak ditemukan.</p>
+
+            <a href="./penginapan.html" class="btn btn-dark"> Back to stays </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- =================================================
+         BOOKING BOTTOM SHEET
+    ================================================== -->
+
+    <div id="bookingSheet" class="booking-sheet" hidden aria-hidden="true">
+      <!-- =========================================
+           BACKDROP
+      ========================================== -->
+
+      <div id="bookingSheetBackdrop" class="booking-sheet-backdrop"></div>
+
+      <!-- =========================================
+           SHEET
+      ========================================== -->
+
+      <section
+        id="bookingSection"
+        class="stay-detail-booking"
+        aria-labelledby="bookingSheetTitle"
+      >
+        <div class="booking-sheet-inner">
+          <!-- =====================================
+               SHEET HANDLE
+          ====================================== -->
+
+          <div class="booking-sheet-handle" aria-hidden="true"></div>
+
+          <!-- =====================================
+               SHEET HEADER
+          ====================================== -->
+
+          <div class="booking-sheet-header">
+            <div class="booking-flow-header">
+              <span class="eyebrow eyebrow-dark"> YOUR STAY </span>
+
+              <h3 id="bookingSheetTitle">Book your stay.</h3>
+
+              <p>
+                Choose your dates and guests to check the current available
+                price.
+              </p>
+            </div>
+
+            <!-- CLOSE -->
+
+            <button
+              type="button"
+              id="bookingSheetClose"
+              class="booking-sheet-close"
+              aria-label="Tutup booking"
+            >
+              ×
+            </button>
+          </div>
+
+          <!-- =====================================
+               BOOKING PANEL
+          ====================================== -->
+
+          <div class="booking-panel" id="bookingPanel">
+            <!-- =================================
+                 SELECTED ROOM
+            ================================== -->
+
+            <div class="booking-selected-room" id="bookingSelectedRoom">
+              <span class="booking-label"> ROOM </span>
+
+              <strong id="bookingRoomName"> Select a room </strong>
+            </div>
+
+            <!-- =================================
+                 BOOKING FIELDS
+            ================================== -->
+
+            <div class="booking-fields">
+              <!-- CHECK IN -->
+
+              <div class="booking-field">
+                <label for="bookingCheckIn"> CHECK-IN </label>
+
+                <input type="date" id="bookingCheckIn" />
+              </div>
+
+              <!-- CHECK OUT -->
+
+              <div class="booking-field">
+                <label for="bookingCheckOut"> CHECK-OUT </label>
+
+                <input type="date" id="bookingCheckOut" />
+              </div>
+
+              <!-- GUESTS -->
+
+              <div class="booking-field">
+                <label for="bookingGuests"> GUESTS </label>
+
+                <select id="bookingGuests">
+                  <option value="1">1 Guest</option>
+
+                  <option value="2" selected>2 Guests</option>
+
+                  <option value="3">3 Guests</option>
+
+                  <option value="4">4 Guests</option>
+
+                  <option value="5">5 Guests</option>
+
+                  <option value="6">6 Guests</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- =================================
+                 CURRENT PRICE
+            ================================== -->
+
+            <div id="bookingPriceResult" class="booking-price-result" hidden>
+              <div class="booking-price-header">
+                <div>
+                  <span class="booking-label"> CURRENT PRICE </span>
+
+                  <span id="bookingNightCount"> 0 nights </span>
+                </div>
+              </div>
+
+              <!-- NIGHTLY BREAKDOWN -->
+
+              <div id="bookingNightList" class="booking-night-list"></div>
+
+              <!-- TOTAL -->
+
+              <div class="booking-total">
+                <span> Total stay </span>
+
+                <strong id="bookingTotal"> Rp0 </strong>
+              </div>
+            </div>
+
+            <!-- =================================
+                 ERROR
+            ================================== -->
+
+            <div id="bookingError" class="booking-error" hidden></div>
+
+            <!-- =================================
+                 ACTION
+            ================================== -->
+
+            <div class="booking-actions">
+              <button
+                type="button"
+                id="bookingPriceButton"
+                class="btn btn-dark booking-price-button"
+              >
+                Check availability
+              </button>
+
+              <button
+                type="button"
+                id="bookingSubmitButton"
+                class="btn btn-dark booking-submit-button"
+                hidden
+              >
+                Book this room
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- =========================================
+         FOOTER
+    ========================================== -->
+
+    <footer class="public-footer" id="publicFooter" hidden>
+      <div class="container">
+        <div class="footer-grid">
+          <!-- BRAND -->
+
+          <div class="footer-brand">
+            <a href="./index.html" class="brand">
+              <span class="brand-mark"> DN </span>
+
+              <span class="brand-name"> Dieng Net </span>
+            </a>
+
+            <p>Discover Dieng through stay, nature and experience.</p>
+          </div>
+
+          <!-- STAY -->
+
+          <div class="footer-column">
+            <span class="footer-title"> STAY </span>
+
+            <a href="./penginapan.html"> Penginapan </a>
+
+            <a href="./penginapan.html"> Find a stay </a>
+          </div>
+
+          <!-- EXPLORE -->
+
+          <div class="footer-column">
+            <span class="footer-title"> EXPLORE </span>
+
+            <a href="./index.html#explore"> Destinations </a>
+
+            <a href="./index.html#explore"> Jeep </a>
+
+            <a href="./index.html#experience"> Experiences </a>
+          </div>
+
+          <!-- INFORMATION -->
+
+          <div class="footer-column">
+            <span class="footer-title"> DIENG </span>
+
+            <a href="#"> About Dieng </a>
+
+            <a href="#"> Contact </a>
+          </div>
+        </div>
+
+        <!-- FOOTER BOTTOM -->
+
+        <div class="footer-bottom">
+          <span> © 2026 Dieng Net </span>
+
+          <span> Explore Dieng, Your Way. </span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- =========================================
+         CORE
+    ========================================== -->
+
+    <script src="../assets/js/core/config.js"></script>
+
+    <script src="../assets/js/core/api.js"></script>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- =========================================
+         PUBLIC DETAIL
+    ========================================== -->
+
+    <script src="../assets/js/public/penginapan-detail.js"></script>
+  </body>
+</html>
