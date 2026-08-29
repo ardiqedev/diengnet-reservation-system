@@ -4,12 +4,40 @@
 
 const PaymentService = (() => {
   /* =====================================
-     GET BY BOOKING ID
+     GET BY RESERVATION
   ===================================== */
 
-  async function getByBookingId(bookingId) {
+  async function getByReservationId(reservationId) {
+    if (!reservationId) {
+      return {
+        success: false,
+        message: "Reservation ID wajib diisi.",
+        data: [],
+        meta: {},
+      };
+    }
+
     return API.post("payment.list", {
-      bookingId,
+      reservationId,
+    });
+  }
+
+  /* =====================================
+     GET BY ID
+  ===================================== */
+
+  async function getById(id) {
+    if (!id) {
+      return {
+        success: false,
+        message: "Payment ID wajib diisi.",
+        data: null,
+        meta: {},
+      };
+    }
+
+    return API.post("payment.detail", {
+      id,
     });
   }
 
@@ -17,27 +45,67 @@ const PaymentService = (() => {
      SAVE
   ===================================== */
 
-  async function save(data, proof = null) {
+  async function save(data = {}, proof = null) {
     const payload = {
       ...data,
-      proof,
+
+      /*
+       * Proof dikirim ke backend
+       * sebagai bagian dari payload.
+       */
+
+      proof: proof || data.proof || "",
     };
 
-    if (data.id) {
-      return API.post("payment.update", payload);
+    return API.post("payment.store", payload);
+  }
+
+  /* =====================================
+     VERIFY
+  ===================================== */
+
+  async function verify(id, verifiedBy = "") {
+    if (!id) {
+      return {
+        success: false,
+        message: "Payment ID wajib diisi.",
+        data: null,
+        meta: {},
+      };
     }
 
-    return API.post("payment.store", payload);
+    return API.post("payment.verify", {
+      id,
+
+      verifiedBy,
+    });
+  }
+
+  /* =====================================
+     REJECT
+  ===================================== */
+
+  async function reject(id) {
+    if (!id) {
+      return {
+        success: false,
+        message: "Payment ID wajib diisi.",
+        data: null,
+        meta: {},
+      };
+    }
+
+    return API.post("payment.reject", {
+      id,
+    });
   }
 
   /* =====================================
      REMOVE
   ===================================== */
 
-  async function remove(id) {
-    return API.post("payment.delete", {
-      id,
-    });
+  async function remove() {
+    throw new Error("Payment tidak mendukung hard delete.");
   }
 
   /* =====================================
@@ -45,9 +113,15 @@ const PaymentService = (() => {
   ===================================== */
 
   return {
-    getByBookingId,
+    getByReservationId,
+
+    getById,
 
     save,
+
+    verify,
+
+    reject,
 
     remove,
   };

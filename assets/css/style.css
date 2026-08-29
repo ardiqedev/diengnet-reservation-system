@@ -32,13 +32,11 @@
 ========================================= */
 
 /* nanti di sini */
-
-/* @import url("pages/dashboard.css"); */
+@import url("pages/profil-penginapan.css");
+@import url("pages/detail-profil-penginapan.css");
 @import url("pages/penginapan.css");
-@import url("pages/tipe-kamar.css");
-/* @import url("pages/kamar.css"); */
+@import url("pages/pengaturan.css");
 @import url("pages/reservasi.css");
-
 @import url("pages/invoice.css");
 
 /* =========================================

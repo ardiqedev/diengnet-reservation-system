@@ -4,326 +4,342 @@
 
 const InvoiceView = (() => {
   /* =====================================
-       RENDER
-    ===================================== */
+     RENDER
+  ===================================== */
 
-  function render(booking = {}, invoice = {}, payments = []) {
-    return `
-
+  function render(data = {}) {
+    if (!data || typeof data !== "object") {
+      return `
         <div class="invoice">
-
-            ${renderHeader(booking, invoice)}
-
-            ${renderBody(booking, payments)}
-
-            ${renderFooter()}
-
+          <div class="invoice-empty">
+            Data invoice tidak valid.
+          </div>
         </div>
+      `;
+    }
 
-    `;
-  }
-
-  /* =====================================
-   HEADER
-===================================== */
-
-  function renderHeader(booking = {}, invoice = {}) {
     return `
 
-        <div class="invoice-header">
+      <div class="invoice">
 
-            <div class="invoice-company">
+        ${renderHeader(data)}
 
-                <div class="invoice-logo">
+        ${renderBody(data)}
 
-                    DIENG STAY PMS
+        ${renderFooter()}
 
-                </div>
-
-                <div class="invoice-company-info">
-
-                    <div>
-
-                        Sistem Reservasi Penginapan
-
-                    </div>
-
-                    <div>
-
-                        Dieng, Banjarnegara, Jawa Tengah
-
-                    </div>
-
-                    <div>
-
-                        Telp : 08xxxxxxxxxx
-
-                    </div>
-
-                    <div>
-
-                        Email : info@diengstay.com
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <div class="invoice-document">
-
-                <h1>
-
-                    INVOICE
-
-                </h1>
-
-                <div class="invoice-document-info">
-                    ${renderInfoRow({
-                      label: "No Invoice",
-                      value: invoice.invoiceNumber || "-",
-                    })}
-
-                    ${renderInfoRow({
-                      label: "Kode Reservasi",
-                      value: booking.kodeReservasi || "-",
-                    })}
-
-                    ${renderInfoRow({
-                      label: "Tanggal",
-                      value: ReservasiHelper.formatDate(invoice.invoiceDate),
-                    })}
-
-                    ${renderInfoRow({
-                      label: "Status",
-                      value: invoice.status || "-",
-                    })}
-
-                </div>
-
-            </div>
-
-        </div>
+      </div>
 
     `;
   }
 
   /* =====================================
-   INFO ROW
-    ===================================== */
+     HEADER
+  ===================================== */
+
+  function renderHeader(data = {}) {
+    const invoice = data.invoice || {};
+
+    return `
+
+      <div class="invoice-header">
+
+        <div class="invoice-company">
+
+          <div class="invoice-logo">
+
+            DIENG STAY PMS
+
+          </div>
+
+          <div class="invoice-company-info">
+
+            <div>
+              Sistem Reservasi Penginapan
+            </div>
+
+            <div>
+              Dieng, Banjarnegara, Jawa Tengah
+            </div>
+
+            <div>
+              Telp : 08xxxxxxxxxx
+            </div>
+
+            <div>
+              Email : info@diengstay.com
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="invoice-document">
+
+          <h1>
+            INVOICE
+          </h1>
+
+
+          <div class="invoice-document-info">
+
+            ${renderInfoRow({
+              label: "No Invoice",
+
+              value: invoice.kode || "-",
+            })}
+
+
+            ${renderInfoRow({
+              label: "Kode Reservasi",
+
+              value: invoice.reservationId || "-",
+            })}
+
+
+            ${renderInfoRow({
+              label: "Tanggal",
+
+              value: formatDateTime(invoice.issuedAt),
+            })}
+
+
+            ${renderInfoRow({
+              label: "Status",
+
+              value: formatStatus(invoice.status),
+            })}
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =====================================
+     INFO ROW
+  ===================================== */
 
   function renderInfoRow({ label = "-", value = "-", className = "" } = {}) {
     return `
 
-        <div class="invoice-row ${className}">
+      <div class="invoice-row ${className}">
 
-            <span>
+        <span>
+          ${escapeHtml(label)}
+        </span>
 
-                ${label}
+        <strong>
+          ${escapeHtml(value)}
+        </strong>
 
-            </span>
-
-            <strong>
-
-                ${value}
-
-            </strong>
-
-        </div>
+      </div>
 
     `;
   }
 
   /* =====================================
-   BODY
-    ===================================== */
+     BODY
+  ===================================== */
 
-  /* =====================================
-   BODY
-===================================== */
-
-  function renderBody(booking = {}, payments = []) {
+  function renderBody(data = {}) {
     return `
 
-        <div class="invoice-grid">
+      <div class="invoice-grid">
 
-            ${renderGuest(booking)}
+        ${renderGuest(data)}
 
-            ${renderStay(booking)}
+        ${renderProperty(data)}
 
-        </div>
+      </div>
 
-        ${renderSchedule(booking)}
 
-        ${renderSummary(booking)}
+      ${renderSchedule(data)}
 
-        ${renderPayment(booking, payments)}
 
-        ${renderNote(booking)}        
+      ${renderSummary(data)}
 
-        ${renderSignature()}
+
+      ${renderPayment(data)}
+
+
+      ${renderNote(data)}
+
+
+      ${renderSignature()}
 
     `;
   }
 
   /* =====================================
-       FOOTER
-    ===================================== */
+     GUEST
+  ===================================== */
 
-  function renderFooter() {
+  function renderGuest(data = {}) {
+    const guest = data.guest || {};
+
     return `
 
-            <div class="invoice-footer">
+      <div class="invoice-section">
 
-                <button
-                    type="button"
-                    class="btn btn-primary"
-                    id="btnPrintInvoice">
+        <div class="invoice-section-title">
 
-                    Print Invoice
-
-                </button>
-
-            </div>
-
-        `;
-  }
-
-  /* =====================================
-    GUEST
-    ===================================== */
-
-  function renderGuest(booking = {}) {
-    return `
-
-        <div class="invoice-section">
-
-            <div class="invoice-section-title">
-
-                👤 Data Tamu
-
-            </div>
-
-            <div class="invoice-information">
-
-                ${renderInfoRow({
-                  label: "Nama Tamu",
-                  value: booking.namaTamu || "-",
-                })}
-
-                ${renderInfoRow({
-                  label: "No. HP",
-                  value: booking.noHp || "-",
-                })}
-
-                ${renderInfoRow({
-                  label: "Email",
-                  value: booking.email || "-",
-                })}
-
-            </div>
+          👤 Data Tamu
 
         </div>
+
+
+        <div class="invoice-information">
+
+          ${renderInfoRow({
+            label: "Nama Tamu",
+
+            value: guest.namaTamu || "-",
+          })}
+
+
+          ${renderInfoRow({
+            label: "No. HP",
+
+            value: guest.noHp || "-",
+          })}
+
+
+          ${renderInfoRow({
+            label: "Email",
+
+            value: guest.email || "-",
+          })}
+
+        </div>
+
+      </div>
 
     `;
   }
 
   /* =====================================
-    STAY
-    ===================================== */
+     PROPERTY
+  ===================================== */
 
-  function renderStay(booking = {}) {
+  function renderProperty(data = {}) {
+    const property = data.property || {};
+
     return `
 
-        <div class="invoice-section">
+      <div class="invoice-section">
 
-            <div class="invoice-section-title">
+        <div class="invoice-section-title">
 
-                🏡 Informasi Menginap
-
-            </div>
-
-            <div class="invoice-information">
-
-                ${renderInfoRow({
-                  label: "Penginapan",
-                  value: booking.penginapan || "-",
-                })}
-
-                ${renderInfoRow({
-                  label: "Tipe Kamar",
-                  value: booking.tipeKamar || "-",
-                })}
-
-                ${renderInfoRow({
-                  label: "Nomor Kamar",
-                  value: booking.kamar || "-",
-                })}
-
-                ${renderInfoRow({
-                  label: "Channel",
-                  value: booking.channel || "-",
-                })}
-
-            </div>
+          🏡 Informasi Menginap
 
         </div>
+
+
+        <div class="invoice-information">
+
+          ${renderInfoRow({
+            label: "Penginapan",
+
+            value: property.penginapanNama || "-",
+          })}
+
+
+          ${renderInfoRow({
+            label: "Tipe Kamar",
+
+            value: property.tipeKamar || "-",
+          })}
+
+
+          ${renderInfoRow({
+            label: "Nomor Kamar",
+
+            value: property.nomorKamar || "-",
+          })}
+
+
+          ${renderInfoRow({
+            label: "Channel",
+
+            value: data.stay?.channel || "-",
+          })}
+
+        </div>
+
+      </div>
 
     `;
   }
 
   /* =====================================
-    SCHEDULE
-    ===================================== */
+     SCHEDULE
+  ===================================== */
 
-  function renderSchedule(booking = {}) {
+  function renderSchedule(data = {}) {
+    const stay = data.stay || {};
+
     return `
 
-        <div class="invoice-section">
+      <div class="invoice-section">
 
-            <div class="invoice-section-title">
+        <div class="invoice-section-title">
 
-                📅 Jadwal Menginap
-
-            </div>
-
-            <div class="invoice-information">
-
-                ${renderInfoRow({
-                  label: "Check In",
-                  value: ReservasiHelper.formatDate(booking.checkIn),
-                })}
-
-                ${renderInfoRow({
-                  label: "Check Out",
-                  value: ReservasiHelper.formatDate(booking.checkOut),
-                })}
-
-                ${renderInfoRow({
-                  label: "Jumlah Malam",
-                  value: `${booking.jumlahMalam || 0} Malam`,
-                })}
-
-                ${renderInfoRow({
-                  label: "Dewasa",
-                  value: `${booking.dewasa || 0} Orang`,
-                })}
-
-                ${renderInfoRow({
-                  label: "Anak",
-                  value: `${booking.anak || 0} Orang`,
-                })}
-
-            </div>
+          📅 Jadwal Menginap
 
         </div>
+
+
+        <div class="invoice-information">
+
+          ${renderInfoRow({
+            label: "Check In",
+
+            value: formatDate(stay.checkIn),
+          })}
+
+
+          ${renderInfoRow({
+            label: "Check Out",
+
+            value: formatDate(stay.checkOut),
+          })}
+
+
+          ${renderInfoRow({
+            label: "Jumlah Malam",
+
+            value: `${Number(stay.jumlahMalam || 0)} Malam`,
+          })}
+
+
+          ${renderInfoRow({
+            label: "Dewasa",
+
+            value: `${Number(stay.dewasa || 0)} Orang`,
+          })}
+
+
+          ${renderInfoRow({
+            label: "Anak",
+
+            value: `${Number(stay.anak || 0)} Orang`,
+          })}
+
+        </div>
+
+      </div>
 
     `;
   }
 
   /* =====================================
-   INVOICE ROW
-===================================== */
+     INVOICE ROW
+  ===================================== */
 
   function renderInvoiceRow({
     description = "-",
@@ -334,260 +350,567 @@ const InvoiceView = (() => {
   } = {}) {
     return `
 
-        <tr class="${isBold ? "invoice-row-bold" : ""}">
+      <tr class="${isBold ? "invoice-row-bold" : ""}">
 
-            <td>
+        <td>
+          ${escapeHtml(description)}
+        </td>
 
-                ${description}
 
-            </td>
+        <td class="text-center">
+          ${escapeHtml(String(qty))}
+        </td>
 
-            <td class="text-center">
 
-                ${qty}
+        <td class="text-end">
 
-            </td>
+          ${formatCurrency(price)}
 
-            <td class="text-end">
+        </td>
 
-                ${ReservasiHelper.formatCurrency(price)}
 
-            </td>
+        <td class="text-end">
 
-            <td class="text-end">
+          ${formatCurrency(subtotal)}
 
-                ${ReservasiHelper.formatCurrency(subtotal)}
+        </td>
 
-            </td>
-
-        </tr>
-
-    `;
-  }
-
-  /* =====================================
-   SUMMARY
-    ===================================== */
-
-  function renderSummary(booking = {}) {
-    return `
-
-        <div class="invoice-section">
-
-            <div class="invoice-section-title">
-
-                RINCIAN BIAYA
-
-            </div>
-
-            <table class="invoice-table">
-
-                <thead>
-
-                    <tr>
-
-                        <th>Deskripsi</th>
-
-                        <th>Qty</th>
-
-                        <th>Harga</th>
-
-                        <th>Subtotal</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    ${renderInvoiceRow({
-                      description: booking.tipeKamar || "-",
-                      qty: `${booking.jumlahMalam || 0} Malam`,
-                      price: booking.weekday || 0,
-                      subtotal:
-                        (booking.weekday || 0) * (booking.jumlahMalam || 0),
-                    })}
-
-                    ${renderInvoiceRow({
-                      description: "Extra Person",
-                      qty: `${booking.anak || 0} Orang`,
-                      price: booking.extraPerson || 0,
-                      subtotal: booking.extraPerson || 0,
-                    })}
-
-                    ${renderInvoiceRow({
-                      description: "Diskon",
-                      qty: "-",
-                      price: 0,
-                      subtotal: booking.diskon || 0,
-                    })}
-
-                    ${renderInvoiceRow({
-                      description: "Pajak",
-                      qty: "-",
-                      price: 0,
-                      subtotal: booking.pajak || 0,
-                    })}
-
-                </tbody>
-
-                <tfoot>
-
-                    <tr>
-
-                        <th colspan="3">
-
-                            TOTAL PEMBAYARAN
-
-                        </th>
-
-                        <th class="text-end">
-
-                            ${ReservasiHelper.formatCurrency(
-                              booking.grandTotal,
-                            )}
-
-                        </th>
-
-                    </tr>
-
-                </tfoot>
-
-            </table>
-
-        </div>
+      </tr>
 
     `;
   }
 
   /* =====================================
-   PAYMENT
-===================================== */
+     SUMMARY
+  ===================================== */
 
-  function renderPayment(booking = {}, payments = []) {
-    const totalPaid = PaymentHelper.getTotalPaid(payments);
+  function renderSummary(data = {}) {
+    const pricing = data.pricing || {};
 
-    const remaining = PaymentHelper.getRemaining(booking.grandTotal, payments);
+    const stay = data.stay || {};
 
-    const status = PaymentHelper.getStatus(booking.grandTotal, payments);
+    const jumlahMalam = Number(stay.jumlahMalam || 0);
+
+    const roomPrice = Number(pricing.roomPrice || 0);
+
+    const extraPerson = Number(pricing.extraPerson || 0);
+
+    const discount = Number(pricing.discount || 0);
+
+    const tax = Number(pricing.tax || 0);
+
+    const grandTotal = Number(pricing.grandTotal || 0);
+
+    /*
+     * roomPrice pada reservation adalah
+     * snapshot biaya kamar reservation.
+     *
+     * Jangan dikalikan lagi dengan
+     * jumlah malam karena backend sudah
+     * menyimpan roomPrice sebagai nilai
+     * pricing reservation.
+     */
+
+    const roomSubtotal = roomPrice;
 
     return `
 
-        <div class="invoice-section">
+      <div class="invoice-section">
 
-            <div class="invoice-section-title">
+        <div class="invoice-section-title">
 
-                💳 Status Pembayaran
-
-            </div>
-
-            <div class="invoice-information">
-
-                ${renderInfoRow({
-                  label: "Sudah Dibayar",
-                  value: ReservasiHelper.formatCurrency(totalPaid),
-                })}
-
-                ${renderInfoRow({
-                  label: "Sisa Pembayaran",
-                  value: ReservasiHelper.formatCurrency(remaining),
-                })}
-
-                ${renderInfoRow({
-                  label: "Status",
-                  value: status.label,
-                })}
-
-            </div>
+          RINCIAN BIAYA
 
         </div>
+
+
+        <table class="invoice-table">
+
+          <thead>
+
+            <tr>
+
+              <th>
+                Deskripsi
+              </th>
+
+              <th>
+                Qty
+              </th>
+
+              <th>
+                Harga
+              </th>
+
+              <th>
+                Subtotal
+              </th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            ${renderInvoiceRow({
+              description: data.property?.tipeKamar || "Kamar",
+
+              qty: `${jumlahMalam} Malam`,
+
+              price: roomPrice,
+
+              subtotal: roomSubtotal,
+            })}
+
+
+            ${
+              extraPerson > 0
+                ? renderInvoiceRow({
+                    description: "Extra Person",
+
+                    qty: "1",
+
+                    price: extraPerson,
+
+                    subtotal: extraPerson,
+                  })
+                : ""
+            }
+
+
+            ${
+              discount > 0
+                ? renderInvoiceRow({
+                    description: "Diskon",
+
+                    qty: "-",
+
+                    price: 0,
+
+                    subtotal: -discount,
+                  })
+                : ""
+            }
+
+
+            ${
+              tax > 0
+                ? renderInvoiceRow({
+                    description: "Pajak",
+
+                    qty: "-",
+
+                    price: 0,
+
+                    subtotal: tax,
+                  })
+                : ""
+            }
+
+          </tbody>
+
+
+          <tfoot>
+
+            <tr>
+
+              <th colspan="3">
+
+                TOTAL PEMBAYARAN
+
+              </th>
+
+
+              <th class="text-end">
+
+                ${formatCurrency(grandTotal)}
+
+              </th>
+
+            </tr>
+
+          </tfoot>
+
+        </table>
+
+      </div>
 
     `;
   }
 
   /* =====================================
-   NOTE
-===================================== */
+     PAYMENT
+  ===================================== */
 
-  function renderNote(booking = {}) {
+  function renderPayment(data = {}) {
+    const payment = data.payment || {};
+
+    const grandTotal = Number(payment.grandTotal || 0);
+
+    const totalVerified = Number(payment.totalVerified || 0);
+
+    const remaining = Number(payment.remaining || 0);
+
+    const isPaid = payment.isPaid === true;
+
+    const status = isPaid ? "LUNAS" : "BELUM LUNAS";
+
     return `
 
-        <div class="invoice-section">
+      <div class="invoice-section">
 
-            <div class="invoice-section-title">
+        <div class="invoice-section-title">
 
-                📝 Catatan
-
-            </div>
-
-            <div class="invoice-note">
-
-                ${booking.catatan || "-"}
-
-            </div>
+          💳 Status Pembayaran
 
         </div>
+
+
+        <div class="invoice-information">
+
+          ${renderInfoRow({
+            label: "Total Tagihan",
+
+            value: formatCurrency(grandTotal),
+          })}
+
+
+          ${renderInfoRow({
+            label: "Pembayaran Terverifikasi",
+
+            value: formatCurrency(totalVerified),
+          })}
+
+
+          ${renderInfoRow({
+            label: "Sisa Pembayaran",
+
+            value: formatCurrency(remaining),
+          })}
+
+
+          ${renderInfoRow({
+            label: "Status",
+
+            value: status,
+
+            className: isPaid
+              ? "invoice-payment-paid"
+              : "invoice-payment-unpaid",
+          })}
+
+        </div>
+
+
+        ${renderVerifiedPayments(payment.payments)}
+
+      </div>
 
     `;
   }
 
   /* =====================================
-   SIGNATURE
-===================================== */
+     VERIFIED PAYMENTS
+  ===================================== */
+
+  function renderVerifiedPayments(payments = []) {
+    if (!Array.isArray(payments) || payments.length === 0) {
+      return "";
+    }
+
+    return `
+
+      <div class="invoice-payment-list">
+
+        <div class="invoice-payment-title">
+
+          Riwayat Pembayaran Terverifikasi
+
+        </div>
+
+
+        <table class="invoice-table">
+
+          <thead>
+
+            <tr>
+
+              <th>
+                Tanggal
+              </th>
+
+              <th>
+                Metode
+              </th>
+
+              <th>
+                Referensi
+              </th>
+
+              <th>
+                Jumlah
+              </th>
+
+            </tr>
+
+          </thead>
+
+
+          <tbody>
+
+            ${payments.map((payment) => renderPaymentRow(payment)).join("")}
+
+          </tbody>
+
+        </table>
+
+      </div>
+
+    `;
+  }
 
   /* =====================================
-   SIGNATURE
-===================================== */
+     PAYMENT ROW
+  ===================================== */
+
+  function renderPaymentRow(payment = {}) {
+    const date =
+      payment.verifiedAt || payment.updatedAt || payment.createdAt || "";
+
+    const method = payment.paymentMethod || payment.method || "-";
+
+    const reference =
+      payment.reference || payment.referenceNumber || payment.id || "-";
+
+    const amount = Number(payment.paymentAmount || 0);
+
+    return `
+
+      <tr>
+
+        <td>
+
+          ${formatDateTime(date)}
+
+        </td>
+
+
+        <td>
+
+          ${escapeHtml(method)}
+
+        </td>
+
+
+        <td>
+
+          ${escapeHtml(reference)}
+
+        </td>
+
+
+        <td class="text-end">
+
+          ${formatCurrency(amount)}
+
+        </td>
+
+      </tr>
+
+    `;
+  }
+
+  /* =====================================
+     NOTE
+  ===================================== */
+
+  function renderNote(data = {}) {
+    const note = data.note || data.catatan || "-";
+
+    return `
+
+      <div class="invoice-section">
+
+        <div class="invoice-section-title">
+
+          📝 Catatan
+
+        </div>
+
+
+        <div class="invoice-note">
+
+          ${escapeHtml(note)}
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =====================================
+     SIGNATURE
+  ===================================== */
 
   function renderSignature() {
     return `
 
-        <div class="invoice-signature">
+      <div class="invoice-signature">
 
-            <div class="invoice-signature-item">
+        <div class="invoice-signature-item">
 
-                <div class="invoice-signature-title">
+          <div class="invoice-signature-title">
 
-                    Diterbitkan Oleh
+            Diterbitkan Oleh
 
-                </div>
+          </div>
 
-                <div class="invoice-signature-space"></div>
 
-                <div class="invoice-signature-name">
+          <div class="invoice-signature-space"></div>
 
-                    Dieng Stay PMS
 
-                </div>
+          <div class="invoice-signature-name">
 
-            </div>
+            Dieng Stay PMS
 
-            <div class="invoice-signature-item">
-
-                <div class="invoice-signature-title">
-
-                    Diterima Oleh
-
-                </div>
-
-                <div class="invoice-signature-space"></div>
-
-                <div class="invoice-signature-name">
-
-                    (...........................)
-
-                </div>
-
-            </div>
+          </div>
 
         </div>
+
+
+        <div class="invoice-signature-item">
+
+          <div class="invoice-signature-title">
+
+            Diterima Oleh
+
+          </div>
+
+
+          <div class="invoice-signature-space"></div>
+
+
+          <div class="invoice-signature-name">
+
+            (...........................)
+
+          </div>
+
+        </div>
+
+      </div>
 
     `;
   }
 
   /* =====================================
-       PUBLIC API
-    ===================================== */
+     FOOTER
+  ===================================== */
+
+  function renderFooter() {
+    return `
+
+      <div class="invoice-footer">
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          id="btnPrintInvoice">
+
+          Print Invoice
+
+        </button>
+
+      </div>
+
+    `;
+  }
+
+  /* =====================================
+     FORMAT CURRENCY
+  ===================================== */
+
+  function formatCurrency(amount) {
+    const value = Number(amount || 0);
+
+    return `Rp ${value.toLocaleString("id-ID")}`;
+  }
+
+  /* =====================================
+     FORMAT DATE
+  ===================================== */
+
+  function formatDate(value) {
+    if (!value) {
+      return "-";
+    }
+
+    if (
+      typeof ReservasiHelper !== "undefined" &&
+      typeof ReservasiHelper.formatDate === "function"
+    ) {
+      return ReservasiHelper.formatDate(value);
+    }
+
+    return escapeHtml(String(value));
+  }
+
+  /* =====================================
+     FORMAT DATE TIME
+  ===================================== */
+
+  function formatDateTime(value) {
+    if (!value) {
+      return "-";
+    }
+
+    const date = new Date(value);
+
+    if (isNaN(date.getTime())) {
+      return escapeHtml(String(value));
+    }
+
+    return date.toLocaleString("id-ID");
+  }
+
+  /* =====================================
+     FORMAT STATUS
+  ===================================== */
+
+  function formatStatus(status) {
+    const value = String(status || "")
+      .trim()
+      .toUpperCase();
+
+    if (value === "CHECK_OUT") {
+      return "CHECK OUT";
+    }
+
+    if (value === "CHECK_IN") {
+      return "CHECK IN";
+    }
+
+    return value || "-";
+  }
+
+  /* =====================================
+     ESCAPE HTML
+  ===================================== */
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  /* =====================================
+     PUBLIC API
+  ===================================== */
 
   return {
     render,

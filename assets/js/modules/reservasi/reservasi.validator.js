@@ -5,7 +5,7 @@
 const ReservasiValidator = {
   /* =====================================
      STEP 1
-     CARI KAMAR
+     CARI PENGINAPAN
   ===================================== */
 
   step1(data) {
@@ -50,12 +50,17 @@ const ReservasiValidator = {
 
   /* =====================================
      STEP 2
-     PILIH KAMAR
+     PILIH UNIT
   ===================================== */
 
+  /* =====================================
+   STEP 2
+   PILIH UNIT
+===================================== */
+
   step2(data) {
-    if (!data.kamarId) {
-      Toast.warning("Silakan pilih kamar.");
+    if (!data.unitId) {
+      Toast.warning("Silakan pilih unit.");
 
       return false;
     }
@@ -89,15 +94,28 @@ const ReservasiValidator = {
      REVIEW
   ===================================== */
 
-  step4(booking) {
-    const pricing = ReservasiPricing.calculate(booking);
+  /* =====================================
+   STEP 4
+   REVIEW
+===================================== */
 
-    if (pricing.total <= 0) {
-      Toast.warning("Total reservasi belum valid.");
+  step4(booking) {
+    try {
+      const pricing = BookingService.calculatePrice(booking);
+
+      if (!pricing || Number(pricing.total) <= 0) {
+        Toast.warning("Total reservasi belum valid.");
+
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("[VALIDATOR] STEP4:", error);
+
+      Toast.warning(error.message || "Harga reservasi belum valid.");
 
       return false;
     }
-
-    return true;
   },
 };

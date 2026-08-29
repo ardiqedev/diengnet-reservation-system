@@ -4,257 +4,421 @@
 
 const PaymentView = (() => {
   /* =====================================
-   STATUS
-===================================== */
+     PAYMENT STATUS
+  ===================================== */
+
+  function getPaymentStatus(payments = []) {
+    if (!payments.length) {
+      return "UNPAID";
+    }
+
+    const hasPending = payments.some(
+      (payment) => payment.status === PaymentTransactionStatus.PENDING,
+    );
+
+    if (hasPending) {
+      return "PENDING";
+    }
+
+    const hasVerified = payments.some(
+      (payment) => payment.status === PaymentTransactionStatus.VERIFIED,
+    );
+
+    if (hasVerified) {
+      return "VERIFIED";
+    }
+
+    const hasRejected = payments.some(
+      (payment) => payment.status === PaymentTransactionStatus.REJECTED,
+    );
+
+    if (hasRejected) {
+      return "REJECTED";
+    }
+
+    return "UNPAID";
+  }
+
+  /* =====================================
+     STATUS CARD
+  ===================================== */
 
   function renderStatus(booking = {}, payments = []) {
-    const totalPaid = PaymentHelper.getTotalPaid(payments);
-
-    const remaining = PaymentHelper.getRemaining(booking.grandTotal, payments);
+    const status = getPaymentStatus(payments);
 
     let badge = "🔴";
     let title = "BELUM BAYAR";
     let description = "Belum ada pembayaran.";
 
-    if (totalPaid > 0 && remaining > 0) {
-      badge = "🟡";
-      title = "DP";
-      description = "Pembayaran sebagian.";
-    }
+    switch (status) {
+      case "PENDING":
+        badge = "🟡";
+        title = "MENUNGGU VERIFIKASI";
+        description =
+          "Pembayaran telah dikirim dan sedang menunggu verifikasi.";
+        break;
 
-    if (remaining === 0 && totalPaid > 0) {
-      badge = "🟢";
-      title = "LUNAS";
-      description = "Pembayaran telah selesai.";
+      case "VERIFIED":
+        badge = "🟢";
+        title = "PEMBAYARAN TERVERIFIKASI";
+        description = "Pembayaran telah diverifikasi.";
+        break;
+
+      case "REJECTED":
+        badge = "🔴";
+        title = "PEMBAYARAN DITOLAK";
+        description = "Pembayaran terakhir ditolak.";
+        break;
+
+      case "UNPAID":
+      default:
+        badge = "🔴";
+        title = "BELUM BAYAR";
+        description = "Belum ada pembayaran.";
+        break;
     }
 
     return `
+      <div class="summary-section">
 
-        <div class="summary-section">
+        <div class="summary-section-title">
+          Status Pembayaran
+        </div>
 
-            <div class="summary-section-title">
+        <div class="budget-total">
 
-                Status Pembayaran
+          <div>
 
-            </div>
+            <strong>
+              ${badge} ${title}
+            </strong>
 
-            <div class="budget-total">
+            <br>
 
-                <div>
+            <small>
+              ${description}
+            </small>
 
-                    <strong>${badge} ${title}</strong>
-
-                    <br>
-
-                    <small>${description}</small>
-
-                </div>
-
-            </div>
+          </div>
 
         </div>
 
+      </div>
     `;
   }
 
   /* =====================================
-       RENDER
-    ===================================== */
+     RENDER
+  ===================================== */
 
   function render(booking = {}, payments = []) {
     return `
+      ${renderStatus(booking, payments)}
 
-    ${renderStatus(booking, payments)}
+      ${renderSummary(booking, payments)}
 
-    ${renderSummary(booking, payments)}
+      ${renderHistory(payments)}
 
-    ${renderHistory(payments)}
-
-    ${renderFooter()}
-
+      ${renderFooter(booking, payments)}
     `;
   }
 
   /* =====================================
-       SUMMARY
-    ===================================== */
+     SUMMARY
+  ===================================== */
 
   function renderSummary(booking = {}, payments = []) {
-    const totalPaid = payments.reduce(
-      (total, item) => total + Number(item.amount || 0),
-      0,
-    );
+    /*
+     * Hanya pembayaran VERIFIED
+     * yang dihitung sebagai uang masuk.
+     */
 
-    const remaining = Math.max(0, Number(booking.grandTotal || 0) - totalPaid);
+    const totalPaid = PaymentHelper.getTotalPaid(payments);
+
+    const remaining = PaymentHelper.getRemaining(booking.grandTotal, payments);
 
     return `
+      <div class="summary-section">
 
-            <div class="summary-section">
+        <div class="summary-section-title">
+          Ringkasan Pembayaran
+        </div>
 
-                <div class="summary-section-title">
+        <div class="budget-list">
 
-                    Ringkasan Pembayaran
+          <div class="budget-item">
 
-                </div>
+            <span>
+              Grand Total
+            </span>
 
-                <div class="budget-list">
+            <strong>
+              ${ReservasiHelper.formatCurrency(booking.grandTotal || 0)}
+            </strong>
 
-                    <div class="budget-item">
+          </div>
 
-                        <span>Grand Total</span>
+          <div class="budget-item">
 
-                        <strong>
+            <span>
+              Total Dibayar
+            </span>
 
-                            ${ReservasiHelper.formatCurrency(booking.grandTotal || 0)}
+            <strong>
+              ${ReservasiHelper.formatCurrency(totalPaid)}
+            </strong>
 
-                        </strong>
+          </div>
 
-                    </div>
+          <div class="budget-total">
 
-                    <div class="budget-item">
-
-                        <span>Total Dibayar</span>
-
-                        <strong>
-
-                            ${ReservasiHelper.formatCurrency(totalPaid)}
-
-                        </strong>
-
-                    </div>
-
-                    <div class="budget-total">
-
-                        <div>Sisa Pembayaran</div>
-
-                        <div>
-
-                            ${ReservasiHelper.formatCurrency(remaining)}
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+            <div>
+              Sisa Pembayaran
             </div>
 
-        `;
+            <div>
+              ${ReservasiHelper.formatCurrency(remaining)}
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    `;
   }
 
   /* =====================================
-       HISTORY
-    ===================================== */
+     HISTORY
+  ===================================== */
 
   function renderHistory(payments = []) {
     if (!payments.length) {
       return `
+        <div class="summary-section">
 
-                <div class="summary-section">
+          <div class="summary-section-title">
+            Riwayat Pembayaran
+          </div>
 
-                    <div class="summary-section-title">
+          <p>
+            Belum ada pembayaran.
+          </p>
 
-                        Riwayat Pembayaran
-
-                    </div>
-
-                    <p>
-
-                        Belum ada pembayaran.
-
-                    </p>
-
-                </div>
-
-            `;
+        </div>
+      `;
     }
 
     return `
+      <div class="summary-section">
 
-            <div class="summary-section">
+        <div class="summary-section-title">
+          Riwayat Pembayaran
+        </div>
 
-                <div class="summary-section-title">
+        <div class="budget-list">
 
-                    Riwayat Pembayaran
+          ${payments.map(renderItem).join("")}
 
-                </div>
+        </div>
 
-                <div class="budget-list">
-
-                    ${payments.map(renderItem).join("")}
-
-                </div>
-
-            </div>
-
-        `;
+      </div>
+    `;
   }
 
   /* =====================================
-       ITEM
-    ===================================== */
+     PAYMENT ITEM
+  ===================================== */
 
   function renderItem(item = {}) {
+    const status = PaymentHelper.getTransactionStatus(item);
+
+    const isPending = item.status === PaymentTransactionStatus.PENDING;
+
+    const isVerified = item.status === PaymentTransactionStatus.VERIFIED;
+
+    const isRejected = item.status === PaymentTransactionStatus.REJECTED;
+
     return `
+      <div class="budget-item">
 
-            <div class="budget-item">
+        <div>
 
-                <div>
+          <strong>
+            ${status.label}
+          </strong>
 
-                    <strong>${item.status}</strong>
+          <br>
 
-                    <br>
+          <small>
+            ${item.paymentMethod || "-"}
+            •
+            ${ReservasiHelper.formatDate(item.paymentDate)}
+          </small>
 
-                    <small>
+          ${
+            item.paymentReference
+              ? `
+                <br>
 
-                        ${item.method}
+                <small>
+                  Ref: ${item.paymentReference}
+                </small>
+              `
+              : ""
+          }
 
-                        •
+          ${
+            isPending
+              ? `
+                <div
+                  style="
+                    margin-top: 10px;
+                    display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                  "
+                >
 
-                        ${ReservasiHelper.formatDate(item.paymentDate)}
+                  <button
+                    type="button"
+                    class="btn btn-primary btn-sm"
+                    data-action="verify-payment"
+                    data-payment-id="${item.id}"
+                  >
+                    Verifikasi Pembayaran
+                  </button>
 
-                    </small>
+                  <button
+                    type="button"
+                    class="btn btn-outline btn-sm"
+                    data-action="reject-payment"
+                    data-payment-id="${item.id}"
+                  >
+                    Tolak
+                  </button>
 
                 </div>
+              `
+              : ""
+          }
 
-                <strong>
+          ${
+            isVerified
+              ? `
+                <br>
 
-                    ${ReservasiHelper.formatCurrency(item.amount)}
+                <small class="text-success">
+                  Pembayaran telah diverifikasi.
+                </small>
+              `
+              : ""
+          }
 
-                </strong>
+          ${
+            isRejected
+              ? `
+                <br>
 
-            </div>
+                <small class="text-danger">
+                  Pembayaran ditolak.
+                </small>
+              `
+              : ""
+          }
 
-        `;
+        </div>
+
+        <strong>
+          ${ReservasiHelper.formatCurrency(item.paymentAmount || 0)}
+        </strong>
+
+      </div>
+    `;
   }
 
   /* =====================================
-       FOOTER
-    ===================================== */
+     FOOTER
+  ===================================== */
 
-  function renderFooter() {
+  function renderFooter(booking = {}, payments = []) {
+    const totalPaid = PaymentHelper.getTotalPaid(payments);
+
+    const remaining = PaymentHelper.getRemaining(booking.grandTotal, payments);
+
+    const hasPending = payments.some(
+      (payment) => payment.status === PaymentTransactionStatus.PENDING,
+    );
+
+    /*
+     * Masih ada pembayaran menunggu verifikasi.
+     */
+
+    if (hasPending) {
+      return `
+        <div class="wizard-footer">
+
+          <div>
+            <strong>
+              Pembayaran sedang menunggu verifikasi.
+            </strong>
+
+            <br>
+
+            <small>
+              Total yang belum terverifikasi tidak
+              dihitung sebagai pembayaran.
+            </small>
+          </div>
+
+        </div>
+      `;
+    }
+
+    /*
+     * Sudah lunas berdasarkan pembayaran VERIFIED.
+     */
+
+    if (remaining <= 0 && totalPaid > 0) {
+      return `
+        <div class="wizard-footer">
+
+          <div class="text-success">
+            Pembayaran telah lunas.
+          </div>
+
+        </div>
+      `;
+    }
+
+    /*
+     * Belum lunas dan tidak ada
+     * transaksi pending.
+     */
+
     return `
+      <div class="wizard-footer">
 
-            <div class="wizard-footer">
+        <button
+          class="btn btn-primary"
+          id="btnAddPayment"
+        >
+          Bayar Sekarang
+        </button>
 
-                <button
-                    class="btn btn-primary"
-                    id="btnAddPayment">
-
-                    Tambah Pembayaran
-
-                </button>
-
-            </div>
-
-        `;
+      </div>
+    `;
   }
 
   /* =====================================
-       PUBLIC API
-    ===================================== */
+     PUBLIC API
+  ===================================== */
 
   return {
     render,
+    renderStatus,
+    renderSummary,
+    renderHistory,
+    renderFooter,
   };
 })();

@@ -8,7 +8,9 @@ const Payment = (() => {
   ===================================== */
 
   let booking = null;
+
   let payments = [];
+
   let currentView = "workspace";
 
   /* =====================================
@@ -17,6 +19,7 @@ const Payment = (() => {
 
   async function open(data = {}) {
     booking = data;
+
     currentView = "workspace";
 
     await load();
@@ -31,18 +34,38 @@ const Payment = (() => {
 ===================================== */
 
   async function load() {
-    Loading.show();
+    if (!booking?.id) {
+      console.error("[PAYMENT] Booking tidak valid:", booking);
+
+      Toast.error("Data reservasi tidak valid.");
+
+      return;
+    }
+
+    console.log("[PAYMENT] BOOKING:", booking);
+
+    console.log("[PAYMENT] RESERVATION ID:", booking.id);
 
     try {
-      payments = await PaymentService.getByBookingId(booking.id);
+      const result = await PaymentService.getByReservationId(booking.id);
+
+      console.log("[PAYMENT] LIST RESULT:", result);
+
+      if (!result.success) {
+        Toast.error(result.message || "Gagal memuat data pembayaran.");
+
+        return;
+      }
+
+      payments = Array.isArray(result.data) ? result.data : [];
+
+      console.log("[PAYMENT] PAYMENTS:", payments);
 
       render();
     } catch (error) {
-      console.error(error);
+      console.error("[PAYMENT] Load error:", error);
 
       Toast.error("Gagal memuat data pembayaran.");
-    } finally {
-      Loading.hide();
     }
   }
 
@@ -57,8 +80,11 @@ const Payment = (() => {
       Modal.open(options);
     } else {
       Modal.setTitle(options.title);
+
       Modal.setSize(options.size);
+
       Modal.setBody(options.body);
+
       Modal.setFooter(options.footer);
     }
 
@@ -83,6 +109,7 @@ const Payment = (() => {
         };
 
       case "workspace":
+
       default:
         return {
           title: "Pembayaran",
@@ -96,11 +123,19 @@ const Payment = (() => {
     }
   }
 
+  /* =====================================
+     SHOW WORKSPACE
+  ===================================== */
+
   function showWorkspace() {
     currentView = "workspace";
 
     render();
   }
+
+  /* =====================================
+     SHOW FORM
+  ===================================== */
 
   function showForm() {
     currentView = "form";
@@ -113,23 +148,56 @@ const Payment = (() => {
   ===================================== */
 
   function bindEvents() {
-    switch (currentView) {
-      case "form":
-        bindFormEvents();
-        break;
+    if (currentView === "form") {
+      bindFormEvents();
 
-      case "workspace":
-      default:
-        bindWorkspaceEvents();
-        break;
+      return;
     }
+
+    bindWorkspaceEvents();
   }
 
+  /* =====================================
+     WORKSPACE EVENTS
+  ===================================== */
+
   function bindWorkspaceEvents() {
+    /* ---------------------------------
+       ADD PAYMENT
+    --------------------------------- */
+
     document
       .getElementById("btnAddPayment")
       ?.addEventListener("click", showForm);
+
+    /* ---------------------------------
+       VERIFY PAYMENT
+    --------------------------------- */
+
+    document
+      .querySelectorAll('[data-action="verify-payment"]')
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          verifyPayment(button.dataset.paymentId);
+        });
+      });
+
+    /* ---------------------------------
+       REJECT PAYMENT
+    --------------------------------- */
+
+    document
+      .querySelectorAll('[data-action="reject-payment"]')
+      .forEach((button) => {
+        button.addEventListener("click", () => {
+          rejectPayment(button.dataset.paymentId);
+        });
+      });
   }
+
+  /* =====================================
+     FORM EVENTS
+  ===================================== */
 
   function bindFormEvents() {
     Upload.init("paymentProof");
@@ -150,8 +218,8 @@ const Payment = (() => {
   }
 
   /* =====================================
-   TOGGLE PAYMENT FIELDS
-===================================== */
+     TOGGLE PAYMENT FIELDS
+  ===================================== */
 
   function togglePaymentFields() {
     const method = document.getElementById("paymentMethod")?.value;
@@ -162,7 +230,9 @@ const Payment = (() => {
 
     const needReference = [
       PaymentMethod.TRANSFER,
+
       PaymentMethod.QRIS,
+
       PaymentMethod.CREDIT_CARD,
     ].includes(method);
 
@@ -176,31 +246,159 @@ const Payment = (() => {
   }
 
   /* =====================================
-     ACTION
+   VERIFY PAYMENT
+===================================== */
+
+  async function verifyPayment(paymentId) {
+    if (!paymentId) {
+      Toast.error("Payment ID tidak valid.");
+
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Apakah pembayaran ini benar dan ingin diverifikasi?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    Loading.show();
+
+    try {
+      const result = await PaymentService.verify(paymentId, "USR001");
+
+      if (!result.success) {
+        Toast.error(result.message || "Gagal memverifikasi pembayaran.");
+
+        return;
+      }
+
+      Toast.success(result.message || "Pembayaran berhasil diverifikasi.");
+
+      await load();
+      if (typeof Reservasi?.refresh === "function") {
+        await Reservasi.refresh();
+      }
+    } catch (error) {
+      console.error("[PAYMENT] Verify error:", error);
+
+      Toast.error("Gagal memverifikasi pembayaran.");
+    } finally {
+      Loading.hide();
+    }
+  }
+
+  /* =====================================
+     REJECT PAYMENT
   ===================================== */
 
   /* =====================================
-   SUBMIT
+   REJECT PAYMENT
+===================================== */
+
+  async function rejectPayment(paymentId) {
+    if (!paymentId) {
+      Toast.error("Payment ID tidak valid.");
+
+      return;
+    }
+
+    const confirmed = window.confirm("Apakah pembayaran ini ingin ditolak?");
+
+    if (!confirmed) {
+      return;
+    }
+
+    Loading.show();
+
+    try {
+      const result = await PaymentService.reject(paymentId);
+
+      if (!result.success) {
+        Toast.error(result.message || "Gagal menolak pembayaran.");
+
+        return;
+      }
+
+      Toast.success(result.message || "Pembayaran berhasil ditolak.");
+
+      await load();
+      if (typeof Reservasi?.refresh === "function") {
+        await Reservasi.refresh();
+      }
+    } catch (error) {
+      console.error("[PAYMENT] Reject error:", error);
+
+      Toast.error("Gagal menolak pembayaran.");
+    } finally {
+      Loading.hide();
+    }
+  }
+
+  /* =====================================
+     SUBMIT PAYMENT
+  ===================================== */
+
+  /* =====================================
+   SUBMIT PAYMENT
 ===================================== */
 
   async function submit() {
+    if (!booking?.id) {
+      Toast.error("Data reservasi tidak valid.");
+
+      return;
+    }
+
     const payload = {
-      bookingId: booking.id,
+      reservationId: booking.id,
 
       ...Form.getData("#paymentForm"),
     };
 
     const proof = Upload.getFile("paymentProof");
 
-    if (!PaymentValidator.validate(payload, proof)) {
+    /* =================================
+     VALIDATION
+  ================================= */
+
+    if (!PaymentValidator.validate(payload, proof, booking, payments)) {
       return;
     }
 
-    await PaymentService.save(payload, proof);
+    Loading.show();
 
-    await refresh();
+    try {
+      const result = await PaymentService.save(payload, proof);
 
-    showWorkspace();
+      if (!result.success) {
+        Toast.error(result.message || "Pembayaran gagal disimpan.");
+
+        return;
+      }
+
+      Toast.success(
+        result.message ||
+          "Pembayaran berhasil dikirim dan menunggu verifikasi.",
+      );
+
+      /*
+       * Kembali ke workspace
+       * setelah backend berhasil.
+       */
+
+      currentView = "workspace";
+
+      await load();
+    } catch (error) {
+      console.error("[PAYMENT] Submit error:", error);
+
+      Toast.error(error.message || "Pembayaran gagal disimpan.");
+    } finally {
+      Loading.hide();
+    }
   }
 
   /* =====================================
@@ -223,5 +421,9 @@ const Payment = (() => {
     showWorkspace,
 
     showForm,
+
+    verifyPayment,
+
+    rejectPayment,
   };
 })();

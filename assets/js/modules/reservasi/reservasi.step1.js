@@ -184,59 +184,92 @@ const ReservasiStep1 = {
    LOAD PENGINAPAN
 ===================================== */
 
-  /* =====================================
-   LOAD PENGINAPAN
-===================================== */
-
   async loadPenginapan() {
-    const result = await ReservasiService.getPenginapan();
+    try {
+      const result = await PenginapanService.getAll({
+        page: 1,
+        limit: 100,
+        status: "Aktif",
+      });
 
-    if (!result.success) return;
+      if (!result || !result.success) {
+        Toast.error(result?.message || "Gagal memuat data penginapan.");
 
-    Dropdown.render({
-      target: "#penginapanId",
+        return;
+      }
 
-      data: result.data,
+      /* ===============================
+       NORMALIZE DATA
+    =============================== */
 
-      valueField: "id",
+      let rows = [];
 
-      textField: "nama",
+      if (Array.isArray(result.data)) {
+        rows = result.data;
+      } else if (result.data && Array.isArray(result.data.rows)) {
+        rows = result.data.rows;
+      }
 
-      placeholder: "Pilih Penginapan",
-    });
+      Dropdown.render({
+        target: "#penginapanId",
+
+        data: rows,
+
+        valueField: "id",
+
+        textField: "nama",
+
+        placeholder: "Pilih Penginapan",
+      });
+    } catch (error) {
+      console.error("[RESERVASI] Load penginapan error:", error);
+
+      Toast.error("Gagal memuat data penginapan.");
+    }
   },
 
   /* =====================================
    LOAD CHANNEL
 ===================================== */
 
+  /* =====================================
+   LOAD CHANNEL
+===================================== */
+
   async loadChannel() {
-    const result = await ReservasiService.getChannel();
+    try {
+      const result = await ChannelService.getAll();
 
-    if (!result.success) return;
+      if (!result || !result.success) {
+        Toast.error(result?.message || "Gagal memuat channel.");
 
-    Dropdown.render({
-      target: "#channel",
+        return;
+      }
 
-      data: result.data,
+      Dropdown.render({
+        target: "#channel",
 
-      valueField: "id",
+        data: result.data,
 
-      textField: "nama",
+        valueField: "id",
 
-      placeholder: "Pilih Channel",
-    });
+        textField: "nama",
+
+        placeholder: "Pilih Channel",
+      });
+    } catch (error) {
+      console.error("[RESERVASI] Load channel error:", error);
+
+      Toast.error("Gagal memuat channel.");
+    }
   },
 
   /* =====================================
-     BIND EVENTS
-  ===================================== */
+   BIND EVENTS
+===================================== */
+
   bindEvents() {
-    document
-      .getElementById("penginapanId")
-      ?.addEventListener("change", async () => {
-        await this.loadChannel();
-      });
+    // Tidak ada event khusus Step 1.
   },
 
   /* =====================================

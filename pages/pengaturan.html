@@ -1,0 +1,102 @@
+<!-- =========================================
+     PENGATURAN
+========================================= -->
+
+<div class="page">
+  <!-- =====================================
+       HEADER
+  ====================================== -->
+
+  <div class="page-header">
+    <div>
+      <h1>Pengaturan</h1>
+
+      <p>Kelola konfigurasi sistem PMS.</p>
+    </div>
+  </div>
+
+  <!-- =====================================
+       CONTENT
+  ====================================== -->
+
+  <div class="card">
+    <!-- ===================================
+         TAB NAVIGATION
+    ==================================== -->
+
+    <div class="settings-tabs">
+      <button type="button" class="settings-tab active" data-tab="unit">
+        <i data-lucide="bed-double"></i>
+
+        Pengaturan Unit
+      </button>
+    </div>
+
+    <!-- ===================================
+         TAB CONTENT
+    ==================================== -->
+
+    <div id="pengaturanContent" class="settings-content">
+      <!-- ================================
+           PENGATURAN UNIT
+      ================================= -->
+
+      <section id="settingsUnit" class="settings-section">
+        <div class="settings-section-header">
+          <div>
+            <h2>Pengaturan Unit</h2>
+
+            <p>
+              Atur field yang tersedia pada form unit berdasarkan jenis
+              penginapan.
+            </p>
+          </div>
+        </div>
+
+        <!-- ==============================
+             JENIS PENGINAPAN
+        =============================== -->
+
+        <div class="form-group settings-filter">
+          <label for="settingsJenisPenginapan"> Jenis Penginapan </label>
+
+          <select id="settingsJenisPenginapan" class="form-control">
+            <option value="">Pilih Jenis Penginapan</option>
+          </select>
+
+          <small class="form-help">
+            Pilih jenis penginapan untuk mengatur field form unit.
+          </small>
+        </div>
+
+        <!-- ==============================
+             FIELD LIST
+        =============================== -->
+
+        <div class="settings-field-header">
+          <div>
+            <h3>Field Form Unit</h3>
+
+            <p>Atur field yang tampil pada form unit.</p>
+          </div>
+        </div>
+
+        <div id="pengaturanUnitList" class="settings-field-list">
+          <!--
+
+            Akan dirender oleh pengaturan.js
+
+          -->
+
+          <div class="settings-empty">
+            <i data-lucide="settings-2"></i>
+
+            <h3>Belum ada konfigurasi</h3>
+
+            <p>Pilih jenis penginapan terlebih dahulu.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

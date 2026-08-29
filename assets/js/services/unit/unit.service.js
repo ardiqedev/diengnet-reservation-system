@@ -1,18 +1,22 @@
 /* =========================================
-   TIPE KAMAR SERVICE
+   QEDEV UNIT SERVICE
 ========================================= */
 
-const TipeKamarService = {
+const UnitService = {
   /* =====================================
      GET ALL
   ===================================== */
 
   async getAll(payload = {}) {
-    return API.post("tipe-kamar.list", {
+    return API.post("unit.list", {
       page: payload.page || 1,
+
       limit: payload.limit || 10,
+
       keyword: payload.keyword || "",
+
       status: payload.status || "",
+
       penginapanId: payload.penginapanId || "",
     });
   },
@@ -22,8 +26,26 @@ const TipeKamarService = {
   ===================================== */
 
   async getById(id) {
-    return API.post("tipe-kamar.detail", {
+    if (!id) {
+      throw new Error("ID unit wajib diisi.");
+    }
+
+    return API.post("unit.detail", {
       id,
+    });
+  },
+
+  /* =====================================
+     GET ACTIVE BY PENGINAPAN
+  ===================================== */
+
+  async getActiveByPenginapanId(penginapanId) {
+    if (!penginapanId) {
+      throw new Error("Penginapan wajib dipilih.");
+    }
+
+    return API.post("unit.active", {
+      penginapanId,
     });
   },
 
@@ -31,16 +53,20 @@ const TipeKamarService = {
      CREATE
   ===================================== */
 
-  async create(data) {
-    return API.post("tipe-kamar.store", data);
+  async create(data = {}) {
+    return API.post("unit.store", data);
   },
 
   /* =====================================
      UPDATE
   ===================================== */
 
-  async update(id, data) {
-    return API.post("tipe-kamar.update", {
+  async update(id, data = {}) {
+    if (!id) {
+      throw new Error("ID unit wajib diisi.");
+    }
+
+    return API.post("unit.update", {
       id,
       ...data,
     });
@@ -51,7 +77,11 @@ const TipeKamarService = {
   ===================================== */
 
   async remove(id) {
-    return API.post("tipe-kamar.delete", {
+    if (!id) {
+      throw new Error("ID unit wajib diisi.");
+    }
+
+    return API.post("unit.delete", {
       id,
     });
   },

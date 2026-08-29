@@ -1,30 +1,88 @@
 /* =========================================
+   HTML ESCAPE HELPER
+========================================= */
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function escapeAttribute(value = "") {
+  return escapeHtml(value);
+}
+
+/* =========================================
    PENGINAPAN MODULE
 ========================================= */
 
 const Penginapan = {
   editingId: null,
+
   keyword: "",
+
   searchTimer: null,
+
+  owners: [],
 
   /* =====================================
      INIT
   ===================================== */
 
-  init() {
+  async init() {
     console.log("Penginapan Module Loaded");
 
     this.bindEvents();
-    this.loadData();
+
+    await this.loadOwners();
+
+    await this.loadData();
+  },
+
+  /* =====================================
+     LOAD OWNERS
+  ===================================== */
+
+  async loadOwners() {
+    try {
+      const result = await PenginapanService.getOwners();
+
+      console.log("[Penginapan] OWNER RESULT:", result);
+
+      if (!result.success) {
+        Toast.error(result.message || "Gagal mengambil data owner.");
+
+        return;
+      }
+
+      this.owners = Array.isArray(result.data) ? result.data : [];
+
+      console.log("[Penginapan] OWNERS:", this.owners);
+    } catch (err) {
+      console.error("[Penginapan] Owner error:", err);
+
+      Toast.error("Gagal memuat data owner.");
+    }
+  },
+
+  /* =====================================
+     GET OWNER NAME
+  ===================================== */
+
+  getOwnerName(ownerId) {
+    const owner = this.owners.find(
+      (item) => String(item.id) === String(ownerId),
+    );
+
+    return owner?.nama || "-";
   },
 
   /* =====================================
      BIND EVENTS
   ===================================== */
-
-  /* =====================================
-   BIND EVENTS
-===================================== */
 
   bindEvents() {
     Search.init({
@@ -40,8 +98,8 @@ const Penginapan = {
     });
 
     /* =====================================
-     CLEAR SEARCH
-  ===================================== */
+       CLEAR SEARCH
+    ===================================== */
 
     const clearButton = document.querySelector("#clearSearchPenginapan");
 
@@ -64,6 +122,10 @@ const Penginapan = {
     }
   },
 
+  /* =====================================
+     UPDATE SEARCH CLEAR
+  ===================================== */
+
   updateSearchClear() {
     const input = document.querySelector("#searchPenginapan");
 
@@ -82,7 +144,11 @@ const Penginapan = {
      OPEN FORM
   ===================================== */
 
-  openForm(data = null) {
+  async openForm(data = null) {
+    if (!this.owners.length) {
+      await this.loadOwners();
+    }
+
     Modal.open({
       title: data ? "Edit Penginapan" : "Tambah Penginapan",
 
@@ -92,6 +158,10 @@ const Penginapan = {
 
       footer: this.renderFooter(data),
     });
+
+    /* =====================================
+       LOGO
+    ===================================== */
 
     Upload.init({
       id: "logoPenginapan",
@@ -109,6 +179,10 @@ const Penginapan = {
       format: "webp",
     });
 
+    /* =====================================
+       COVER
+    ===================================== */
+
     Upload.init({
       id: "coverPenginapan",
 
@@ -125,36 +199,50 @@ const Penginapan = {
       format: "jpeg",
     });
 
+    /* =====================================
+       EDIT DATA
+    ===================================== */
+
     if (data) {
       this.editingId = data.id;
 
       Form.setData(
         {
           namaPenginapan: data.nama,
+
           jenisPenginapan: data.jenis,
-          kategoriPenginapan: data.kategori,
-          namaPemilik: data.pemilik,
-          whatsappPemilik: data.whatsapp,
-          username: data.username,
+
+          ownerId: data.ownerId,
+
           provinsi: data.provinsi,
+
           kabupaten: data.kabupaten,
+
           kecamatan: data.kecamatan,
+
           desa: data.desa,
+
           alamat: data.alamat,
+
           maps: data.maps,
+
           jamCheckIn: data.checkIn,
+
           jamCheckOut: data.checkOut,
         },
+
         "#formPenginapan",
       );
 
       Upload.load("logoPenginapan", {
         url: data.logoUrl,
+
         name: "Logo Penginapan",
       });
 
       Upload.load("coverPenginapan", {
         url: data.coverUrl,
+
         name: "Cover Penginapan",
       });
     } else {
@@ -163,494 +251,553 @@ const Penginapan = {
   },
 
   /* =====================================
-   RENDER FORM
-===================================== */
+     RENDER FORM
+  ===================================== */
 
   renderForm() {
     return `
 
-    <form id="formPenginapan" class="form">
+    <form
+      id="formPenginapan"
+      class="form">
 
-        <!-- =====================================
-             INFORMASI PENGINAPAN
-        ====================================== -->
+      <!-- =====================================
+          INFORMASI PENGINAPAN
+      ====================================== -->
 
-        <div class="form-section">
+      <div class="form-section">
 
-            <div class="form-section-title">
+        <div class="form-section-title">
 
-                Informasi Penginapan
-
-            </div>
-
-            <div class="form-grid">
-
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Nama Penginapan
-
-                        <span>*</span>
-
-                    </label>
-
-                    <input
-                        id="namaPenginapan"
-                        type="text"
-                        class="form-control"
-                        placeholder="Masukkan nama penginapan">
-
-                </div>
-
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Jenis Penginapan
-
-                        <span>*</span>
-
-                    </label>
-
-                    <select
-                        id="jenisPenginapan"
-                        class="form-control">
-
-                        <option value="">
-                            Pilih Jenis Penginapan
-                        </option>
-
-                        <option>Homestay</option>
-
-                        <option>Villa</option>
-
-                        <option>Hotel</option>
-
-                        <option>Guest House</option>
-
-                        <option>Hostel</option>
-
-                        <option>Camping Ground</option>
-
-                    </select>
-
-                </div>
-
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Kategori
-
-                    </label>
-
-                    <select
-                        id="kategoriPenginapan"
-                        class="form-control">
-
-                        <option>Standard</option>
-
-                        <option>Premium</option>
-
-                        <option>Luxury</option>
-
-                    </select>
-
-                </div>
-             
-
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Jam Check In
-
-                    </label>
-
-                    <input
-                        id="jamCheckIn"
-                        type="time"
-                        value="14:00"
-                        class="form-control">
-
-                </div>
-
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Jam Check Out
-
-                    </label>
-
-                    <input
-                        id="jamCheckOut"
-                        type="time"
-                        value="12:00"
-                        class="form-control">
-
-                </div>
-
-            </div>
+          Informasi Penginapan
 
         </div>
 
-        <!-- =====================================
-             INFORMASI PEMILIK
-        ====================================== -->
 
-        <div class="form-section">
+        <div class="form-grid">
 
-            <div class="form-section-title">
 
-                Informasi Pemilik
+          <!-- =====================================
+              NAMA PENGINAPAN
+          ====================================== -->
 
-            </div>
+          <div class="form-row">
 
-            <div class="form-grid">
+            <label class="form-label">
 
-                <div class="form-row">
+              Nama Penginapan
 
-                    <label class="form-label">
+              <span>*</span>
 
-                        Nama Pemilik
+            </label>
 
-                        <span>*</span>
 
-                    </label>
+            <input
+              id="namaPenginapan"
+              type="text"
+              class="form-control"
+              placeholder="Masukkan nama penginapan">
 
-                    <input
-                        id="namaPemilik"
-                        class="form-control"
-                        placeholder="Masukkan nama pemilik">
+          </div>
 
-                </div>
 
-                <div class="form-row">
+          <!-- =====================================
+              JENIS PENGINAPAN
+          ====================================== -->
 
-                    <label class="form-label">
+          <div class="form-row">
 
-                        Nomor WhatsApp
+            <label class="form-label">
 
-                        <span>*</span>
+              Jenis Penginapan
 
-                    </label>
+              <span>*</span>
 
-                    <input
-                        id="whatsappPemilik"
-                        class="form-control"
-                        placeholder="08xxxxxxxxxx">
+            </label>
 
-                </div>
 
-                <div class="form-row">
+            <select
+              id="jenisPenginapan"
+              class="form-control">
 
-                    <label class="form-label">
+              <option value="">
 
-                        Username
+                Pilih Jenis Penginapan
 
-                        <span>*</span>
+              </option>
 
-                    </label>
+              <option value="Homestay">
 
-                    <input
-                        id="username"
-                        class="form-control"
-                        placeholder="Username login">
+                Homestay
 
-                </div>
+              </option>
 
-                <div class="form-row">
+              <option value="Villa">
 
-                    <label class="form-label">
+                Villa
 
-                        Password Awal
+              </option>
 
-                    </label>
+              <option value="Hotel">
 
-                    <input
-                        id="password"
-                        class="form-control"
-                        placeholder="Generate otomatis"
-                        readonly>
+                Hotel
 
-                </div>
+              </option>
 
-            </div>
+              <option value="Glamping">
+
+                Glamping
+
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- =====================================
+              CHECK IN
+          ====================================== -->
+
+          <div class="form-row">
+
+            <label class="form-label">
+
+              Jam Check In
+
+            </label>
+
+
+            <input
+              id="jamCheckIn"
+              type="time"
+              value="14:00"
+              class="form-control">
+
+          </div>
+
+
+          <!-- =====================================
+              CHECK OUT
+          ====================================== -->
+
+          <div class="form-row">
+
+            <label class="form-label">
+
+              Jam Check Out
+
+            </label>
+
+
+            <input
+              id="jamCheckOut"
+              type="time"
+              value="12:00"
+              class="form-control">
+
+          </div>
+
 
         </div>
 
-        <!-- =====================================
-             LOKASI PENGINAPAN
-        ====================================== -->
+      </div>
 
-        <div class="form-section">
 
-            <div class="form-section-title">
 
-                Lokasi Penginapan
+      <!-- =====================================
+           PEMILIK PENGINAPAN
+      ====================================== -->
 
-            </div>
+      <div class="form-section">
 
-            <div class="form-grid">
+        <div class="form-section-title">
 
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Provinsi
-
-                    </label>
-
-                    <input
-                        id="provinsi"
-                        class="form-control">
-
-                </div>
-
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Kabupaten
-
-                    </label>
-
-                    <input
-                        id="kabupaten"
-                        class="form-control">
-
-                </div>
-
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Kecamatan
-
-                    </label>
-
-                    <input
-                        id="kecamatan"
-                        class="form-control">
-
-                </div>
-
-                <div class="form-row">
-
-                    <label class="form-label">
-
-                        Desa
-
-                    </label>
-
-                    <input
-                        id="desa"
-                        class="form-control">
-
-                </div>
-
-                <div class="form-row full">
-
-                    <label class="form-label">
-
-                        Alamat Lengkap
-
-                    </label>
-
-                    <textarea
-                        id="alamat"
-                        class="form-control"
-                        placeholder="Masukkan alamat lengkap"></textarea>
-
-                </div>
-
-                <div class="form-row full">
-
-                    <label class="form-label">
-
-                        Google Maps URL
-
-                    </label>
-
-                    <input
-                        id="maps"
-                        class="form-control"
-                        placeholder="https://maps.google.com/...">
-
-                </div>
-
-            </div>
+          Pemilik Penginapan
 
         </div>
 
-        <!-- =====================================
-            MEDIA
-        ===================================== -->
 
-        <div class="form-section">
+        <div class="form-grid">
 
-            <div class="form-section-title">
 
-                Media
+          <div class="form-row">
 
-            </div>
+            <label class="form-label">
 
-            <div class="form-grid">
+              Owner
 
-                <!-- ==========================
-                    LOGO
-                =========================== -->
+              <span>*</span>
+
+            </label>
+
+
+            <select
+              id="ownerId"
+              class="form-control">
+
+              <option value="">
+
+                Pilih Owner
+
+              </option>
+
+              ${this.owners
+                .map(
+                  (owner) => `
+
+                    <option
+                      value="${escapeAttribute(owner.id)}">
+
+                      ${escapeHtml(owner.nama)}
+
+                    </option>
+
+                  `,
+                )
+                .join("")}
+
+            </select>
+
+          </div>
+
+
+        </div>
+
+      </div>
+
+
+      <!-- =====================================
+           LOKASI PENGINAPAN
+      ====================================== -->
+
+      <div class="form-section">
+
+        <div class="form-section-title">
+
+          Lokasi Penginapan
+
+        </div>
+
+
+        <div class="form-grid">
+
+
+          <div class="form-row">
+
+            <label class="form-label">
+
+              Provinsi
+
+            </label>
+
+
+            <input
+              id="provinsi"
+              class="form-control">
+
+          </div>
+
+
+          <div class="form-row">
+
+            <label class="form-label">
+
+              Kabupaten
+
+            </label>
+
+
+            <input
+              id="kabupaten"
+              class="form-control">
+
+          </div>
+
+
+          <div class="form-row">
+
+            <label class="form-label">
+
+              Kecamatan
+
+            </label>
+
+
+            <input
+              id="kecamatan"
+              class="form-control">
+
+          </div>
+
+
+          <div class="form-row">
+
+            <label class="form-label">
+
+              Desa
+
+            </label>
+
+
+            <input
+              id="desa"
+              class="form-control">
+
+          </div>
+
+
+          <div class="form-row full">
+
+            <label class="form-label">
+
+              Alamat Lengkap
+
+            </label>
+
+
+            <textarea
+              id="alamat"
+              class="form-control"
+              placeholder="Masukkan alamat lengkap"></textarea>
+
+          </div>
+
+
+          <div class="form-row full">
+
+            <label class="form-label">
+
+              Google Maps URL
+
+            </label>
+
+
+            <input
+              id="maps"
+              class="form-control"
+              placeholder="https://maps.google.com/...">
+
+          </div>
+
+
+        </div>
+
+      </div>
+
+
+      <!-- =====================================
+           MEDIA
+      ====================================== -->
+
+      <div class="form-section">
+
+        <div class="form-section-title">
+
+          Media
+
+        </div>
+
+
+        <div class="form-grid">
+
+
+          <!-- ==========================
+               LOGO
+          =========================== -->
+
+          <div
+            class="upload"
+            data-upload="logoPenginapan">
+
+
+            <label class="upload-box">
+
+
+              <div class="upload-icon">
+
+                <i data-lucide="image"></i>
+
+              </div>
+
+
+              <div class="upload-title">
+
+                Upload Logo
+
+              </div>
+
+
+              <div class="upload-text">
+
+                Klik untuk memilih logo
+
+                <br>
+
+                JPG • PNG • WEBP
+
+              </div>
+
+
+              <input
+                type="file"
+                accept="image/*">
+
+
+            </label>
+
+
+            <div class="upload-preview">
+
+
+              <img
+                class="upload-image">
+
+
+              <div class="upload-info">
 
                 <div
-                    class="upload"
-                    data-upload="logoPenginapan">
-
-                    <label class="upload-box">
-
-                        <div class="upload-icon">
-
-                            <i data-lucide="image"></i>
-
-                        </div>
-
-                        <div class="upload-title">
-
-                            Upload Logo
-
-                        </div>
-
-                        <div class="upload-text">
-
-                            Klik untuk memilih logo
-                            <br>
-
-                            JPG • PNG • WEBP
-
-                        </div>
-
-                        <input
-                            type="file"
-                            accept="image/*">
-
-                    </label>
-
-                    <div class="upload-preview">
-
-                      <img class="upload-image">
-
-                      <div class="upload-info">
-
-                          <div class="upload-name"></div>
-
-                          <div class="upload-size"></div>
-
-                      </div>
-
-                      <div class="upload-actions">
-
-                          <button
-                              type="button"
-                              class="btn btn-outline btn-sm"
-                              onclick="Upload.change('logoPenginapan')">
-
-                              Ganti
-
-                          </button>
-
-                          <button
-                              type="button"
-                              class="upload-remove"
-                              onclick="Upload.remove('logoPenginapan')">
-
-                              <i data-lucide="x"></i>
-
-                          </button>
-
-                      </div>
-
-                  </div>
-
+                  class="upload-name">
                 </div>
-
-                <!-- ==========================
-                    COVER
-                =========================== -->
 
                 <div
-                    class="upload"
-                    data-upload="coverPenginapan">
-
-                    <label class="upload-box">
-
-                        <div class="upload-icon">
-
-                            <i data-lucide="image-plus"></i>
-
-                        </div>
-
-                        <div class="upload-title">
-
-                            Upload Cover
-
-                        </div>
-
-                        <div class="upload-text">
-
-                            Klik untuk memilih cover
-                            <br>
-
-                            JPG • PNG • WEBP
-
-                        </div>
-
-                        <input
-                            type="file"
-                            accept="image/*">
-
-                    </label>
-
-                    <div class="upload-preview">
-
-                      <img class="upload-image">
-
-                      <div class="upload-info">
-
-                          <div class="upload-name"></div>
-
-                          <div class="upload-size"></div>
-
-                      </div>
-
-                      <div class="upload-actions">
-
-                          <button
-                              type="button"
-                              class="btn btn-outline btn-sm"
-                              onclick="Upload.change('coverPenginapan')">
-
-                              Ganti
-
-                          </button>
-
-                          <button
-                              type="button"
-                              class="upload-remove"
-                              onclick="Upload.remove('coverPenginapan')">
-
-                              <i data-lucide="x"></i>
-
-                          </button>
-
-                      
-
-                  </div>
+                  class="upload-size">
                 </div>
+
+              </div>
+
+
+              <div class="upload-actions">
+
+
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  onclick="Upload.change('logoPenginapan')">
+
+                  Ganti
+
+                </button>
+
+
+                <button
+                  type="button"
+                  class="upload-remove"
+                  onclick="Upload.remove('logoPenginapan')">
+
+                  <i data-lucide="x"></i>
+
+                </button>
+
+
+              </div>
+
 
             </div>
 
+          </div>
+
+
+          <!-- ==========================
+               COVER
+          =========================== -->
+
+          <div
+            class="upload"
+            data-upload="coverPenginapan">
+
+
+            <label class="upload-box">
+
+
+              <div class="upload-icon">
+
+                <i data-lucide="image-plus"></i>
+
+              </div>
+
+
+              <div class="upload-title">
+
+                Upload Cover
+
+              </div>
+
+
+              <div class="upload-text">
+
+                Klik untuk memilih cover
+
+                <br>
+
+                JPG • PNG • WEBP
+
+              </div>
+
+
+              <input
+                type="file"
+                accept="image/*">
+
+
+            </label>
+
+
+            <div class="upload-preview">
+
+
+              <img
+                class="upload-image">
+
+
+              <div class="upload-info">
+
+                <div
+                  class="upload-name">
+                </div>
+
+                <div
+                  class="upload-size">
+                </div>
+
+              </div>
+
+
+              <div class="upload-actions">
+
+
+                <button
+                  type="button"
+                  class="btn btn-outline btn-sm"
+                  onclick="Upload.change('coverPenginapan')">
+
+                  Ganti
+
+                </button>
+
+
+                <button
+                  type="button"
+                  class="upload-remove"
+                  onclick="Upload.remove('coverPenginapan')">
+
+                  <i data-lucide="x"></i>
+
+                </button>
+
+
+              </div>
+
+
+            </div>
+
+          </div>
+
+
         </div>
+
+      </div>
+
 
     </form>
 
@@ -672,24 +819,21 @@ const Penginapan = {
 
       </button>
 
+
       <button
-
         class="btn btn-primary"
-
         onclick="Penginapan.save()">
 
         ${data ? "Update Penginapan" : "Simpan Penginapan"}
 
-    </button>
-
-      
+      </button>
 
     `;
   },
 
   /* =====================================
-   SAVE
-    ===================================== */
+     SAVE
+  ===================================== */
 
   async save() {
     /* ===============================
@@ -699,27 +843,20 @@ const Penginapan = {
     const valid = Validator.validate({
       namaPenginapan: {
         required: true,
+
         label: "Nama Penginapan wajib diisi",
       },
 
       jenisPenginapan: {
         required: true,
+
         label: "Pilih jenis penginapan",
       },
 
-      namaPemilik: {
+      ownerId: {
         required: true,
-        label: "Nama pemilik wajib diisi",
-      },
 
-      whatsappPemilik: {
-        required: true,
-        label: "Nomor WhatsApp wajib diisi",
-      },
-
-      username: {
-        required: true,
-        label: "Username wajib diisi",
+        label: "Pilih owner penginapan",
       },
     });
 
@@ -738,19 +875,11 @@ const Penginapan = {
     const data = {
       id: this.editingId || this.generateId(),
 
+      ownerId: form.ownerId,
+
       nama: form.namaPenginapan,
 
       jenis: form.jenisPenginapan,
-
-      kategori: form.kategoriPenginapan,
-
-      pemilik: form.namaPemilik,
-
-      whatsapp: form.whatsappPemilik,
-
-      username: form.username,
-
-      password: form.password,
 
       provinsi: form.provinsi,
 
@@ -773,8 +902,6 @@ const Penginapan = {
       logo: await Upload.serialize("logoPenginapan"),
 
       cover: await Upload.serialize("coverPenginapan"),
-
-      createdAt: new Date().toISOString(),
     };
 
     Loading.show();
@@ -812,11 +939,7 @@ const Penginapan = {
 
   /* =====================================
      LOAD DATA
-    ===================================== */
-
-  /* =====================================
-   LOAD DATA
-===================================== */
+  ===================================== */
 
   async loadData(page = 1, showLoading = true) {
     if (showLoading) {
@@ -842,17 +965,11 @@ const Penginapan = {
 
       const rows = Array.isArray(result.data?.rows) ? result.data.rows : [];
 
-      console.log("[Penginapan] ROWS:", rows);
-
-      /* ===============================
-       RENDER TABLE
-    =============================== */
-
       this.render(rows);
 
       /* ===============================
-       PAGINATION
-    =============================== */
+         PAGINATION
+      ============================== */
 
       Pagination.render({
         target: "#paginationPenginapan",
@@ -867,8 +984,8 @@ const Penginapan = {
       });
 
       /* ===============================
-       SUMMARY
-    =============================== */
+         SUMMARY
+      ============================== */
 
       const totalPenginapan = document.getElementById("totalPenginapan");
 
@@ -885,13 +1002,6 @@ const Penginapan = {
           (item) => String(item.status).toLowerCase() === "aktif",
         ).length;
       }
-
-      /*
-       * Untuk sementara total kamar belum
-       * dihitung dari backend penginapan.
-       *
-       * Jangan hardcode 186.
-       */
 
       if (totalKamar) {
         totalKamar.textContent = "-";
@@ -918,17 +1028,22 @@ const Penginapan = {
       columns: [
         {
           title: "Nama Penginapan",
+
           field: "nama",
         },
 
         {
           title: "Jenis",
+
           field: "jenis",
         },
 
         {
           title: "Pemilik",
-          field: "pemilik",
+
+          field: "ownerId",
+
+          formatter: (row) => this.getOwnerName(row.ownerId),
         },
 
         {
@@ -946,35 +1061,46 @@ const Penginapan = {
 
           formatter: (row) => `
 
-            <div class="table-actions">
+              <div
+                class="table-actions">
 
-              <button
-                class="btn btn-outline btn-sm"
-                onclick="Penginapan.detail('${row.id}')">
 
-                Detail
+                <button
+                  class="btn btn-outline btn-sm"
+                  onclick="
+                    Penginapan.detail('${row.id}')
+                  ">
 
-              </button>
+                  Detail
 
-              <button
-                class="btn btn-primary btn-sm"
-                onclick="Penginapan.edit('${row.id}')">
+                </button>
 
-                Edit
 
-              </button>
+                <button
+                  class="btn btn-primary btn-sm"
+                  onclick="
+                    Penginapan.edit('${row.id}')
+                  ">
 
-              <button
-                class="btn btn-danger btn-sm"
-                onclick="Penginapan.delete('${row.id}')">
+                  Edit
 
-                Hapus
+                </button>
 
-              </button>
 
-            </div>
+                <button
+                  class="btn btn-danger btn-sm"
+                  onclick="
+                    Penginapan.delete('${row.id}')
+                  ">
 
-          `,
+                  Hapus
+
+                </button>
+
+
+              </div>
+
+            `,
         },
       ],
 
@@ -998,7 +1124,7 @@ const Penginapan = {
         return;
       }
 
-      this.openForm(result.data);
+      await this.openForm(result.data);
     } catch (err) {
       console.error(err);
 
@@ -1017,6 +1143,7 @@ const Penginapan = {
 
     if (!result.success) {
       Toast.error(result.message);
+
       return;
     }
 
@@ -1029,21 +1156,29 @@ const Penginapan = {
 
       html: `
 
-            <div class="delete-info">
+        <div class="delete-info">
 
-                <h4>${d.nama}</h4>
+          <h4>
+            ${escapeHtml(d.nama)}
+          </h4>
 
-                <p>${d.pemilik}</p>
+          <p>
+            ${escapeHtml(this.getOwnerName(d.ownerId))}
+          </p>
 
-                <span>${d.jenis}</span>
+          <span>
+            ${escapeHtml(d.jenis || "-")}
+          </span>
 
-            </div>
+        </div>
 
-            <p>
-                Data yang dihapus tidak dapat dikembalikan.
-            </p>
 
-        `,
+        <p>
+          Data yang dihapus tidak dapat
+          dikembalikan.
+        </p>
+
+      `,
 
       confirmText: "Ya, Hapus",
 
@@ -1061,7 +1196,7 @@ const Penginapan = {
 
           Toast.success(res.message);
 
-          this.loadData();
+          await this.loadData();
         } finally {
           Loading.hide();
         }
@@ -1069,174 +1204,165 @@ const Penginapan = {
     });
   },
 
+  /* =====================================
+     DETAIL
+  ===================================== */
+
   async detail(id) {
-    const result = await PenginapanService.getById(id);
+    Loading.show();
 
-    if (!result.success) {
-      Toast.error(result.message);
+    try {
+      const result = await PenginapanService.getById(id);
 
-      return;
+      if (!result.success) {
+        Toast.error(result.message);
+
+        return;
+      }
+
+      const d = result.data;
+
+      Detail.open({
+        title: "Detail Penginapan",
+
+        header: {
+          image: d.logoUrl,
+
+          icon: "hotel",
+
+          title: d.nama,
+
+          badge: Badge.status(d.status),
+        },
+
+        sections: [
+          /* =====================================
+             MEDIA
+          ===================================== */
+
+          {
+            title: "Media",
+
+            fields: [
+              {
+                label: "Cover",
+
+                type: "image",
+
+                value: d.coverUrl,
+
+                full: true,
+              },
+            ],
+          },
+
+          /* =====================================
+             INFORMASI PENGINAPAN
+          ===================================== */
+
+          {
+            title: "Informasi Penginapan",
+
+            fields: [
+              {
+                label: "Nama Penginapan",
+
+                value: d.nama,
+              },
+
+              {
+                label: "Jenis",
+
+                value: d.jenis,
+              },
+
+              {
+                label: "Jumlah Kamar",
+
+                value: "-",
+              },
+            ],
+          },
+
+          /* =====================================
+             INFORMASI PEMILIK
+          ===================================== */
+
+          {
+            title: "Informasi Pemilik",
+
+            fields: [
+              {
+                label: "Pemilik",
+
+                value: this.getOwnerName(d.ownerId),
+              },
+            ],
+          },
+
+          /* =====================================
+             LOKASI
+          ===================================== */
+
+          {
+            title: "Lokasi",
+
+            fields: [
+              {
+                label: "Provinsi",
+
+                value: d.provinsi,
+              },
+
+              {
+                label: "Kabupaten",
+
+                value: d.kabupaten,
+              },
+
+              {
+                label: "Kecamatan",
+
+                value: d.kecamatan,
+              },
+
+              {
+                label: "Desa",
+
+                value: d.desa,
+              },
+
+              {
+                label: "Alamat",
+
+                value: d.alamat,
+
+                full: true,
+              },
+
+              {
+                label: "Google Maps",
+
+                value: d.maps,
+
+                full: true,
+              },
+            ],
+          },
+        ],
+      });
+    } catch (err) {
+      console.error(err);
+
+      Toast.error("Gagal mengambil data.");
+    } finally {
+      Loading.hide();
     }
-
-    const d = result.data;
-    console.log("DATA :", d);
-    console.log("LOGO :", d.logoUrl);
-    console.log("COVER:", d.coverUrl);
-
-    Detail.open({
-      title: "Detail Penginapan",
-
-      header: {
-        image: d.logoUrl,
-
-        icon: "hotel",
-
-        title: d.nama,
-
-        subtitle: `${d.jenis} • ${d.kategori}`,
-
-        badge: Badge.status(d.status),
-      },
-
-      sections: [
-        /* =====================================
-           MEDIA
-        ===================================== */
-
-        {
-          title: "Media",
-
-          fields: [
-            {
-              label: "Cover",
-
-              type: "image",
-
-              value: d.coverUrl,
-
-              full: true,
-            },
-          ],
-        },
-
-        /* =====================================
-           INFORMASI PENGINAPAN
-        ===================================== */
-
-        {
-          title: "Informasi Penginapan",
-
-          fields: [
-            {
-              label: "Nama Penginapan",
-
-              value: d.nama,
-            },
-
-            {
-              label: "Jenis",
-
-              value: d.jenis,
-            },
-
-            {
-              label: "Kategori",
-
-              value: d.kategori,
-            },
-
-            {
-              label: "Jumlah Kamar",
-
-              value: "-",
-            },
-          ],
-        },
-
-        /* =====================================
-           INFORMASI PEMILIK
-        ===================================== */
-
-        {
-          title: "Informasi Pemilik",
-
-          fields: [
-            {
-              label: "Nama",
-
-              value: d.pemilik,
-            },
-
-            {
-              label: "WhatsApp",
-
-              value: d.whatsapp,
-            },
-
-            {
-              label: "Username",
-
-              value: d.username,
-            },
-          ],
-        },
-
-        /* =====================================
-           LOKASI
-        ===================================== */
-
-        {
-          title: "Lokasi",
-
-          fields: [
-            {
-              label: "Provinsi",
-
-              value: d.provinsi,
-            },
-
-            {
-              label: "Kabupaten",
-
-              value: d.kabupaten,
-            },
-
-            {
-              label: "Kecamatan",
-
-              value: d.kecamatan,
-            },
-
-            {
-              label: "Desa",
-
-              value: d.desa,
-            },
-
-            {
-              label: "Alamat",
-
-              value: d.alamat,
-
-              full: true,
-            },
-
-            {
-              label: "Google Maps",
-
-              value: d.maps,
-
-              full: true,
-            },
-          ],
-        },
-      ],
-    });
   },
 
   /* =====================================
-    GENERATE ID
-    ===================================== */
+     GENERATE ID
+  ===================================== */
 
   generateId() {
     return "PGN" + Date.now();

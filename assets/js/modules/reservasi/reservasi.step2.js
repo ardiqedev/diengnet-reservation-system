@@ -1,9 +1,11 @@
 /* =========================================
    RESERVASI STEP 2
-   PILIH KAMAR
+   PILIH UNIT
 ========================================= */
 
 const ReservasiStep2 = {
+  rooms: [],
+
   /* =====================================
      RENDER
   ===================================== */
@@ -16,32 +18,28 @@ const ReservasiStep2 = {
         <div class="card-header">
 
           <h3>
-
-            Pilih Kamar
-
+            Pilih Unit
           </h3>
 
           <p>
-
-            Pilih kamar yang tersedia sesuai pencarian.
-
+            Pilih unit yang tersedia sesuai pencarian.
           </p>
 
         </div>
 
+
         <div class="card-body">
 
-            <div
-                id="bookingSummary"
-                class="booking-summary">
+          <div
+            id="bookingSummary"
+            class="booking-summary">
+          </div>
 
-            </div>
 
-            <div
-                id="availableRooms"
-                class="room-grid">
-
-            </div>
+          <div
+            id="availableRooms"
+            class="room-grid">
+          </div>
 
         </div>
 
@@ -51,63 +49,57 @@ const ReservasiStep2 = {
   },
 
   /* =====================================
-   RENDER SUMMARY
-===================================== */
+     RENDER SUMMARY
+  ===================================== */
 
-  renderSummary(totalRoom = 0) {
+  renderSummary(totalUnit = 0) {
     const booking = Reservasi.booking;
 
     const container = document.getElementById("bookingSummary");
 
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
     const malam = ReservasiHelper.countNight(booking.checkIn, booking.checkOut);
 
     container.innerHTML = `
 
-<div class="booking-summary-card">
+      <div class="booking-summary-card">
 
-    <div class="booking-summary-item">
+        <div class="booking-summary-item">
 
-        <div class="booking-summary-label">
-
+          <div class="booking-summary-label">
             Penginapan
+          </div>
 
-        </div>
-
-        <div class="booking-summary-value">
-
+          <div class="booking-summary-value">
             ${booking.penginapanNama || "-"}
+          </div>
 
         </div>
 
-    </div>
 
-    <div class="booking-summary-item">
+        <div class="booking-summary-item">
 
-        <div class="booking-summary-label">
-
+          <div class="booking-summary-label">
             Channel
+          </div>
 
-        </div>
-
-        <div class="booking-summary-value">
-
+          <div class="booking-summary-value">
             ${booking.channel || "-"}
+          </div>
 
         </div>
 
-    </div>
 
-    <div class="booking-summary-item">
+        <div class="booking-summary-item">
 
-        <div class="booking-summary-label">
-
+          <div class="booking-summary-label">
             Menginap
+          </div>
 
-        </div>
-
-        <div class="booking-summary-value">
+          <div class="booking-summary-value">
 
             ${ReservasiHelper.formatDate(booking.checkIn)}
 
@@ -115,91 +107,90 @@ const ReservasiStep2 = {
 
             ${ReservasiHelper.formatDate(booking.checkOut)}
 
+          </div>
+
         </div>
 
-    </div>
 
-    <div class="booking-summary-item">
+        <div class="booking-summary-item">
 
-        <div class="booking-summary-label">
-
+          <div class="booking-summary-label">
             Lama Menginap
+          </div>
 
-        </div>
-
-        <div class="booking-summary-value">
-
+          <div class="booking-summary-value">
             ${malam} Malam
+          </div>
 
         </div>
 
-    </div>
 
-    <div class="booking-summary-item">
+        <div class="booking-summary-item">
 
-        <div class="booking-summary-label">
-
+          <div class="booking-summary-label">
             Tamu
+          </div>
 
-        </div>
+          <div class="booking-summary-value">
 
-        <div class="booking-summary-value">
-
-            ${booking.dewasa} Dewasa
+            ${booking.dewasa || 0}
+            Dewasa
 
             •
 
-            ${booking.anak} Anak
+            ${booking.anak || 0}
+            Anak
+
+          </div>
 
         </div>
 
-    </div>
 
-    <div class="booking-summary-item">
+        <div class="booking-summary-item">
 
-        <div class="booking-summary-label">
+          <div class="booking-summary-label">
+            Unit Ditemukan
+          </div>
 
-            Kamar Ditemukan
+          <div class="booking-summary-value">
+
+            ${totalUnit}
+            Unit
+
+          </div>
 
         </div>
 
-        <div class="booking-summary-value">
+      </div>
 
-            ${totalRoom} Kamar
-
-        </div>
-
-    </div>
-
-</div>
-
-`;
+    `;
   },
 
   /* =====================================
-   INIT
-===================================== */
+     INIT
+  ===================================== */
 
   async init() {
     Loading.show();
 
     try {
-      const rooms = await this.loadRooms();
-      this.renderSummary(rooms.length);
+      const units = await this.loadRooms();
 
-      this.renderRooms(rooms);
+      this.renderSummary(units.length);
+
+      this.renderRooms(units);
     } catch (err) {
-      console.error(err);
+      console.error("STEP 2 ERROR:", err);
 
-      Toast.error("Gagal memuat kamar.");
+      Toast.error("Gagal memuat unit.");
     } finally {
       Loading.hide();
     }
   },
 
   /* =====================================
-   LOAD ROOMS
-    ===================================== */
+     LOAD UNITS
+  ===================================== */
 
   async loadRooms() {
     try {
@@ -212,181 +203,322 @@ const ReservasiStep2 = {
   },
 
   /* =====================================
-     RENDER ROOM
+     RENDER UNITS
   ===================================== */
 
-  renderRooms(rooms = []) {
-    this.rooms = rooms;
+  renderRooms(units = []) {
+    this.rooms = units;
+
     const container = document.getElementById("availableRooms");
 
-    if (!container) return;
+    if (!container) {
+      return;
+    }
 
-    if (!rooms.length) {
+    if (!units.length) {
       container.innerHTML = `
 
-            <div class="empty-state">
+        <div class="empty-state">
 
-                Tidak ada kamar tersedia.
+          Tidak ada unit tersedia
+          untuk tanggal dan jumlah tamu
+          yang dipilih.
 
-            </div>
+        </div>
 
-        `;
+      `;
 
       return;
     }
 
-    const html = rooms.map((room) => this.renderCard(room)).join("");
+    const html = units.map((unit) => this.renderCard(unit)).join("");
 
     container.innerHTML = html;
+
+    /*
+     * Jika icon menggunakan
+     * Lucide.
+     */
+
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
   },
 
   /* =====================================
-   RENDER CARD
-===================================== */
+     RENDER CARD
+  ===================================== */
 
-  renderCard(room) {
+  renderCard(unit) {
+    const kapasitasDewasa = Number(unit.kapasitasDewasa) || 0;
+
+    const kapasitasAnak = Number(unit.kapasitasAnak) || 0;
+
+    const jumlahBed = Number(unit.jumlahBed) || 0;
+
+    const luas = Number(unit.luas) || 0;
+
+    const foto = unit.fotoUrl || "";
+
     return `
 
-    <div class="room-card">
+      <div class="room-card">
 
-      <!-- ===========================
-           FOTO
-      ============================ -->
 
-      <div class="room-image">
+        <!-- =========================
+             FOTO
+        ========================== -->
 
-        ${
-          room.foto
-            ? `<img src="${room.foto}" alt="${room.tipeKamar}">`
-            : `
-              <div class="room-image-placeholder">
+        <div class="room-image">
 
-                <i data-lucide="image"></i>
+          ${
+            foto
+              ? `
 
-              </div>
-            `
-        }
+                <img
+                  src="${foto}"
+                  alt="${unit.nama || "Unit"}">
 
-      </div>
+              `
+              : `
 
-      <!-- ===========================
-           BODY
-      ============================ -->
+                <div
+                  class="room-image-placeholder">
 
-      <div class="room-content">
+                  <i
+                    data-lucide="image">
+                  </i>
 
-        <div class="room-header">
+                </div>
 
-          <div>
+              `
+          }
 
-            <h3 class="room-title">
+        </div>
 
-              ${room.tipeKamar}
 
-            </h3>
+        <!-- =========================
+             BODY
+        ========================== -->
 
-            <div class="room-number">
+        <div class="room-content">
 
-              ${room.nomor}
+
+          <!-- =======================
+               HEADER
+          ======================== -->
+
+          <div class="room-header">
+
+            <div>
+
+              <h3
+                class="room-title">
+
+                ${unit.nama || "-"}
+
+              </h3>
+
+
+              ${
+                unit.tipe
+                  ? `
+
+                    <div
+                      class="room-number">
+
+                      ${unit.tipe}
+
+                    </div>
+
+                  `
+                  : ""
+              }
 
             </div>
 
-          </div>
 
-          <span class="badge ${ReservasiHelper.getBadgeClass(room.badge)}">
+            <span
+              class="badge badge-success">
 
-                ${room.badge}
+              TERSEDIA
 
             </span>
 
-        </div>
+          </div>
 
-        <!-- =======================
-             INFO
-        ======================== -->
 
-        <div class="room-info">
+          <!-- =======================
+               INFO
+          ======================== -->
 
-          <div>
+          <div class="room-info">
 
-            👥 ${room.kapasitasDewasa} Dewasa
 
-            ${room.kapasitasAnak ? `• ${room.kapasitasAnak} Anak` : ""}
+            <div>
+
+              👥
+              ${kapasitasDewasa}
+              Dewasa
+
+              ${
+                kapasitasAnak > 0
+                  ? `
+
+                    •
+                    ${kapasitasAnak}
+                    Anak
+
+                  `
+                  : ""
+              }
+
+            </div>
+
+
+            <div>
+
+              🛏
+              ${jumlahBed}
+              ${unit.jenisBed || ""}
+
+            </div>
+
+
+            ${
+              luas > 0
+                ? `
+
+                  <div>
+
+                    📐
+                    ${luas} m²
+
+                  </div>
+
+                `
+                : ""
+            }
+
 
           </div>
 
-          <div>
 
-            🛏 ${room.bed}
+          <!-- =======================
+               FASILITAS
+          ======================== -->
 
-          </div>
+          ${
+            unit.fasilitas
+              ? `
 
-          <div>
+                <div
+                  class="room-facilities">
 
-            🌙 Minimal ${room.minimalMalam} malam
+                  ${unit.fasilitas}
 
-          </div>
+                </div>
 
-        </div>
+              `
+              : ""
+          }
 
-        <!-- =======================
-             FOOTER
-        ======================== -->
 
-        <div class="room-footer">
+          <!-- =======================
+               FOOTER
+          ======================== -->
 
-          <div class="room-price">
+          <div class="room-footer">
 
-            ${ReservasiHelper.formatCurrency(room.roomPrice)}
 
-            <small>/ malam</small>
+            <div class="room-price">
 
-        </div>
-          
+              <strong>
 
-          <button
+                Harga
+
+              </strong>
+
+              <small>
+                akan dihitung
+              </small>
+
+            </div>
+
+
+            <button
               class="btn btn-primary"
-              onclick="ReservasiStep2.selectRoom('${room.id}')">
+              onclick="
+                ReservasiStep2.selectRoom(
+                  '${unit.id}'
+                )
+              ">
 
               Pilih
 
-          </button>
+            </button>
+
+
+          </div>
+
 
         </div>
 
       </div>
 
-    </div>
-
-  `;
+    `;
   },
 
   /* =====================================
-   SELECT ROOM
-===================================== */
+     SELECT UNIT
+  ===================================== */
 
-  selectRoom(roomId) {
-    const room = this.rooms.find((x) => x.id === roomId);
+  selectRoom(unitId) {
+    const unit = this.rooms.find((item) => String(item.id) === String(unitId));
 
-    if (!room) return;
+    if (!unit) {
+      Toast.warning("Unit tidak ditemukan.");
+
+      return;
+    }
+
+    /*
+     * Simpan data Unit
+     * ke booking.
+     */
 
     Reservasi.booking = {
       ...Reservasi.booking,
 
-      kamarId: room.id,
+      unitId: unit.id,
 
-      nomorKamar: room.nomor,
+      unitNama: unit.nama || "",
 
-      tipeKamarId: room.tipeKamarId,
+      unitTipe: unit.tipe || "",
 
-      tipeKamar: room.tipeKamar,
+      kapasitasDewasa: Number(unit.kapasitasDewasa) || 0,
 
-      roomPrice: room.roomPrice,
+      kapasitasAnak: Number(unit.kapasitasAnak) || 0,
 
-      extraPerson: room.extraPerson,
+      jumlahBed: Number(unit.jumlahBed) || 0,
 
-      minimalMalam: room.minimalMalam,
+      jenisBed: unit.jenisBed || "",
+
+      luas: Number(unit.luas) || 0,
+
+      fasilitas: unit.fasilitas || "",
+
+      fotoUrl: unit.fotoUrl || "",
+
+      /*
+       * Harga sementara.
+       * Nanti diisi oleh pricing engine.
+       */
+
+      roomPrice: Number(unit.roomPrice) || 0,
     };
+
+    console.log("[RESERVASI] UNIT SELECTED:", unit);
 
     Reservasi.goToStep(3);
   },

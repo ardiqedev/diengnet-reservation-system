@@ -1,15 +1,27 @@
 /* =========================================
-   PAYMENT STATUS
+   PAYMENT CONSTANT
+========================================= */
+
+/* =========================================
+   PAYMENT SUMMARY STATUS
 ========================================= */
 
 const PaymentStatus = Object.freeze({
   UNPAID: "UNPAID",
 
-  DP: "DP",
-
   PAID: "PAID",
+});
 
-  REFUND: "REFUND",
+/* =========================================
+   PAYMENT TRANSACTION STATUS
+========================================= */
+
+const PaymentTransactionStatus = Object.freeze({
+  PENDING: "PENDING",
+
+  VERIFIED: "VERIFIED",
+
+  REJECTED: "REJECTED",
 });
 
 /* =========================================
@@ -23,5 +35,5 @@ const PaymentMethod = Object.freeze({
 
   QRIS: "QRIS",
 
-  CREDIT_CARD: "CREDIT CARD",
+  CREDIT_CARD: "CREDIT_CARD",
 });

@@ -5,7 +5,7 @@
 const Router = {
   /* =====================================
        ROUTES
-    ===================================== */
+  ===================================== */
 
   routes: {
     dashboard: "pages/dashboard.html",
@@ -22,7 +22,10 @@ const Router = {
 
     penginapan: "pages/penginapan.html",
 
-    "tipe-kamar": "pages/tipe-kamar.html",
+    "profil-penginapan": "pages/profil-penginapan.html",
+    "profil-penginapan-detail": "pages/profil-penginapan-detail.html",
+
+    unit: "pages/unit.html",
 
     musim: "pages/musim.html",
 
@@ -37,7 +40,7 @@ const Router = {
 
   /* =====================================
        LOAD COMPONENT
-    ===================================== */
+  ===================================== */
 
   async loadComponent(file, targetId) {
     try {
@@ -57,7 +60,7 @@ const Router = {
 
   /* =====================================
        LOAD PAGE
-    ===================================== */
+  ===================================== */
 
   async loadPage(file) {
     try {
@@ -79,7 +82,7 @@ const Router = {
 
   /* =====================================
        NAVIGATE
-    ===================================== */
+  ===================================== */
 
   async navigate(page) {
     if (!this.routes[page]) {
@@ -98,12 +101,8 @@ const Router = {
   },
 
   /* =====================================
-   INIT MODULE
-===================================== */
-
-  /* =====================================
-   INIT MODULE
-===================================== */
+       INIT MODULE
+  ===================================== */
 
   initModule(page) {
     const modules = {
@@ -111,7 +110,15 @@ const Router = {
 
       penginapan: typeof Penginapan !== "undefined" ? Penginapan : null,
 
-      "tipe-kamar": typeof TipeKamar !== "undefined" ? TipeKamar : null,
+      "profil-penginapan":
+        typeof ProfilPenginapan !== "undefined" ? ProfilPenginapan : null,
+
+      "profil-penginapan-detail":
+        typeof DetailProfilPenginapan !== "undefined"
+          ? DetailProfilPenginapan
+          : null,
+
+      unit: typeof Unit !== "undefined" ? Unit : null,
 
       musim: typeof Musim !== "undefined" ? Musim : null,
 
@@ -139,7 +146,7 @@ const Router = {
 
   /* =====================================
        SAVE PAGE
-    ===================================== */
+  ===================================== */
 
   saveCurrentPage(page) {
     localStorage.setItem("lastPage", page);
@@ -147,7 +154,7 @@ const Router = {
 
   /* =====================================
        GET LAST PAGE
-    ===================================== */
+  ===================================== */
 
   getLastPage() {
     return localStorage.getItem("lastPage") || "dashboard";
@@ -155,24 +162,29 @@ const Router = {
 
   /* =====================================
        SHOW 404
-    ===================================== */
+  ===================================== */
 
   show404() {
     document.getElementById("content").innerHTML = `
 
-            <div class="page-error">
+      <div class="page-error">
 
-                <h2>404</h2>
+        <h2>404</h2>
 
-                <p>Halaman tidak ditemukan.</p>
+        <p>Halaman tidak ditemukan.</p>
 
-            </div>
+      </div>
 
-        `;
+    `;
   },
+
+  /* =====================================
+       START
+  ===================================== */
 
   async start() {
     const page = this.getLastPage();
+
     await this.navigate(page);
   },
 };

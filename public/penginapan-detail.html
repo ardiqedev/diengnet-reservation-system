@@ -5,7 +5,10 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <meta name="description" content="Detail penginapan di Dieng." />
+    <meta
+      name="description"
+      content="Detail penginapan dan reservasi di Dieng."
+    />
 
     <title>Dieng Net — Penginapan</title>
 
@@ -95,10 +98,6 @@
     ========================================== -->
 
     <main>
-      <!-- =========================================
-           PROPERTY DETAIL
-      ========================================== -->
-
       <section class="stay-detail">
         <div class="container">
           <!-- =====================================
@@ -153,37 +152,76 @@
 
               <p id="detailDescription" class="stay-detail-description"></p>
 
-              <!-- =================================
-                   PROPERTY META
-              ================================== -->
+              <!-- PROPERTY META -->
 
               <div id="detailMeta" class="stay-detail-meta"></div>
 
               <!-- =================================
-                   ACCOMMODATION
+                   RESERVATION WIZARD
               ================================== -->
 
               <section class="stay-detail-stay">
-                <!-- =================================
-                     SECTION HEADER
-                ================================== -->
-
                 <div class="stay-detail-section-heading">
-                  <span class="eyebrow eyebrow-dark"> ACCOMMODATION </span>
+                  <span class="eyebrow eyebrow-dark"> RESERVATION </span>
 
-                  <h2>Choose your room.</h2>
+                  <h2>Book your stay.</h2>
 
-                  <p>
-                    Select a room and choose your dates to see the current
-                    price.
-                  </p>
+                  <p>Choose your dates, guests and available unit.</p>
                 </div>
 
                 <!-- =================================
-                     ROOM LIST
+                     WIZARD
                 ================================== -->
 
-                <div id="roomList" class="room-grid"></div>
+                <div id="reservationWizard" class="public-reservation-wizard">
+                  <!-- =================================
+                       STEPPER
+                  ================================== -->
+
+                  <div id="wizardStepper" class="public-wizard-stepper">
+                    <div class="public-wizard-step active" data-step="1">
+                      <span class="public-wizard-step-number"> 1 </span>
+
+                      <span class="public-wizard-step-label"> Search </span>
+                    </div>
+
+                    <div class="public-wizard-step" data-step="2">
+                      <span class="public-wizard-step-number"> 2 </span>
+
+                      <span class="public-wizard-step-label"> Unit </span>
+                    </div>
+
+                    <div class="public-wizard-step" data-step="3">
+                      <span class="public-wizard-step-number"> 3 </span>
+
+                      <span class="public-wizard-step-label"> Guest </span>
+                    </div>
+
+                    <div class="public-wizard-step" data-step="4">
+                      <span class="public-wizard-step-number"> 4 </span>
+
+                      <span class="public-wizard-step-label"> Confirm </span>
+                    </div>
+                  </div>
+
+                  <!-- =================================
+                       STEP CONTENT
+                  ================================== -->
+
+                  <div id="wizardContent" class="public-wizard-content"></div>
+
+                  <!-- =================================
+                       ERROR
+                  ================================== -->
+
+                  <div id="wizardError" class="booking-error" hidden></div>
+
+                  <!-- =================================
+                       FOOTER
+                  ================================== -->
+
+                  <div id="wizardFooter" class="public-wizard-footer"></div>
+                </div>
               </section>
             </div>
           </div>
@@ -202,177 +240,6 @@
         </div>
       </section>
     </main>
-
-    <!-- =================================================
-         BOOKING BOTTOM SHEET
-    ================================================== -->
-
-    <div id="bookingSheet" class="booking-sheet" hidden aria-hidden="true">
-      <!-- =========================================
-           BACKDROP
-      ========================================== -->
-
-      <div id="bookingSheetBackdrop" class="booking-sheet-backdrop"></div>
-
-      <!-- =========================================
-           SHEET
-      ========================================== -->
-
-      <section
-        id="bookingSection"
-        class="stay-detail-booking"
-        aria-labelledby="bookingSheetTitle"
-      >
-        <div class="booking-sheet-inner">
-          <!-- =====================================
-               SHEET HANDLE
-          ====================================== -->
-
-          <div class="booking-sheet-handle" aria-hidden="true"></div>
-
-          <!-- =====================================
-               SHEET HEADER
-          ====================================== -->
-
-          <div class="booking-sheet-header">
-            <div class="booking-flow-header">
-              <span class="eyebrow eyebrow-dark"> YOUR STAY </span>
-
-              <h3 id="bookingSheetTitle">Book your stay.</h3>
-
-              <p>
-                Choose your dates and guests to check the current available
-                price.
-              </p>
-            </div>
-
-            <!-- CLOSE -->
-
-            <button
-              type="button"
-              id="bookingSheetClose"
-              class="booking-sheet-close"
-              aria-label="Tutup booking"
-            >
-              ×
-            </button>
-          </div>
-
-          <!-- =====================================
-               BOOKING PANEL
-          ====================================== -->
-
-          <div class="booking-panel" id="bookingPanel">
-            <!-- =================================
-                 SELECTED ROOM
-            ================================== -->
-
-            <div class="booking-selected-room" id="bookingSelectedRoom">
-              <span class="booking-label"> ROOM </span>
-
-              <strong id="bookingRoomName"> Select a room </strong>
-            </div>
-
-            <!-- =================================
-                 BOOKING FIELDS
-            ================================== -->
-
-            <div class="booking-fields">
-              <!-- CHECK IN -->
-
-              <div class="booking-field">
-                <label for="bookingCheckIn"> CHECK-IN </label>
-
-                <input type="date" id="bookingCheckIn" />
-              </div>
-
-              <!-- CHECK OUT -->
-
-              <div class="booking-field">
-                <label for="bookingCheckOut"> CHECK-OUT </label>
-
-                <input type="date" id="bookingCheckOut" />
-              </div>
-
-              <!-- GUESTS -->
-
-              <div class="booking-field">
-                <label for="bookingGuests"> GUESTS </label>
-
-                <select id="bookingGuests">
-                  <option value="1">1 Guest</option>
-
-                  <option value="2" selected>2 Guests</option>
-
-                  <option value="3">3 Guests</option>
-
-                  <option value="4">4 Guests</option>
-
-                  <option value="5">5 Guests</option>
-
-                  <option value="6">6 Guests</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- =================================
-                 CURRENT PRICE
-            ================================== -->
-
-            <div id="bookingPriceResult" class="booking-price-result" hidden>
-              <div class="booking-price-header">
-                <div>
-                  <span class="booking-label"> CURRENT PRICE </span>
-
-                  <span id="bookingNightCount"> 0 nights </span>
-                </div>
-              </div>
-
-              <!-- NIGHTLY BREAKDOWN -->
-
-              <div id="bookingNightList" class="booking-night-list"></div>
-
-              <!-- TOTAL -->
-
-              <div class="booking-total">
-                <span> Total stay </span>
-
-                <strong id="bookingTotal"> Rp0 </strong>
-              </div>
-            </div>
-
-            <!-- =================================
-                 ERROR
-            ================================== -->
-
-            <div id="bookingError" class="booking-error" hidden></div>
-
-            <!-- =================================
-                 ACTION
-            ================================== -->
-
-            <div class="booking-actions">
-              <button
-                type="button"
-                id="bookingPriceButton"
-                class="btn btn-dark booking-price-button"
-              >
-                Check availability
-              </button>
-
-              <button
-                type="button"
-                id="bookingSubmitButton"
-                class="btn btn-dark booking-submit-button"
-                hidden
-              >
-                Book this room
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
 
     <!-- =========================================
          FOOTER
@@ -437,18 +304,28 @@
     </footer>
 
     <!-- =========================================
-         CORE
-    ========================================== -->
+     CORE
+  ========================================= -->
 
     <script src="../assets/js/core/config.js"></script>
 
     <script src="../assets/js/core/api.js"></script>
 
+    <!-- =========================================
+     SERVICES
+  ========================================= -->
+
+    <script src="../assets/js/modules/reservasi/booking.service.js"></script>
+
+    <!-- =========================================
+     ICON
+    ========================================= -->
+
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <!-- =========================================
-         PUBLIC DETAIL
-    ========================================== -->
+     PUBLIC DETAIL
+========================================= -->
 
     <script src="../assets/js/public/penginapan-detail.js"></script>
   </body>

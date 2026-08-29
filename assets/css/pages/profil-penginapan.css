@@ -1,0 +1,826 @@
+/* =========================================
+   QEDEV PROFIL PENGINAPAN
+========================================= */
+
+/* =========================================
+   PAGE HEADER
+========================================= */
+
+.profil-page-header {
+  margin-bottom: 20px;
+}
+
+.page-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  margin-bottom: 8px;
+
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.page-breadcrumb span {
+  color: var(--border-color);
+}
+
+/* =========================================
+   QEDEV PROFIL PENGINAPAN
+========================================= */
+
+/* =========================================
+   TOOLBAR
+========================================= */
+
+.profil-toolbar-card {
+  margin-bottom: 20px;
+}
+
+.profil-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* =========================================
+   COMPATIBILITY
+   HTML menggunakan:
+   .card
+   .toolbar
+   .search-box
+   .form-select
+========================================= */
+
+.profil-penginapan-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 18px;
+
+  align-items: stretch;
+}
+
+/* =========================================
+   CARD
+========================================= */
+
+.profil-card {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background: #fff;
+
+  border: 1px solid var(--border-color);
+
+  border-radius: 14px;
+
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.profil-card:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(37, 99, 235, 0.18);
+
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* =========================================
+   IMAGE
+========================================= */
+
+.profil-card-image {
+  position: relative;
+
+  width: 100%;
+
+  aspect-ratio: 16 / 9;
+
+  overflow: hidden;
+
+  background: #f1f5f9;
+}
+
+.profil-card-image img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  transition: transform 0.35s ease;
+}
+
+.profil-card:hover .profil-card-image img {
+  transform: scale(1.035);
+}
+
+/* =========================================
+   EMPTY IMAGE
+========================================= */
+
+.profil-card-image-empty {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  color: #94a3b8;
+
+  background: linear-gradient(135deg, #f8fafc, #eef2f7);
+}
+
+.profil-card-image-empty svg {
+  width: 34px;
+  height: 34px;
+
+  stroke-width: 1.5;
+}
+
+.profil-card-image-empty span {
+  font-size: 11px;
+
+  color: #94a3b8;
+}
+
+/* =========================================
+   BODY
+========================================= */
+
+.profil-card-body {
+  display: flex;
+
+  flex-direction: column;
+
+  flex: 1;
+
+  padding: 16px;
+}
+
+/* =========================================
+   HEADING
+========================================= */
+
+.profil-card-heading {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-bottom: 8px;
+}
+
+.profil-card-title {
+  min-width: 0;
+}
+
+.profil-card-title h3 {
+  margin: 0;
+
+  overflow: hidden;
+
+  color: var(--text-primary);
+
+  font-size: 15px;
+
+  font-weight: 700;
+
+  line-height: 1.35;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+.profil-card-type {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--text-muted);
+
+  font-size: 11px;
+}
+
+/* =========================================
+   STATUS
+========================================= */
+
+.profil-status {
+  flex-shrink: 0;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  height: 22px;
+
+  padding: 0 8px;
+
+  border-radius: 999px;
+
+  font-size: 10px;
+
+  font-weight: 600;
+}
+
+.profil-status.is-active {
+  color: #15803d;
+
+  background: #dcfce7;
+}
+
+.profil-status.is-inactive {
+  color: #dc2626;
+
+  background: #fee2e2;
+}
+
+/* =========================================
+   LOCATION
+========================================= */
+
+.profil-card-location {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 6px;
+
+  min-height: 30px;
+
+  color: var(--text-muted);
+
+  font-size: 11px;
+
+  line-height: 1.5;
+}
+
+.profil-card-location svg {
+  flex-shrink: 0;
+
+  width: 14px;
+  height: 14px;
+
+  margin-top: 1px;
+}
+
+/* =========================================
+   DESCRIPTION
+========================================= */
+
+.profil-card-description {
+  display: -webkit-box;
+
+  margin: 8px 0 14px;
+
+  overflow: hidden;
+
+  color: #64748b;
+
+  font-size: 11px;
+
+  line-height: 1.55;
+
+  -webkit-box-orient: vertical;
+
+  -webkit-line-clamp: 2;
+}
+
+.profil-card-description.is-empty {
+  color: #94a3b8;
+
+  font-style: italic;
+}
+
+/* =========================================
+   STATS
+========================================= */
+
+.profil-card-stats {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  padding: 12px 0;
+
+  margin-top: auto;
+
+  border-top: 1px solid var(--border-color);
+
+  border-bottom: 1px solid var(--border-color);
+}
+
+.profil-stat {
+  min-width: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  padding: 0 5px;
+
+  border-right: 1px solid var(--border-color);
+}
+
+.profil-stat:last-child {
+  border-right: none;
+}
+
+.profil-stat > svg {
+  flex-shrink: 0;
+
+  width: 14px;
+  height: 14px;
+
+  color: var(--primary-color);
+}
+
+.profil-stat div {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+.profil-stat strong {
+  color: var(--text-primary);
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  line-height: 1.2;
+}
+
+.profil-stat span {
+  margin-top: 2px;
+
+  color: var(--text-muted);
+
+  font-size: 9px;
+
+  line-height: 1.2;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.profil-card-footer {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding-top: 14px;
+}
+
+.profil-readiness {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  min-width: 0;
+
+  font-size: 10px;
+
+  font-weight: 600;
+}
+
+.profil-readiness svg {
+  width: 14px;
+  height: 14px;
+}
+
+.profil-readiness.is-ready {
+  color: #16a34a;
+}
+
+.profil-readiness.is-pending {
+  color: #d97706;
+}
+
+.profil-detail-btn {
+  flex-shrink: 0;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 5px;
+}
+
+.profil-detail-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* =========================================
+   EMPTY
+========================================= */
+
+.profil-empty {
+  grid-column: 1 / -1;
+
+  min-height: 280px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  text-align: center;
+
+  padding: 30px;
+
+  border: 1px dashed var(--border-color);
+
+  border-radius: 14px;
+
+  background: #fff;
+}
+
+.profil-empty-icon {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 12px;
+
+  border-radius: 12px;
+
+  color: var(--primary-color);
+
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.profil-empty-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.profil-empty h3 {
+  margin: 0 0 5px;
+
+  color: var(--text-primary);
+
+  font-size: 14px;
+}
+
+.profil-empty p {
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 12px;
+}
+
+/* =========================================
+   PAGINATION
+========================================= */
+
+.profil-pagination {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+
+  margin-top: 20px;
+}
+
+.profil-pagination .btn {
+  min-width: 36px;
+
+  height: 36px;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding: 0 10px;
+}
+
+.profil-pagination svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* =========================================
+   TABLET
+========================================= */
+
+@media (max-width: 1100px) {
+  .profil-penginapan-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 768px) {
+  .profil-penginapan-grid {
+    grid-template-columns: 1fr;
+
+    gap: 14px;
+  }
+
+  .profil-card-body {
+    padding: 14px;
+  }
+
+  .profil-card-title h3 {
+    font-size: 14px;
+  }
+
+  .profil-card-stats {
+    padding: 11px 0;
+  }
+
+  .profil-detail-btn {
+    min-height: 38px;
+  }
+}
+
+/* =========================================
+   SMALL MOBILE
+========================================= */
+
+@media (max-width: 480px) {
+  .profil-card-image {
+    aspect-ratio: 16 / 10;
+  }
+
+  .profil-card-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+  }
+
+  .profil-stat {
+    justify-content: flex-start;
+
+    border-right: none;
+  }
+
+  .profil-stat:nth-child(-n + 2) {
+    padding-bottom: 8px;
+
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .profil-card-footer {
+    align-items: center;
+  }
+}
+
+/* =========================================
+   PROFIL SKELETON
+========================================= */
+
+.skeleton-profil-card {
+  pointer-events: none;
+
+  transform: none !important;
+}
+
+.skeleton-profil-card:hover {
+  transform: none !important;
+
+  border-color: var(--border-color);
+
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
+}
+
+/* =========================================
+   SKELETON BASE
+========================================= */
+
+.skeleton {
+  position: relative;
+
+  overflow: hidden;
+
+  background: #e9edf3;
+
+  border-radius: 6px;
+}
+
+.skeleton::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  transform: translateX(-100%);
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+
+  animation: skeleton-loading 1.35s infinite;
+}
+
+@keyframes skeleton-loading {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* =========================================
+   SKELEKTON
+========================================= */
+/* =========================================
+   IMAGE
+========================================= */
+
+.skeleton-image {
+  width: 100%;
+  height: 100%;
+
+  border-radius: 0;
+}
+
+/* =========================================
+   TITLE
+========================================= */
+
+.skeleton-profil-title {
+  width: 145px;
+  height: 17px;
+
+  margin-bottom: 7px;
+}
+
+.skeleton-profil-type {
+  width: 70px;
+  height: 10px;
+}
+
+/* =========================================
+   STATUS
+========================================= */
+
+.skeleton-profil-status {
+  width: 48px;
+  height: 22px;
+
+  border-radius: 999px;
+}
+
+/* =========================================
+   LOCATION
+========================================= */
+
+.profil-skeleton-location {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  min-height: 30px;
+}
+
+.skeleton-location-icon {
+  width: 14px;
+  height: 14px;
+
+  border-radius: 50%;
+}
+
+.skeleton-location-text {
+  width: 150px;
+  height: 10px;
+}
+
+/* =========================================
+   DESCRIPTION
+========================================= */
+
+.skeleton-description {
+  width: 100%;
+  height: 10px;
+
+  margin-top: 8px;
+}
+
+.skeleton-description.short {
+  width: 70%;
+
+  margin-top: 6px;
+  margin-bottom: 14px;
+}
+
+/* =========================================
+   STATS
+========================================= */
+
+.profil-skeleton-stats {
+  gap: 0;
+}
+
+.profil-skeleton-stat {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 4px;
+
+  padding: 0 5px;
+
+  border-right: 1px solid var(--border-color);
+}
+
+.profil-skeleton-stat:last-child {
+  border-right: none;
+}
+
+.skeleton-stat-icon {
+  width: 14px;
+  height: 14px;
+
+  border-radius: 4px;
+}
+
+.skeleton-stat-number {
+  width: 22px;
+  height: 10px;
+}
+
+.skeleton-stat-label {
+  width: 32px;
+  height: 7px;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+
+.skeleton-readiness {
+  width: 82px;
+  height: 13px;
+}
+
+.skeleton-detail-button {
+  width: 90px;
+  height: 34px;
+
+  border-radius: 8px;
+}

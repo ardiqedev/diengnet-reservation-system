@@ -4,41 +4,56 @@
 
 const PaymentHelper = (() => {
   /* =====================================
-       TOTAL PAID
-    ===================================== */
+     VERIFIED PAYMENTS
+  ===================================== */
+
+  function getVerifiedPayments(payments = []) {
+    return payments.filter(
+      (payment) => payment.status === PaymentTransactionStatus.VERIFIED,
+    );
+  }
+
+  /* =====================================
+     TOTAL PAID
+  ===================================== */
 
   function getTotalPaid(payments = []) {
-    return payments.reduce(
+    return getVerifiedPayments(payments).reduce(
       (total, payment) => total + Number(payment.paymentAmount || 0),
-
       0,
     );
   }
 
   /* =====================================
-       REMAINING
-    ===================================== */
+     REMAINING
+  ===================================== */
 
   function getRemaining(grandTotal = 0, payments = []) {
-    return Math.max(
-      0,
+    const total = Number(grandTotal || 0);
 
-      Number(grandTotal) - getTotalPaid(payments),
-    );
+    const totalPaid = getTotalPaid(payments);
+
+    return Math.max(0, total - totalPaid);
   }
 
   /* =====================================
-       STATUS
-    ===================================== */
+     PAYMENT STATUS
+  ===================================== */
 
   function getStatus(grandTotal = 0, payments = []) {
+    const total = Number(grandTotal || 0);
+
     const totalPaid = getTotalPaid(payments);
 
-    const remaining = getRemaining(grandTotal, payments);
+    const remaining = getRemaining(total, payments);
+
+    /*
+     * Belum ada pembayaran VERIFIED.
+     */
 
     if (totalPaid <= 0) {
       return {
-        code: "UNPAID",
+        code: PaymentStatus.UNPAID,
 
         label: "Belum Bayar",
 
@@ -46,54 +61,105 @@ const PaymentHelper = (() => {
       };
     }
 
-    if (remaining <= 0) {
+    /*
+     * Sudah ada pembayaran VERIFIED,
+     * tetapi belum memenuhi grand total.
+     *
+     * Kondisi ini tidak digunakan sebagai
+     * flow normal karena sistem menggunakan
+     * FULL PAYMENT.
+     *
+     * Tetap dikembalikan sebagai UNPAID agar
+     * tidak dianggap PAID.
+     */
+
+    if (remaining > 0) {
       return {
-        code: "PAID",
+        code: PaymentStatus.UNPAID,
 
-        label: "Lunas",
+        label: "Belum Lunas",
 
-        color: "success",
+        color: "warning",
       };
     }
 
+    /*
+     * Total pembayaran VERIFIED sudah
+     * memenuhi grand total.
+     */
+
     return {
-      code: "DP",
+      code: PaymentStatus.PAID,
 
-      label: "DP",
+      label: "Lunas",
 
-      color: "warning",
+      color: "success",
     };
   }
 
   /* =====================================
-       VERIFIED
-    ===================================== */
+     FULL PAYMENT CHECK
+  ===================================== */
 
-  function getVerification(payment = {}) {
-    return payment.verified
-      ? {
-          label: "Verified",
+  function isFullyPaid(grandTotal = 0, payments = []) {
+    const total = Number(grandTotal || 0);
 
-          color: "success",
-        }
-      : {
-          label: "Pending",
+    if (total <= 0) {
+      return false;
+    }
 
-          color: "warning",
-        };
+    return getRemaining(total, payments) === 0;
   }
 
   /* =====================================
-       PUBLIC API
-    ===================================== */
+     CAN MAKE PAYMENT
+  ===================================== */
+
+  function canMakePayment(grandTotal = 0, payments = []) {
+    return !isFullyPaid(grandTotal, payments);
+  }
+
+  /* =====================================
+     TRANSACTION STATUS
+  ===================================== */
+
+  function getTransactionStatus(payment = {}) {
+    switch (payment.status) {
+      case PaymentTransactionStatus.VERIFIED:
+        return {
+          label: "Verified",
+          color: "success",
+        };
+
+      case PaymentTransactionStatus.REJECTED:
+        return {
+          label: "Rejected",
+          color: "danger",
+        };
+
+      case PaymentTransactionStatus.PENDING:
+
+      default:
+        return {
+          label: "Pending",
+          color: "warning",
+        };
+    }
+  }
 
   return {
+    getVerifiedPayments,
+
     getTotalPaid,
 
     getRemaining,
 
     getStatus,
 
-    getVerification,
+    isFullyPaid,
+
+    canMakePayment,
+
+    getTransactionStatus,
   };
 })();

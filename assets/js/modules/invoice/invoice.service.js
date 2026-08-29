@@ -4,28 +4,72 @@
 
 const InvoiceService = (() => {
   /* =====================================
-       GET BY RESERVATION
-    ===================================== */
+     GET BY RESERVATION
+  ===================================== */
 
-  async function getByReservation(bookingId) {
-    const booking = ReservasiDummy.getById(bookingId).data;
+  async function getByReservation(reservationId) {
+    /* =================================
+       VALIDATE ID
+    ================================= */
 
-    const invoice = InvoiceDummy.getByBookingId(bookingId);
+    const id = String(reservationId || "").trim();
 
-    const payments = PaymentDummy.getByBookingId(bookingId);
+    if (!id) {
+      throw new Error("ID reservasi wajib diisi.");
+    }
 
-    return {
-      booking,
+    /* =================================
+       REQUEST BACKEND
+    ================================= */
 
-      invoice,
+    const response = await API.post("invoice.detail", {
+      reservationId: id,
+    });
 
-      payments,
-    };
+    /* =================================
+       VALIDATE RESPONSE
+    ================================= */
+
+    if (!response) {
+      throw new Error("Response invoice tidak tersedia.");
+    }
+
+    /* =================================
+       HANDLE API ERROR
+    ================================= */
+
+    if (response.success === false) {
+      throw new Error(response.message || "Gagal mengambil data invoice.");
+    }
+
+    /* =================================
+       GET DATA
+       
+       API biasanya mengembalikan:
+       
+       {
+         success: true,
+         message: "...",
+         data: {...}
+       }
+    ================================= */
+
+    const data = response.data || response;
+
+    if (!data || typeof data !== "object") {
+      throw new Error("Data invoice tidak valid.");
+    }
+
+    /* =================================
+       RETURN
+    ================================= */
+
+    return data;
   }
 
   /* =====================================
-       PUBLIC API
-    ===================================== */
+     PUBLIC API
+  ===================================== */
 
   return {
     getByReservation,

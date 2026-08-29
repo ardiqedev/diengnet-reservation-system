@@ -1,0 +1,156 @@
+<!-- =========================================
+     PROFIL PENGINAPAN — DETAIL
+========================================= -->
+
+<div class="page profil-detail-page">
+  <!-- =====================================
+       HEADER
+  ====================================== -->
+
+  <div class="profil-detail-heading">
+    <div class="profil-detail-heading-left">
+      <button
+        id="btnBackProfilPenginapan"
+        class="btn btn-outline profil-back-btn"
+        type="button"
+      >
+        <i data-lucide="arrow-left"></i>
+
+        Kembali
+      </button>
+
+      <div class="profil-detail-title">
+        <h1>Profil Penginapan</h1>
+
+        <p>Ringkasan lengkap konfigurasi dan tarif penginapan.</p>
+      </div>
+    </div>
+
+    <button
+      id="btnEditProfilPenginapan"
+      class="btn btn-outline profil-edit-btn"
+      type="button"
+    >
+      <i data-lucide="pencil"></i>
+
+      Edit Penginapan
+    </button>
+  </div>
+
+  <!-- =====================================
+       HERO
+  ====================================== -->
+
+  <section id="profilDetailHero" class="profil-detail-hero"></section>
+
+  <!-- =====================================
+       UNIT + MUSIM
+  ====================================== -->
+
+  <div class="profil-detail-two-column">
+    <!-- ===================================
+         UNIT
+    ==================================== -->
+
+    <section class="card profil-detail-section">
+      <div class="profil-section-header">
+        <div>
+          <h2>
+            <i data-lucide="bed-double"></i>
+
+            Unit Penginapan
+          </h2>
+
+          <p>Daftar unit yang tersedia di penginapan.</p>
+        </div>
+
+        <div class="profil-section-header-right">
+          <span id="profilDetailUnitCount" class="profil-section-count">
+            0 Unit
+          </span>
+
+          <button
+            id="btnLihatSemuaUnit"
+            class="btn btn-outline btn-sm"
+            type="button"
+          >
+            Lihat Semua Unit
+          </button>
+        </div>
+      </div>
+
+      <div id="profilDetailUnits" class="profil-detail-table"></div>
+    </section>
+
+    <!-- ===================================
+         MUSIM
+    ==================================== -->
+
+    <section class="card profil-detail-section">
+      <div class="profil-section-header">
+        <div>
+          <h2>
+            <i data-lucide="calendar-range"></i>
+
+            Musim & Periode
+          </h2>
+
+          <p>Periode musim yang digunakan penginapan.</p>
+        </div>
+
+        <div class="profil-section-header-right">
+          <span id="profilDetailMusimCount" class="profil-section-count">
+            0 Musim
+          </span>
+
+          <button
+            id="btnKelolaMusim"
+            class="btn btn-outline btn-sm"
+            type="button"
+          >
+            Kelola Musim
+          </button>
+        </div>
+      </div>
+
+      <div id="profilDetailMusim" class="profil-detail-table"></div>
+    </section>
+  </div>
+
+  <!-- =====================================
+       HARGA
+  ====================================== -->
+
+  <section class="card profil-detail-section profil-detail-price-section">
+    <div class="profil-section-header">
+      <div>
+        <h2>
+          <i data-lucide="badge-dollar-sign"></i>
+
+          Tarif per Musim
+        </h2>
+
+        <p>Tarif penginapan berdasarkan musim.</p>
+      </div>
+
+      <div class="profil-section-header-right">
+        <span id="profilDetailHargaCount" class="profil-section-count">
+          0 Harga
+        </span>
+
+        <button
+          id="btnKelolaHargaMusim"
+          class="btn btn-outline btn-sm"
+          type="button"
+        >
+          Kelola Harga Musim
+        </button>
+      </div>
+    </div>
+
+    <div
+      id="profilDetailHarga"
+      class="profil-detail-table profil-detail-price-table"
+    ></div>
+  </section>
+</div>

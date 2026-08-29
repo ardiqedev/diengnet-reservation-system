@@ -1,0 +1,78 @@
+<!-- =========================================
+     PROFIL PENGINAPAN
+========================================= -->
+
+<div class="page profil-penginapan-page">
+  <!-- =====================================
+       HEADER
+  ====================================== -->
+
+  <div class="page-header profil-page-header">
+    <div>
+      <div class="page-breadcrumb">
+        Profil
+        <span>/</span>
+        Profil Penginapan
+      </div>
+
+      <h1>Profil Penginapan</h1>
+
+      <p>Kelola profil dan kesiapan penginapan untuk menerima reservasi.</p>
+    </div>
+
+    <button
+      class="btn btn-primary"
+      type="button"
+      onclick="ProfilPenginapan.openForm()"
+    >
+      <i data-lucide="plus"></i>
+
+      Tambah Penginapan
+    </button>
+  </div>
+
+  <!-- =====================================
+       TOOLBAR
+  ====================================== -->
+
+  <div class="card profil-toolbar-card">
+    <div class="profil-toolbar">
+      <!-- SEARCH -->
+
+      <div class="profil-search">
+        <i data-lucide="search"></i>
+
+        <input
+          id="searchProfilPenginapan"
+          type="text"
+          placeholder="Cari penginapan..."
+          autocomplete="off"
+        />
+      </div>
+
+      <!-- REFRESH -->
+
+      <button
+        id="btnRefreshProfilPenginapan"
+        class="btn btn-outline profil-refresh-btn"
+        type="button"
+      >
+        <i data-lucide="refresh-cw"></i>
+
+        <span>Refresh</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- =====================================
+       CARD GRID
+  ====================================== -->
+
+  <div id="profilPenginapanGrid" class="profil-penginapan-grid"></div>
+
+  <!-- =====================================
+       PAGINATION
+  ====================================== -->
+
+  <div id="paginationProfilPenginapan" class="profil-pagination"></div>
+</div>

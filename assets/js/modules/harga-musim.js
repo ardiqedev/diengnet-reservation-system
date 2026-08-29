@@ -5,9 +5,12 @@
 const HargaMusim = {
   editingId: null,
 
+  penginapanMap: {},
+  musimMap: {},
+
   /* =====================================
-       INIT
-    ===================================== */
+     INIT
+  ===================================== */
 
   init() {
     console.log("Harga Musim Module Loaded");
@@ -18,41 +21,82 @@ const HargaMusim = {
   },
 
   /* =====================================
-       EVENTS
-    ===================================== */
+     EVENTS
+  ===================================== */
 
   bindEvents() {
-    document.addEventListener("change", async (e) => {
-      if (e.target.id === "penginapanId") {
-        await this.loadTipeKamar(e.target.value);
-
-        document.getElementById("tipeKamarId").value = "";
-      }
-    });
+    /* Reserved for future events */
   },
 
   /* =====================================
      LOAD DATA
-===================================== */
+  ===================================== */
 
   async loadData(page = 1) {
     Loading.show();
 
     try {
-      const result = await HargaMusimService.getAll({
-        page,
-        limit: 10,
-      });
+      /*
+       * Load harga + master secara paralel
+       */
 
-      if (!result.success) {
-        Toast.error(result.message || "Gagal memuat data harga musim.");
+      const [hargaResult, penginapanResult, musimResult] = await Promise.all([
+        HargaMusimService.getAll({
+          page,
+
+          limit: 10,
+        }),
+
+        PenginapanService.getAll(),
+
+        MusimService.getAll(),
+      ]);
+
+      /* ===============================
+         VALIDASI HARGA
+      =============================== */
+
+      if (!hargaResult.success) {
+        Toast.error(hargaResult.message || "Gagal memuat data harga musim.");
+
         return;
       }
 
-      const data = result.data || {};
+      /* ===============================
+         BUILD MASTER MAP
+      =============================== */
+
+      this.buildMasterMap(penginapanResult, musimResult);
+
+      /* ===============================
+         DATA
+      =============================== */
+
+      const data = hargaResult.data || {};
+
       const rows = data.rows || [];
 
-      this.render(rows);
+      /* ===============================
+         ENRICH DATA
+      =============================== */
+
+      const enrichedRows = rows.map((row) => ({
+        ...row,
+
+        penginapan: this.getPenginapanName(row.penginapanId),
+
+        musim: this.getMusimName(row.musimId),
+      }));
+
+      /* ===============================
+         RENDER
+      =============================== */
+
+      this.render(enrichedRows);
+
+      /* ===============================
+         PAGINATION
+      =============================== */
 
       Pagination.render({
         target: "#paginationHargaMusim",
@@ -66,11 +110,11 @@ const HargaMusim = {
         },
       });
 
-      document.getElementById("totalHargaMusim").textContent =
-        data.summary?.total ?? data.total ?? rows.length;
+      /* ===============================
+         SUMMARY
+      =============================== */
 
-      document.getElementById("totalAktif").textContent =
-        data.summary?.aktif ?? 0;
+      this.renderSummary(data, enrichedRows);
     } catch (error) {
       console.error("HargaMusim.loadData:", error);
 
@@ -81,8 +125,116 @@ const HargaMusim = {
   },
 
   /* =====================================
-   RENDER TABLE
-===================================== */
+     BUILD MASTER MAP
+  ===================================== */
+
+  buildMasterMap(penginapanResult, musimResult) {
+    this.penginapanMap = {};
+
+    this.musimMap = {};
+
+    /* ===============================
+       PENGINAPAN
+    =============================== */
+
+    if (penginapanResult && penginapanResult.success) {
+      const rows = penginapanResult.data?.rows || penginapanResult.data || [];
+
+      rows.forEach((row) => {
+        if (!row.id) {
+          return;
+        }
+
+        this.penginapanMap[String(row.id)] =
+          row.nama || row.namaPenginapan || row.id;
+      });
+    }
+
+    /* ===============================
+       MUSIM
+    =============================== */
+
+    if (musimResult && musimResult.success) {
+      const rows = musimResult.data?.rows || musimResult.data || [];
+
+      rows.forEach((row) => {
+        if (!row.id) {
+          return;
+        }
+
+        this.musimMap[String(row.id)] = row.nama || row.kode || row.id;
+      });
+    }
+  },
+
+  /* =====================================
+     GET PENGINAPAN NAME
+  ===================================== */
+
+  getPenginapanName(id) {
+    if (!id) {
+      return "-";
+    }
+
+    return this.penginapanMap[String(id)] || id;
+  },
+
+  /* =====================================
+     GET MUSIM NAME
+  ===================================== */
+
+  getMusimName(id) {
+    if (!id) {
+      return "-";
+    }
+
+    return this.musimMap[String(id)] || id;
+  },
+
+  /* =====================================
+     SUMMARY
+  ===================================== */
+
+  renderSummary(data, rows) {
+    const totalElement = document.getElementById("totalHargaMusim");
+
+    const aktifElement = document.getElementById("totalAktif");
+
+    /*
+     * Jumlah penginapan yang
+     * memiliki konfigurasi harga.
+     */
+
+    const penginapanIds = new Set(
+      rows
+
+        .map((row) => String(row.penginapanId || ""))
+
+        .filter(Boolean),
+    );
+
+    const penginapanElement = document.getElementById("totalPenginapan");
+
+    if (totalElement) {
+      totalElement.textContent =
+        data.summary?.total ?? data.total ?? rows.length;
+    }
+
+    if (aktifElement) {
+      aktifElement.textContent =
+        data.summary?.aktif ??
+        rows.filter((row) => row.status === "ACTIVE").length;
+    }
+
+    if (penginapanElement) {
+      penginapanElement.textContent = penginapanIds.size;
+    }
+  },
+
+  /* =====================================
+     RENDER TABLE
+  ===================================== */
+
   render(rows) {
     Table.render({
       target: "#tableHargaMusim",
@@ -90,37 +242,43 @@ const HargaMusim = {
       columns: [
         {
           title: "Penginapan",
+
           field: "penginapan",
         },
 
         {
-          title: "Tipe Kamar",
-          field: "tipeKamar",
-        },
-
-        {
           title: "Musim",
+
           field: "musim",
         },
 
         {
           title: "Weekday",
+
           className: "text-end",
 
-          formatter: (row) =>
-            "Rp " + Number(row.hargaWeekday || 0).toLocaleString("id-ID"),
+          formatter: (row) => this.formatCurrency(row.hargaWeekday),
         },
 
         {
           title: "Weekend",
+
           className: "text-end",
 
-          formatter: (row) =>
-            "Rp " + Number(row.hargaWeekend || 0).toLocaleString("id-ID"),
+          formatter: (row) => this.formatCurrency(row.hargaWeekend),
+        },
+
+        {
+          title: "Long Weekend",
+
+          className: "text-end",
+
+          formatter: (row) => this.formatCurrency(row.hargaLongWeekend),
         },
 
         {
           title: "Status",
+
           className: "text-center",
 
           formatter: (row) => Badge.status(row.status),
@@ -128,35 +286,44 @@ const HargaMusim = {
 
         {
           title: "Aksi",
+
           className: "text-center",
 
           formatter: (row) => `
 
-          <button
-            class="btn btn-outline btn-sm"
-            onclick="HargaMusim.detail('${row.id}')">
+              <button
+                class="btn btn-outline btn-sm"
+                onclick="
+                  HargaMusim.detail('${row.id}')
+                ">
 
-            Detail
+                Detail
 
-          </button>
+              </button>
 
-          <button
-            class="btn btn-primary btn-sm"
-            onclick="HargaMusim.edit('${row.id}')">
 
-            Edit
+              <button
+                class="btn btn-primary btn-sm"
+                onclick="
+                  HargaMusim.edit('${row.id}')
+                ">
 
-          </button>
+                Edit
 
-          <button
-            class="btn btn-danger btn-sm"
-            onclick="HargaMusim.delete('${row.id}')">
+              </button>
 
-            Hapus
 
-          </button>
+              <button
+                class="btn btn-danger btn-sm"
+                onclick="
+                  HargaMusim.delete('${row.id}')
+                ">
 
-        `,
+                Hapus
+
+              </button>
+
+            `,
         },
       ],
 
@@ -166,7 +333,7 @@ const HargaMusim = {
 
   /* =====================================
      OPEN FORM
-===================================== */
+  ===================================== */
 
   async openForm(data = null) {
     Modal.open({
@@ -179,18 +346,15 @@ const HargaMusim = {
       footer: this.renderFooter(data),
     });
 
-    /* ===========================
-       LOAD DROPDOWN
-    =========================== */
+    /* ===============================
+       LOAD MASTER
+    =============================== */
 
-    await Promise.all([
-      this.loadPenginapan(),
-      this.loadTipeKamar(data ? data.penginapanId : ""),
-      this.loadMusim(),
-    ]);
-    /* ===========================
+    await Promise.all([this.loadPenginapan(), this.loadMusim()]);
+
+    /* ===============================
        EDIT MODE
-    =========================== */
+    =============================== */
 
     if (data) {
       this.editingId = data.id;
@@ -199,19 +363,13 @@ const HargaMusim = {
         {
           penginapanId: data.penginapanId,
 
-          tipeKamarId: data.tipeKamarId,
-
           musimId: data.musimId,
 
-          tanggalMulai: data.tanggalMulai,
+          hargaWeekday: data.hargaWeekday,
 
-          tanggalSelesai: data.tanggalSelesai,
+          hargaWeekend: data.hargaWeekend,
 
-          weekday: data.weekday,
-
-          weekend: data.weekend,
-
-          extraPerson: data.extraPerson,
+          hargaLongWeekend: data.hargaLongWeekend,
 
           minimalMalam: data.minimalMalam,
 
@@ -219,9 +377,9 @@ const HargaMusim = {
 
           catatan: data.catatan,
         },
+
         "#formHargaMusim",
       );
-      document.getElementById("tipeKamarId").disabled = false;
     } else {
       this.editingId = null;
     }
@@ -229,383 +387,293 @@ const HargaMusim = {
 
   /* =====================================
      RENDER FORM
-===================================== */
+  ===================================== */
 
   renderForm() {
     return `
 
-<form
-    id="formHargaMusim"
-    class="form">
+      <form
+        id="formHargaMusim"
+        class="form">
 
-    <!-- ===========================
-        INFORMASI
-    ============================ -->
 
-    <div class="form-section">
+        <!-- ===========================
+             MASTER
+        ============================ -->
 
-        <div class="form-section-title">
+        <div class="form-section">
 
+          <div class="form-section-title">
             Informasi Harga
+          </div>
+
+
+          <div class="form-grid">
+
+
+            <div class="form-row">
+
+              <label class="form-label">
+
+                Penginapan
+
+                <span>*</span>
+
+              </label>
+
+
+              <select
+                id="penginapanId"
+                class="form-control">
+
+                <option value="">
+                  Pilih Penginapan
+                </option>
+
+              </select>
+
+            </div>
+
+
+            <div class="form-row">
+
+              <label class="form-label">
+
+                Musim
+
+                <span>*</span>
+
+              </label>
+
+
+              <select
+                id="musimId"
+                class="form-control">
+
+                <option value="">
+                  Pilih Musim
+                </option>
+
+              </select>
+
+            </div>
+
+
+          </div>
 
         </div>
 
-        <div class="form-grid">
+
+        <!-- ===========================
+             HARGA
+        ============================ -->
+
+        <div class="form-section">
+
+          <div class="form-section-title">
+            Tarif
+          </div>
+
+
+          <div class="form-grid">
+
 
             <div class="form-row">
 
-                <label class="form-label">
+              <label class="form-label">
 
-                    Penginapan
+                Harga Weekday
 
-                    <span>*</span>
+                <span>*</span>
 
-                </label>
+              </label>
 
-                <select
-                    id="penginapanId"
-                    class="form-control">
 
-                    <option value="">
-
-                        Pilih Penginapan
-
-                    </option>
-
-                </select>
+              <input
+                id="hargaWeekday"
+                type="number"
+                min="0"
+                class="form-control"
+                placeholder="350000">
 
             </div>
 
+
             <div class="form-row">
 
-                <label class="form-label">
+              <label class="form-label">
 
-                    Tipe Kamar
+                Harga Weekend
 
-                    <span>*</span>
+                <span>*</span>
 
-                </label>               
+              </label>
 
-                <select
-                    id="tipeKamarId"
-                    class="form-control"
-                    disabled>
 
-                    <option value="">
-
-                        Pilih Penginapan Dahulu
-
-                    </option>
-
-                </select>
+              <input
+                id="hargaWeekend"
+                type="number"
+                min="0"
+                class="form-control"
+                placeholder="450000">
 
             </div>
 
+
             <div class="form-row">
 
-                <label class="form-label">
+              <label class="form-label">
 
-                    Musim
+                Harga Long Weekend
 
-                    <span>*</span>
+                <span>*</span>
 
-                </label>
+              </label>
 
-                <select
-                    id="musimId"
-                    class="form-control">
 
-                    <option value="">
+              <input
+                id="hargaLongWeekend"
+                type="number"
+                min="0"
+                class="form-control"
+                placeholder="500000">
 
-                        Pilih Musim
+            </div>
 
-                    </option>
 
-                </select>
+            <div class="form-row">
 
-            </div>            
+              <label class="form-label">
+
+                Minimal Menginap
+
+              </label>
+
+
+              <input
+                id="minimalMalam"
+                type="number"
+                min="1"
+                class="form-control"
+                value="1">
+
+            </div>
+
+
+            <div class="form-row">
+
+              <label class="form-label">
+
+                Status
+
+              </label>
+
+
+              <select
+                id="status"
+                class="form-control">
+
+                <option value="ACTIVE">
+                  Aktif
+                </option>
+
+                <option value="INACTIVE">
+                  Non Aktif
+                </option>
+
+              </select>
+
+            </div>
+
+
+          </div>
 
         </div>
 
-    </div>
 
-    <!-- ===========================
-        PERIODE
-    ============================ -->
+        <!-- ===========================
+             CATATAN
+        ============================ -->
 
-    <div class="form-section">
+        <div class="form-section">
 
-        <div class="form-section-title">
-
-            Periode
-
-        </div>
-
-        <div class="form-grid">
-
-            <div class="form-row">
-
-                <label class="form-label">
-
-                    Tanggal Mulai
-
-                </label>
-
-                <input
-                    id="tanggalMulai"
-                    type="date"
-                    class="form-control">
-
-            </div>
-
-            <div class="form-row">
-
-                <label class="form-label">
-
-                    Tanggal Selesai
-
-                </label>
-
-                <input
-                    id="tanggalSelesai"
-                    type="date"
-                    class="form-control">
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- ===========================
-        HARGA
-    ============================ -->
-
-    <div class="form-section">
-
-        <div class="form-section-title">
-
-            Harga
-
-        </div>
-
-        <div class="form-grid">
-
-            <div class="form-row">
-
-                <label class="form-label">
-
-                    Tarif Weekday
-
-                </label>
-                
-                <input
-                    id="hargaWeekday"
-                    type="number"
-                    min="0"
-                    class="form-control"
-                    placeholder="350000">
-
-            </div>
-
-            <div class="form-row">
-
-                <label class="form-label">
-
-                    Tarif Weekend
-
-                </label>        
-
-                <input
-                    id="hargaWeekend"
-                    type="number"
-                    min="0"
-                    class="form-control"
-                    placeholder="450000">
-
-            </div>
-
-            <div class="form-row">
-
-                <label class="form-label">
-
-                    Tarif Extra Person
-
-                </label>
-
-          
-                <input
-                    id="hargaExtraBed"
-                    type="number"
-                    min="0"
-                    class="form-control"
-                    placeholder="50000">
-
-            </div>
-
-            <div class="form-row">
-
-                <label class="form-label">
-
-                    Minimal Menginap
-
-                </label>
-
-                <input
-                    id="minimalMalam"
-                    type="number"
-                    min="1"
-                    class="form-control">
-
-            </div>
-
-            <div class="form-row">
-
-                <label class="form-label">
-
-                    Status
-
-                </label>
-
-                <select
-                    id="status"
-                    class="form-control">
-
-                    <option value="Aktif">
-
-                        Aktif
-
-                    </option>
-
-                    <option value="Non Aktif">
-
-                        Non Aktif
-
-                    </option>
-
-                </select>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <!-- ===========================
-        CATATAN
-    ============================ -->
-
-    <div class="form-section">
-
-        <div class="form-section-title">
-
+          <div class="form-section-title">
             Informasi Tambahan
+          </div>
 
-        </div>
 
-        <div class="form-grid">
+          <div class="form-grid">
 
             <div class="form-row full">
 
-                <label class="form-label">
+              <label class="form-label">
+                Catatan
+              </label>
 
-                    Catatan
 
-                </label>
-
-                <textarea
-                    id="catatan"
-                    rows="4"
-                    class="form-control"></textarea>
+              <textarea
+                id="catatan"
+                rows="4"
+                class="form-control"></textarea>
 
             </div>
 
+          </div>
+
         </div>
 
-    </div>
 
-</form>
+      </form>
 
-`;
+    `;
   },
 
   /* =====================================
-       RENDER FOOTER
-    ===================================== */
-
-  /* =====================================
      RENDER FOOTER
-===================================== */
+  ===================================== */
 
   renderFooter(data) {
     return `
 
-<button
-    class="btn btn-outline"
-    onclick="Modal.close()">
+      <button
+        class="btn btn-outline"
+        onclick="Modal.close()">
 
-    Batal
+        Batal
 
-</button>
+      </button>
 
-<button
-    class="btn btn-primary"
-    onclick="HargaMusim.save()">
 
-    ${data ? "Update Harga" : "Simpan Harga"}
+      <button
+        class="btn btn-primary"
+        onclick="HargaMusim.save()">
 
-</button>
+        ${data ? "Update Harga" : "Simpan Harga"}
 
-`;
+      </button>
+
+    `;
   },
 
   /* =====================================
      LOAD PENGINAPAN
-===================================== */
+  ===================================== */
 
   async loadPenginapan() {
     const result = await PenginapanService.getAll();
 
-    if (!result.success) return;
+    if (!result.success) {
+      Toast.error(result.message || "Gagal memuat penginapan.");
+
+      return;
+    }
+
+    const rows = result.data?.rows || result.data || [];
 
     Dropdown.render({
       target: "#penginapanId",
 
       placeholder: "Pilih Penginapan",
-
-      data: result.data.rows,
-
-      valueField: "id",
-
-      textField: "nama",
-    });
-  },
-
-  /* =====================================
-     LOAD TIPE KAMAR
-===================================== */
-
-  async loadTipeKamar(penginapanId = "") {
-    const result = await TipeKamarService.getAll();
-
-    if (!result.success) return;
-
-    let rows = result.data.rows;
-
-    if (penginapanId) {
-      rows = rows.filter((item) => item.penginapanId === penginapanId);
-    }
-
-    const select = document.getElementById("tipeKamarId");
-
-    select.disabled = !penginapanId;
-
-    Dropdown.render({
-      target: "#tipeKamarId",
-
-      placeholder: penginapanId
-        ? "Pilih Tipe Kamar"
-        : "Pilih Penginapan Dahulu",
 
       data: rows,
 
@@ -616,20 +684,26 @@ const HargaMusim = {
   },
 
   /* =====================================
-   LOAD MUSIM
-===================================== */
+     LOAD MUSIM
+  ===================================== */
 
   async loadMusim() {
     const result = await MusimService.getAll();
 
-    if (!result.success) return;
+    if (!result.success) {
+      Toast.error(result.message || "Gagal memuat musim.");
+
+      return;
+    }
+
+    const rows = result.data?.rows || result.data || [];
 
     Dropdown.render({
       target: "#musimId",
 
       placeholder: "Pilih Musim",
 
-      data: result.data.rows,
+      data: rows,
 
       valueField: "id",
 
@@ -638,99 +712,77 @@ const HargaMusim = {
   },
 
   /* =====================================
-   SAVE
-===================================== */
+     SAVE
+  ===================================== */
 
   async save() {
     const data = Form.getData("#formHargaMusim");
 
     /* ===============================
-     VALIDASI
-  =============================== */
+       VALIDASI
+    =============================== */
 
     if (!data.penginapanId) {
-      Toast.warning("Pilih Penginapan");
-      return;
-    }
+      Toast.warning("Pilih Penginapan.");
 
-    if (!data.tipeKamarId) {
-      Toast.warning("Pilih Tipe Kamar");
       return;
     }
 
     if (!data.musimId) {
-      Toast.warning("Pilih Musim");
+      Toast.warning("Pilih Musim.");
+
       return;
     }
 
-    if (!data.hargaWeekday) {
-      Toast.warning("Masukkan Tarif Weekday");
+    if (data.hargaWeekday === "" || data.hargaWeekday == null) {
+      Toast.warning("Masukkan Harga Weekday.");
+
       return;
     }
 
-    if (!data.hargaWeekend) {
-      Toast.warning("Masukkan Tarif Weekend");
+    if (data.hargaWeekend === "" || data.hargaWeekend == null) {
+      Toast.warning("Masukkan Harga Weekend.");
+
       return;
     }
 
-    /* ===============================
-     GET MASTER
-  =============================== */
+    if (data.hargaLongWeekend === "" || data.hargaLongWeekend == null) {
+      Toast.warning("Masukkan Harga Long Weekend.");
 
-    const penginapan = await PenginapanService.getById(data.penginapanId);
-
-    const tipe = await TipeKamarService.getById(data.tipeKamarId);
-
-    const musim = await MusimService.getById(data.musimId);
-
-    if (!penginapan.success || !tipe.success || !musim.success) {
-      Toast.error("Data master tidak ditemukan.");
       return;
     }
 
     /* ===============================
-     MAPPING
-  =============================== */
+       PAYLOAD
+    =============================== */
 
     const payload = {
       id: this.editingId || this.generateId(),
 
       penginapanId: data.penginapanId,
 
-      penginapan: penginapan.data.nama,
-
-      tipeKamarId: data.tipeKamarId,
-
-      tipeKamar: tipe.data.nama,
-
       musimId: data.musimId,
-
-      musim: musim.data.nama,
-
-      tanggalMulai: data.tanggalMulai,
-
-      tanggalSelesai: data.tanggalSelesai,
 
       hargaWeekday: Number(data.hargaWeekday),
 
       hargaWeekend: Number(data.hargaWeekend),
 
-      hargaExtraBed: Number(data.hargaExtraBed) || 0,
+      hargaLongWeekend: Number(data.hargaLongWeekend),
 
       minimalMalam: Number(data.minimalMalam) || 1,
 
       mataUang: "IDR",
 
-      status: data.status,
+      status: data.status || "ACTIVE",
 
-      catatan: data.catatan,
+      catatan: data.catatan || "",
     };
 
     console.log("HargaMusim Payload:", payload);
 
     /* ===============================
-     SAVE
-  =============================== */
+       SAVE
+    =============================== */
 
     Loading.show();
 
@@ -744,7 +796,8 @@ const HargaMusim = {
       }
 
       if (!result.success) {
-        Toast.error(result.message);
+        Toast.error(result.message || "Gagal menyimpan harga musim.");
+
         return;
       }
 
@@ -755,22 +808,18 @@ const HargaMusim = {
       this.editingId = null;
 
       await this.loadData();
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error("HargaMusim.save:", error);
 
-      Toast.error(err.message || "Terjadi kesalahan.");
+      Toast.error(error.message || "Terjadi kesalahan.");
     } finally {
       Loading.hide();
     }
   },
 
   /* =====================================
-       DETAIL
-    ===================================== */
-
-  /* =====================================
      DETAIL
-===================================== */
+  ===================================== */
 
   async detail(id) {
     const result = await HargaMusimService.getById(id);
@@ -783,6 +832,10 @@ const HargaMusim = {
 
     const d = result.data;
 
+    const penginapan = d.penginapan || this.getPenginapanName(d.penginapanId);
+
+    const musim = d.musim || this.getMusimName(d.musimId);
+
     Detail.open({
       title: "Detail Harga Musim",
 
@@ -794,19 +847,13 @@ const HargaMusim = {
             {
               label: "Penginapan",
 
-              value: d.penginapan,
-            },
-
-            {
-              label: "Tipe Kamar",
-
-              value: d.tipeKamar,
+              value: penginapan,
             },
 
             {
               label: "Musim",
 
-              value: d.musim,
+              value: musim,
             },
 
             {
@@ -818,61 +865,37 @@ const HargaMusim = {
         },
 
         {
-          title: "Periode",
+          title: "Tarif",
 
           fields: [
             {
-              label: "Tanggal Mulai",
+              label: "Weekday",
 
-              value: d.tanggalMulai,
+              value: this.formatCurrency(d.hargaWeekday),
             },
 
             {
-              label: "Tanggal Selesai",
+              label: "Weekend",
 
-              value: d.tanggalSelesai,
+              value: this.formatCurrency(d.hargaWeekend),
+            },
+
+            {
+              label: "Long Weekend",
+
+              value: this.formatCurrency(d.hargaLongWeekend),
             },
 
             {
               label: "Minimal Menginap",
 
-              value: d.minimalMalam + " Malam",
+              value: `${d.minimalMalam || 1} Malam`,
             },
-          ],
-        },
 
-        {
-          title: "Harga",
-
-          fields: [
             {
-              title: "Harga",
+              label: "Mata Uang",
 
-              fields: [
-                {
-                  label: "Weekday",
-                  value:
-                    "Rp " + Number(d.hargaWeekday || 0).toLocaleString("id-ID"),
-                },
-
-                {
-                  label: "Weekend",
-                  value:
-                    "Rp " + Number(d.hargaWeekend || 0).toLocaleString("id-ID"),
-                },
-
-                {
-                  label: "Extra Person",
-                  value:
-                    "Rp " +
-                    Number(d.hargaExtraBed || 0).toLocaleString("id-ID"),
-                },
-
-                {
-                  label: "Mata Uang",
-                  value: d.mataUang || "IDR",
-                },
-              ],
+              value: d.mataUang || "IDR",
             },
           ],
         },
@@ -895,12 +918,8 @@ const HargaMusim = {
   },
 
   /* =====================================
-       EDIT
-    ===================================== */
-
-  /* =====================================
      EDIT
-===================================== */
+  ===================================== */
 
   async edit(id) {
     const result = await HargaMusimService.getById(id);
@@ -911,12 +930,12 @@ const HargaMusim = {
       return;
     }
 
-    this.openForm(result.data);
+    await this.openForm(result.data);
   },
 
   /* =====================================
-       DELETE
-    ===================================== */
+     DELETE
+  ===================================== */
 
   async delete(id) {
     Confirm.open({
@@ -939,15 +958,24 @@ const HargaMusim = {
           return;
         }
 
-        Toast.success("Harga musim berhasil dihapus.");
+        Toast.success(result.message || "Harga musim berhasil dihapus.");
 
-        this.loadData();
+        await this.loadData();
       },
     });
   },
+
   /* =====================================
-       GENERATE ID
-    ===================================== */
+     FORMAT CURRENCY
+  ===================================== */
+
+  formatCurrency(value) {
+    return "Rp " + Number(value || 0).toLocaleString("id-ID");
+  },
+
+  /* =====================================
+     GENERATE ID
+  ===================================== */
 
   generateId() {
     return "HM" + Date.now();

@@ -7,31 +7,29 @@ const ReservasiService = {
      GET ALL
   ===================================== */
 
-  async getAll(page = 1) {
-    return ReservasiDummy.getAll(page);
-  },
+  async getAll(filters = {}) {
+    return API.post("reservation.list", {
+      search: filters.search || "",
 
-  /* =====================================
-     GET PENGINAPAN
-  ===================================== */
+      status: filters.status || "",
 
-  async getPenginapan() {
-    return ReservasiDummy.getPenginapan();
-  },
+      channel: filters.channel || "",
 
-  /* =====================================
-     GET CHANNEL
-  ===================================== */
+      penginapanId: filters.penginapanId || "",
 
-  async getChannel() {
-    return ReservasiDummy.getChannel();
+      unitId: filters.unitId || "",
+
+      tanggal: filters.tanggal || "",
+
+      limit: filters.limit || ReservasiDefault.LIMIT,
+    });
   },
 
   /* =====================================
      SEARCH ROOM
   ===================================== */
 
-  async searchRoom(filter) {
+  async searchRoom(filter = {}) {
     return ReservasiAvailability.search(filter);
   },
 
@@ -39,16 +37,24 @@ const ReservasiService = {
      SAVE
   ===================================== */
 
-  async save(data) {
-    return ReservasiDummy.save(data);
+  async save(data = {}) {
+    return API.post("reservation.store", data);
   },
 
   /* =====================================
-   GET BY ID
-===================================== */
+     GET BY ID
+  ===================================== */
 
   async getById(id) {
-    return ReservasiDummy.getById(id);
+    const reservationId = String(id || "").trim();
+
+    if (!reservationId) {
+      throw new Error("ID reservasi wajib diisi.");
+    }
+
+    return API.post("reservation.detail", {
+      id: reservationId,
+    });
   },
 
   /* =====================================
@@ -56,6 +62,94 @@ const ReservasiService = {
   ===================================== */
 
   async delete(id) {
-    return ReservasiDummy.delete(id);
+    const reservationId = String(id || "").trim();
+
+    if (!reservationId) {
+      throw new Error("ID reservasi wajib diisi.");
+    }
+
+    return API.post("reservation.delete", {
+      id: reservationId,
+    });
+  },
+
+  /* =====================================
+     BOOK
+  ===================================== */
+
+  async book(id) {
+    const reservationId = String(id || "").trim();
+
+    if (!reservationId) {
+      throw new Error("ID reservasi wajib diisi.");
+    }
+
+    return API.post("reservation.book", {
+      id: reservationId,
+    });
+  },
+
+  /* =====================================
+     CHECK IN
+     
+     Frontend hanya meneruskan request
+     ke backend.
+
+     Validasi final dilakukan oleh:
+     
+     ReservationController
+            ↓
+     ReservationService
+            ↓
+     PaymentService
+            ↓
+     Repository
+  ===================================== */
+
+  async checkIn(id) {
+    const reservationId = String(id || "").trim();
+
+    if (!reservationId) {
+      throw new Error("ID reservasi wajib diisi.");
+    }
+
+    return API.post("reservation.checkin", {
+      id: reservationId,
+    });
+  },
+
+  /* =====================================
+     CHECK OUT
+     
+     Frontend hanya meneruskan request
+     ke backend.
+  ===================================== */
+
+  async checkOut(id) {
+    const reservationId = String(id || "").trim();
+
+    if (!reservationId) {
+      throw new Error("ID reservasi wajib diisi.");
+    }
+
+    return API.post("reservation.checkout", {
+      id: reservationId,
+    });
+  },
+
+  /* =====================================
+     EXPIRE
+  ===================================== */
+
+  async expire(id) {
+    const reservationId = String(id || "").trim();
+
+    if (!reservationId) {
+      throw new Error("ID reservasi wajib diisi.");
+    }
+
+    return API.post("reservation.expire", {
+      id: reservationId,
+    });
   },
 };

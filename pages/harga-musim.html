@@ -4,14 +4,14 @@
 
 <div class="page">
   <!-- =====================================
-         HEADER
-    ====================================== -->
+       HEADER
+  ====================================== -->
 
   <div class="page-header">
     <div>
       <h1>Master Harga Musim</h1>
 
-      <p>Kelola harga kamar berdasarkan musim, periode, dan tipe kamar.</p>
+      <p>Kelola tarif penginapan berdasarkan musim dan periode tarif.</p>
     </div>
 
     <button class="btn btn-primary" onclick="HargaMusim.openForm()">
@@ -22,13 +22,13 @@
   </div>
 
   <!-- =====================================
-         SUMMARY
-    ====================================== -->
+       SUMMARY
+  ====================================== -->
 
   <div class="stats-grid">
-    <!-- =====================================
-       TOTAL HARGA MUSIM
-  ====================================== -->
+    <!-- ===================================
+         TOTAL HARGA MUSIM
+    ==================================== -->
 
     <div class="card stat-card">
       <div class="stat-content">
@@ -42,9 +42,9 @@
       </div>
     </div>
 
-    <!-- =====================================
-       HARGA AKTIF
-  ====================================== -->
+    <!-- ===================================
+         HARGA AKTIF
+    ==================================== -->
 
     <div class="card stat-card">
       <div class="stat-content">
@@ -58,26 +58,26 @@
       </div>
     </div>
 
-    <!-- =====================================
-       TOTAL CHANNEL
-  ====================================== -->
+    <!-- ===================================
+         TOTAL PENGINAPAN
+    ==================================== -->
 
     <div class="card stat-card">
       <div class="stat-content">
-        <div class="stat-title">Total Channel</div>
+        <div class="stat-title">Penginapan Bertarif</div>
 
-        <div id="totalChannel" class="stat-value">0</div>
+        <div id="totalPenginapan" class="stat-value">0</div>
       </div>
 
       <div class="stat-icon">
-        <i data-lucide="network"></i>
+        <i data-lucide="house"></i>
       </div>
     </div>
   </div>
 
   <!-- =====================================
-         TOOLBAR
-    ====================================== -->
+       TOOLBAR
+  ====================================== -->
 
   <div class="card">
     <div class="toolbar">
@@ -94,8 +94,8 @@
   </div>
 
   <!-- =====================================
-         TABLE
-    ====================================== -->
+       TABLE
+  ====================================== -->
 
   <div class="card">
     <div id="tableHargaMusim"></div>

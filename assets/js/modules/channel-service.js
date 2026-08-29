@@ -7,54 +7,30 @@ const ChannelService = {
      GET ALL
   ===================================== */
 
-  async getAll(payload = {}) {
-    return API.post("channel.list", {
-      page: payload.page || 1,
+  async getAll() {
+    return {
+      success: true,
 
-      limit: payload.limit || 100,
+      message: "Data channel berhasil diambil.",
 
-      keyword: payload.keyword || "",
+      data: [
+        {
+          id: "WEBSITE",
+          nama: "Website",
+        },
 
-      status: payload.status || "",
-    });
-  },
+        {
+          id: "OWNER",
+          nama: "Owner",
+        },
 
-  /* =====================================
-     GET BY ID
-  ===================================== */
+        {
+          id: "AGEN",
+          nama: "Agen",
+        },
+      ],
 
-  async getById(id) {
-    return API.post("channel.detail", {
-      id,
-    });
-  },
-
-  /* =====================================
-     CREATE
-  ===================================== */
-
-  async create(data) {
-    return API.post("channel.store", data);
-  },
-
-  /* =====================================
-     UPDATE
-  ===================================== */
-
-  async update(id, data) {
-    return API.post("channel.update", {
-      id,
-      ...data,
-    });
-  },
-
-  /* =====================================
-     DELETE
-  ===================================== */
-
-  async delete(id) {
-    return API.post("channel.delete", {
-      id,
-    });
+      meta: {},
+    };
   },
 };

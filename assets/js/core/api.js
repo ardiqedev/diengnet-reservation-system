@@ -83,17 +83,3 @@ API.request = async function (action, data = {}) {
 API.post = function (action, data = {}) {
   return this.request(action, data);
 };
-
-API.post("booking.price", {
-  penginapanId: "PGN0001",
-
-  tipeKamarId: "TPK0001",
-
-  checkIn: "2026-08-20",
-
-  checkOut: "2026-08-23",
-
-  jumlahTamu: 2,
-}).then((result) => {
-  console.log("BOOKING PRICE RESULT:", result);
-});

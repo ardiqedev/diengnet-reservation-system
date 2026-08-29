@@ -3,40 +3,54 @@
    PUBLIC — PENGINAPAN DETAIL
    ============================================================
 
-   Responsibility:
+   PUBLIC RESERVATION WIZARD
 
-   - Read slug from URL
-   - Load penginapan detail
-   - Load active room types
-   - Render cover
-   - Render information
-   - Render rooms
-   - Booking Bottom Sheet
-   - Price calculation via booking.price
-   - Loading state
-   - Error state
-   - Mobile menu
-
-   Architecture:
+   FLOW:
 
    URL
     ↓
-   PublicPenginapanDetail
-    ↓
-   API.post()
-    ↓
    penginapan.detail
-   tipe-kamar.active
+    ↓
+   STEP 1
+   Search
+    ↓
+   reservation.availability
+    ↓
+   STEP 2
+   Choose Unit
+    ↓
    booking.price
+    ↓
+   STEP 3
+   Guest Information
+    ↓
+   STEP 4
+   Confirmation
+    ↓
+   reservation.store
+    ↓
+   DRAFT + HOLD
 
    IMPORTANT:
 
    - Tidak menggunakan Dummy
    - Tidak menggunakan Service langsung
-   - Tidak menggunakan Repository langsung
+   - Tidak menggunakan Repository
+   - Semua request melalui API
+   - Harga final selalu ditentukan backend
+   - Unit menggunakan unitId
+   - Channel public = WEBSITE
    ============================================================ */
 
 const PublicPenginapanDetail = (() => {
+  /* ==========================================================
+     CONSTANT
+  ========================================================== */
+
+  const CHANNEL = "WEBSITE";
+
+  const TOTAL_STEPS = 4;
+
   /* ==========================================================
      STATE
   ========================================================== */
@@ -46,26 +60,60 @@ const PublicPenginapanDetail = (() => {
 
     penginapan: null,
 
-    rooms: [],
+    step: 1,
 
     loading: false,
 
     error: null,
+
+    units: [],
+
+    selectedUnit: null,
+
+    pricing: null,
+
+    searching: false,
+
+    pricingLoading: false,
+
+    pricingRequest: null,
+
+    submitting: false,
 
     booking: {
       checkIn: "",
 
       checkOut: "",
 
-      guests: 2,
+      dewasa: 2,
 
-      selectedRoom: null,
+      anak: 0,
 
-      pricing: null,
+      namaTamu: "",
 
-      loading: false,
+      noHp: "",
 
-      error: null,
+      email: "",
+
+      catatan: "",
+    },
+
+    result: null,
+
+    payment: {
+      paymentDate: "",
+      paymentMethod: "TRANSFER",
+      paymentAmount: 0,
+      paymentReference: "",
+      paymentNote: "",
+
+      proofFile: null,
+      proofFileName: "",
+      proofMimeType: "",
+      proofPreviewUrl: "",
+
+      proofUploading: false,
+      submitting: false,
     },
   };
 
@@ -86,28 +134,19 @@ const PublicPenginapanDetail = (() => {
 
     initMobileMenu();
 
-    initBookingEvents();
-
     state.slug = getSlugFromUrl();
 
     console.log("[PublicPenginapanDetail] Slug:", state.slug);
-
-    /*
-     * Booking sheet harus selalu
-     * tertutup saat halaman pertama kali
-     * dibuka.
-     */
-
-    closeBookingSheet({
-      reset: false,
-      restoreFocus: false,
-    });
 
     if (!state.slug) {
       showError("Slug penginapan tidak ditemukan.");
 
       return;
     }
+
+    setDefaultDates();
+
+    renderWizard();
 
     await load();
   }
@@ -117,10 +156,6 @@ const PublicPenginapanDetail = (() => {
   ========================================================== */
 
   function cacheDom() {
-    /* ======================================================
-       DETAIL DOM
-    ====================================================== */
-
     dom.loading = document.getElementById("detailLoading");
 
     dom.content = document.getElementById("detailContent");
@@ -143,53 +178,17 @@ const PublicPenginapanDetail = (() => {
 
     dom.meta = document.getElementById("detailMeta");
 
-    dom.roomList = document.getElementById("roomList");
+    dom.stepper = document.getElementById("wizardStepper");
 
-    /* ======================================================
-       MOBILE MENU
-    ====================================================== */
+    dom.wizardContent = document.getElementById("wizardContent");
+
+    dom.wizardError = document.getElementById("wizardError");
+
+    dom.wizardFooter = document.getElementById("wizardFooter");
 
     dom.mobileMenuBtn = document.getElementById("mobileMenuBtn");
 
     dom.mobileMenu = document.getElementById("mobileMenu");
-
-    /* ======================================================
-       BOOKING SHEET
-    ====================================================== */
-
-    dom.bookingSheet = document.getElementById("bookingSheet");
-
-    dom.bookingSheetBackdrop = document.getElementById("bookingSheetBackdrop");
-
-    dom.bookingSheetClose = document.getElementById("bookingSheetClose");
-
-    dom.bookingSection = document.getElementById("bookingSection");
-
-    dom.bookingPanel = document.getElementById("bookingPanel");
-
-    dom.bookingSelectedRoom = document.getElementById("bookingSelectedRoom");
-
-    dom.bookingRoomName = document.getElementById("bookingRoomName");
-
-    dom.bookingCheckIn = document.getElementById("bookingCheckIn");
-
-    dom.bookingCheckOut = document.getElementById("bookingCheckOut");
-
-    dom.bookingGuests = document.getElementById("bookingGuests");
-
-    dom.bookingPriceResult = document.getElementById("bookingPriceResult");
-
-    dom.bookingNightCount = document.getElementById("bookingNightCount");
-
-    dom.bookingNightList = document.getElementById("bookingNightList");
-
-    dom.bookingTotal = document.getElementById("bookingTotal");
-
-    dom.bookingError = document.getElementById("bookingError");
-
-    dom.bookingPriceButton = document.getElementById("bookingPriceButton");
-
-    dom.bookingSubmitButton = document.getElementById("bookingSubmitButton");
   }
 
   /* ==========================================================
@@ -203,7 +202,7 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
-     LOAD
+     LOAD PROPERTY
   ========================================================== */
 
   async function load() {
@@ -216,19 +215,11 @@ const PublicPenginapanDetail = (() => {
     showLoading();
 
     try {
-      /* =====================================================
-         1. LOAD PENGINAPAN
-      ===================================================== */
-
-      console.log("[PublicPenginapanDetail] Request penginapan.detail:", {
-        slug: state.slug,
-      });
-
       const result = await API.post("penginapan.detail", {
         slug: state.slug,
       });
 
-      console.log("[PublicPenginapanDetail] Penginapan result:", result);
+      console.log("[PublicPenginapanDetail] Property:", result);
 
       const penginapan = result?.data || null;
 
@@ -238,53 +229,11 @@ const PublicPenginapanDetail = (() => {
 
       state.penginapan = penginapan;
 
-      /* =====================================================
-         2. LOAD ACTIVE ROOM
-      ===================================================== */
-
-      console.log("[PublicPenginapanDetail] Request tipe-kamar.active:", {
-        penginapanId: penginapan.id,
-      });
-
-      const roomResult = await API.post("tipe-kamar.active", {
-        penginapanId: penginapan.id,
-      });
-
-      console.log("[PublicPenginapanDetail] Room result:", roomResult);
-
-      const roomData = roomResult?.data || {};
-
-      /*
-       * Backend bisa mengembalikan:
-       *
-       * [
-       *   ...
-       * ]
-       *
-       * atau:
-       *
-       * {
-       *   rows: []
-       * }
-       */
-
-      if (Array.isArray(roomData)) {
-        state.rooms = roomData;
-      } else {
-        state.rooms = Array.isArray(roomData.rows) ? roomData.rows : [];
-      }
-
-      console.log("[PublicPenginapanDetail] Rooms:", state.rooms);
-
-      /* =====================================================
-         3. RENDER
-      ===================================================== */
-
-      render();
+      renderProperty();
     } catch (error) {
       console.error("[PublicPenginapanDetail] Load error:", error);
 
-      state.error = error?.message || "Gagal memuat detail penginapan.";
+      state.error = error?.message || "Gagal memuat penginapan.";
 
       showError(state.error);
     } finally {
@@ -295,10 +244,10 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
-     RENDER
+     RENDER PROPERTY
   ========================================================== */
 
-  function render() {
+  function renderProperty() {
     const item = state.penginapan;
 
     if (!item) {
@@ -313,8 +262,6 @@ const PublicPenginapanDetail = (() => {
 
     renderMeta(item);
 
-    renderRooms(state.rooms);
-
     hideError();
 
     if (dom.content) {
@@ -324,6 +271,10 @@ const PublicPenginapanDetail = (() => {
     if (dom.footer) {
       dom.footer.hidden = false;
     }
+
+    renderWizard();
+
+    createIcons();
   }
 
   /* ==========================================================
@@ -362,8 +313,8 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
-   INFO
-========================================================== */
+     INFO
+  ========================================================== */
 
   function renderInfo(item = {}) {
     if (dom.location) {
@@ -376,6 +327,11 @@ const PublicPenginapanDetail = (() => {
 
     if (dom.type) {
       dom.type.textContent = item.jenis || item.kategori || "Penginapan";
+    }
+
+    if (dom.description) {
+      dom.description.textContent =
+        item.deskripsi || "Nikmati pengalaman menginap di Dieng.";
     }
 
     updateDocumentTitle(item.nama);
@@ -398,96 +354,354 @@ const PublicPenginapanDetail = (() => {
 
     dom.meta.innerHTML = `
 
-    <div class="stay-detail-meta-item">
+      <div class="stay-detail-meta-item">
 
-      <span class="stay-detail-meta-label">
-        Address
-      </span>
+        <span class="stay-detail-meta-label">
+          Address
+        </span>
 
-      <span class="stay-detail-meta-value">
-        ${escapeHtml(address)}
-      </span>
+        <span class="stay-detail-meta-value">
+          ${escapeHtml(address)}
+        </span>
 
+        ${
+          mapQuery
+            ? `
 
-      ${
-        mapQuery
-          ? `
+              <div class="stay-map-card">
 
-            <!-- =========================================
-                 GOOGLE MAPS
-            ========================================== -->
+                <iframe
+                  src="https://www.google.com/maps?q=${encodeURIComponent(
+                    mapQuery,
+                  )}&output=embed"
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  allowfullscreen
+                ></iframe>
 
-            <div class="stay-map-card">
+                <div class="stay-map-footer">
 
-              <iframe
-                src="https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"
-                allowfullscreen
-              ></iframe>
+                  <span class="stay-map-label">
+                    Lokasi Penginapan
+                  </span>
 
+                  ${
+                    mapsUrl
+                      ? `
 
-              <div class="stay-map-footer">
+                        <a
+                          href="${escapeAttribute(mapsUrl)}"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="stay-map-button"
+                        >
+                          Buka Google Maps
+                          <span aria-hidden="true">
+                            ↗
+                          </span>
+                        </a>
 
-                <span class="stay-map-label">
-                  Lokasi Penginapan
-                </span>
+                      `
+                      : ""
+                  }
 
-                ${
-                  mapsUrl
-                    ? `
-                      <a
-                        href="${escapeAttribute(mapsUrl)}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="stay-map-button"
-                      >
-                        Buka Google Maps
-                        <span aria-hidden="true">↗</span>
-                      </a>
-                    `
-                    : ""
-                }
+                </div>
 
               </div>
 
-            </div>
+            `
+            : ""
+        }
 
-          `
-          : ""
-      }
+      </div>
 
-    </div>
-
-  `;
+    `;
   }
 
   /* ==========================================================
-     ROOMS
+     WIZARD
   ========================================================== */
 
-  function renderRooms(rooms = []) {
-    if (!dom.roomList) {
+  function renderWizard() {
+    updateStepper();
+
+    if (!dom.wizardContent) {
       return;
     }
 
-    if (!rooms.length) {
-      dom.roomList.innerHTML = `
+    clearWizardError();
 
-        <div class="room-card">
+    switch (state.step) {
+      case 1:
+        renderStep1();
 
-          <div class="room-card-top">
+        break;
 
-            <h3>
-              Room information
-            </h3>
+      case 2:
+        renderStep2();
+
+        break;
+
+      case 3:
+        renderStep3();
+
+        break;
+
+      case 4:
+        renderStep4();
+
+        break;
+
+      default:
+        state.step = 1;
+
+        renderStep1();
+    }
+
+    renderWizardFooter();
+
+    createIcons();
+  }
+
+  /* ==========================================================
+     STEPPER
+  ========================================================== */
+
+  function updateStepper() {
+    if (!dom.stepper) {
+      return;
+    }
+
+    dom.stepper
+      .querySelectorAll(".public-wizard-step")
+      .forEach((stepElement) => {
+        const step = Number(stepElement.dataset.step);
+
+        stepElement.classList.toggle("active", step === state.step);
+
+        stepElement.classList.toggle("completed", step < state.step);
+      });
+  }
+
+  /* ==========================================================
+     STEP 1
+  ========================================================== */
+
+  function renderStep1() {
+    dom.wizardContent.innerHTML = `
+
+      <div class="public-wizard-panel">
+
+        <div class="public-wizard-panel-heading">
+
+          <span class="eyebrow eyebrow-dark">
+            STEP 1
+          </span>
+
+          <h3>
+            Find your stay
+          </h3>
+
+          <p>
+            Choose your dates and number of guests.
+          </p>
+
+        </div>
+
+
+        <div class="booking-fields">
+
+          <!-- CHECK IN -->
+
+          <div class="booking-field">
+
+            <label
+              for="wizardCheckIn"
+            >
+              CHECK-IN
+            </label>
+
+            <input
+              type="date"
+              id="wizardCheckIn"
+              value="${escapeAttribute(state.booking.checkIn)}"
+            />
 
           </div>
 
-          <p class="room-description">
-            Belum ada tipe kamar aktif
-            untuk penginapan ini.
-          </p>
+
+          <!-- CHECK OUT -->
+
+          <div class="booking-field">
+
+            <label
+              for="wizardCheckOut"
+            >
+              CHECK-OUT
+            </label>
+
+            <input
+              type="date"
+              id="wizardCheckOut"
+              value="${escapeAttribute(state.booking.checkOut)}"
+            />
+
+          </div>
+
+
+          <!-- ADULT -->
+
+          <div class="booking-field">
+
+            <label
+              for="wizardDewasa"
+            >
+              ADULTS
+            </label>
+
+            <select
+              id="wizardDewasa"
+            >
+
+              ${renderGuestOptions(state.booking.dewasa, 1, 10)}
+
+            </select>
+
+          </div>
+
+
+          <!-- CHILD -->
+
+          <div class="booking-field">
+
+            <label
+              for="wizardAnak"
+            >
+              CHILDREN
+            </label>
+
+            <select
+              id="wizardAnak"
+            >
+
+              ${renderGuestOptions(state.booking.anak, 0, 10)}
+
+            </select>
+
+          </div>
+
+        </div>
+
+
+        <div class="public-wizard-note">
+
+          <i
+            data-lucide="info"
+            aria-hidden="true"
+          ></i>
+
+          <span>
+            Ketersediaan unit akan dicek berdasarkan
+            tanggal dan kapasitas tamu.
+          </span>
+
+        </div>
+
+      </div>
+
+    `;
+
+    bindStep1Events();
+  }
+
+  /* ==========================================================
+     STEP 1 EVENTS
+  ========================================================== */
+
+  function bindStep1Events() {
+    const checkIn = document.getElementById("wizardCheckIn");
+
+    const checkOut = document.getElementById("wizardCheckOut");
+
+    const dewasa = document.getElementById("wizardDewasa");
+
+    const anak = document.getElementById("wizardAnak");
+
+    if (checkIn) {
+      checkIn.addEventListener("change", () => {
+        state.booking.checkIn = checkIn.value;
+
+        updateCheckoutMin();
+      });
+    }
+
+    if (checkOut) {
+      checkOut.addEventListener("change", () => {
+        state.booking.checkOut = checkOut.value;
+      });
+    }
+
+    if (dewasa) {
+      dewasa.addEventListener("change", () => {
+        state.booking.dewasa = Number(dewasa.value) || 1;
+      });
+    }
+
+    if (anak) {
+      anak.addEventListener("change", () => {
+        state.booking.anak = Number(anak.value) || 0;
+      });
+    }
+
+    updateCheckoutMin();
+  }
+
+  /* ==========================================================
+     STEP 2
+  ========================================================== */
+
+  function renderStep2() {
+    const units = state.units;
+
+    if (!units.length) {
+      dom.wizardContent.innerHTML = `
+
+        <div class="public-wizard-panel">
+
+          <div class="public-wizard-panel-heading">
+
+            <span class="eyebrow eyebrow-dark">
+              STEP 2
+            </span>
+
+            <h3>
+              No unit available
+            </h3>
+
+            <p>
+              Tidak ada unit yang tersedia
+              untuk tanggal dan jumlah tamu tersebut.
+            </p>
+
+          </div>
+
+
+          <div class="public-wizard-empty">
+
+            <i
+              data-lucide="calendar-x"
+              aria-hidden="true"
+            ></i>
+
+            <strong>
+              Tidak ada unit tersedia.
+            </strong>
+
+            <span>
+              Coba tanggal atau jumlah tamu yang berbeda.
+            </span>
+
+          </div>
 
         </div>
 
@@ -496,594 +710,2447 @@ const PublicPenginapanDetail = (() => {
       return;
     }
 
-    dom.roomList.innerHTML = rooms
-      .map((room, index) => renderRoomCard(room, index))
-      .join("");
+    dom.wizardContent.innerHTML = `
 
-    bindRoomButtons();
-  }
+      <div class="public-wizard-panel">
 
-  /* ==========================================================
-     ROOM CARD
-  ========================================================== */
+        <div class="public-wizard-panel-heading">
 
-  function renderRoomCard(room = {}, index = 0) {
-    /* =====================================
-     BASIC DATA
-  ===================================== */
-
-    const nama = room.nama || "Tipe Kamar";
-
-    const roomId = room.id || room.tipeKamarId || "";
-
-    const fotoUrl = room.fotoUrl || "";
-
-    const deskripsi = room.deskripsi || "";
-
-    const fasilitas = normalizeFasilitas(room.fasilitas);
-
-    /* =====================================
-     KAPASITAS
-  ===================================== */
-
-    const kapasitasDewasa = Number(room.kapasitasDewasa) || 0;
-
-    const kapasitasAnak = Number(room.kapasitasAnak) || 0;
-
-    /* =====================================
-     BED
-  ===================================== */
-
-    const jumlahBed = Number(room.jumlahBed) || 0;
-
-    const jenisBed = room.jenisBed || "";
-
-    /* =====================================
-     LUAS
-  ===================================== */
-
-    const luas = Number(room.luas) || 0;
-
-    /* =====================================
-     ROOM NUMBER
-  ===================================== */
-
-    const roomNumber = String(index + 1).padStart(2, "0");
-
-    /* =====================================
-     CAPACITY TEXT
-  ===================================== */
-
-    let capacityText = "";
-
-    if (kapasitasDewasa) {
-      capacityText += `${kapasitasDewasa} Dewasa`;
-    }
-
-    if (kapasitasAnak) {
-      capacityText += capacityText
-        ? ` • ${kapasitasAnak} Anak`
-        : `${kapasitasAnak} Anak`;
-    }
-
-    /* =====================================
-     BED TEXT
-  ===================================== */
-
-    let bedText = "";
-
-    if (jumlahBed) {
-      bedText = `${jumlahBed} ${jenisBed}`;
-    } else {
-      bedText = jenisBed;
-    }
-
-    /* =====================================
-     IMAGE
-  ===================================== */
-
-    const imageHtml = fotoUrl
-      ? `
-
-      <div class="room-card-image">
-
-        <img
-          src="${escapeAttribute(fotoUrl)}"
-          alt="${escapeAttribute(nama)}"
-          loading="lazy"
-          onerror="this.parentElement.style.display='none'"
-        />
-
-      </div>
-
-    `
-      : "";
-
-    /* =====================================
-     RENDER
-  ===================================== */
-
-    return `
-
-    <article
-      class="room-card"
-      data-room-id="${escapeAttribute(roomId)}"
-    >
-
-      ${imageHtml}
-
-
-      <!-- =================================
-           HEADER
-      ================================== -->
-
-      <div class="room-card-header">
-
-        <div>
-
-          <span class="room-card-number">
-            ${roomNumber}
+          <span class="eyebrow eyebrow-dark">
+            STEP 2
           </span>
 
-          <h3 class="room-card-title">
-            ${escapeHtml(nama)}
+          <h3>
+            Choose your unit
           </h3>
+
+          <p>
+            ${units.length}
+            unit tersedia untuk pilihan Anda.
+          </p>
 
         </div>
 
-        <span class="room-status available">
-          Available
+
+        <div class="public-unit-list">
+
+          ${units.map((unit, index) => renderUnitCard(unit, index)).join("")}
+
+        </div>
+
+      </div>
+
+    `;
+
+    bindUnitEvents();
+  }
+
+  /* ==========================================================
+     UNIT CARD
+  ========================================================== */
+
+  function renderUnitCard(unit = {}, index = 0) {
+    const id = unit.id || "";
+
+    const nama = unit.nama || "Unit";
+
+    const tipe = unit.tipe || "";
+
+    const image = resolveImage(unit);
+
+    const dewasa = Number(unit.kapasitasDewasa) || 0;
+
+    const anak = Number(unit.kapasitasAnak) || 0;
+
+    const bedCount = Number(unit.jumlahBed) || 0;
+
+    const bedType = unit.jenisBed || "";
+
+    const luas = Number(unit.luas) || 0;
+
+    const fasilitas = normalizeFasilitas(unit.fasilitas);
+
+    const selected =
+      state.selectedUnit && String(state.selectedUnit.id) === String(id);
+
+    return `
+
+      <article
+        class="
+          public-unit-card
+          ${selected ? "is-selected" : ""}
+        "
+        data-unit-id="${escapeAttribute(id)}"
+      >
+
+        ${
+          image
+            ? `
+
+              <div class="public-unit-image">
+
+                <img
+                  src="${escapeAttribute(image)}"
+                  alt="${escapeAttribute(nama)}"
+                  loading="lazy"
+                />
+
+              </div>
+
+            `
+            : `
+              <div
+                class="public-unit-image public-unit-image-placeholder"
+                aria-hidden="true"
+              ></div>
+            `
+        }
+
+
+        <div class="public-unit-content">
+
+          <div class="public-unit-header">
+
+            <div>
+
+              <span class="public-unit-number">
+                ${String(index + 1).padStart(2, "0")}
+              </span>
+
+              <h4>
+                ${escapeHtml(nama)}
+              </h4>
+
+              ${
+                tipe
+                  ? `
+                    <span class="public-unit-type">
+                      ${escapeHtml(tipe)}
+                    </span>
+                  `
+                  : ""
+              }
+
+            </div>
+
+
+            <span class="public-unit-status">
+              Available
+            </span>
+
+          </div>
+
+
+          <div class="public-unit-meta">
+
+            ${
+              dewasa
+                ? `
+                  <span>
+                    ${dewasa} Dewasa
+                  </span>
+                `
+                : ""
+            }
+
+            ${
+              anak
+                ? `
+                  <span>
+                    ${anak} Anak
+                  </span>
+                `
+                : ""
+            }
+
+            ${
+              bedCount
+                ? `
+                  <span>
+                    ${bedCount}
+                    ${escapeHtml(bedType)}
+                  </span>
+                `
+                : ""
+            }
+
+            ${
+              luas
+                ? `
+                  <span>
+                    ${luas} m²
+                  </span>
+                `
+                : ""
+            }
+
+          </div>
+
+
+          ${
+            fasilitas
+              ? `
+                <div class="public-unit-facilities">
+
+                  ${fasilitas
+                    .split(",")
+                    .map(
+                      (item) =>
+                        `<span>
+                          ${escapeHtml(item.trim())}
+                        </span>`,
+                    )
+                    .join("")}
+
+                </div>
+              `
+              : ""
+          }
+
+
+          <button
+            type="button"
+            class="btn btn-dark public-unit-select"
+            data-unit-id="${escapeAttribute(id)}"
+          >
+
+            ${selected ? "Selected" : "Select this unit"}
+
+          </button>
+
+        </div>
+
+      </article>
+
+    `;
+  }
+
+  /* ==========================================================
+     UNIT EVENTS
+  ========================================================== */
+
+  function bindUnitEvents() {
+    dom.wizardContent
+      .querySelectorAll(".public-unit-select")
+      .forEach((button) => {
+        button.addEventListener("click", async () => {
+          await selectUnit(button.dataset.unitId);
+        });
+      });
+  }
+
+  /* ==========================================================
+     SELECT UNIT
+  ========================================================== */
+
+  function selectUnit(unitId) {
+    const unit = state.units.find((item) => String(item.id) === String(unitId));
+
+    if (!unit) {
+      showWizardError("Unit tidak ditemukan.");
+
+      return;
+    }
+
+    state.selectedUnit = unit;
+
+    state.pricing = null;
+
+    clearWizardError();
+
+    renderWizard();
+  }
+
+  /* ==========================================================
+     STEP 3
+  ========================================================== */
+
+  function renderStep3() {
+    const unit = state.selectedUnit;
+
+    const pricing = state.pricing;
+
+    dom.wizardContent.innerHTML = `
+
+      <div class="public-wizard-panel">
+
+        <div class="public-wizard-panel-heading">
+
+          <span class="eyebrow eyebrow-dark">
+            STEP 3
+          </span>
+
+          <h3>
+            Guest information
+          </h3>
+
+          <p>
+            Masukkan data tamu yang akan menginap.
+          </p>
+
+        </div>
+
+
+        <!-- SELECTED UNIT -->
+
+        <div class="public-booking-summary">
+
+          <div>
+
+            <span>
+              UNIT
+            </span>
+
+            <strong>
+              ${escapeHtml(unit?.nama || "-")}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              STAY
+            </span>
+
+            <strong>
+              ${formatDate(state.booking.checkIn)}
+              →
+              ${formatDate(state.booking.checkOut)}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              GUESTS
+            </span>
+
+            <strong>
+              ${state.booking.dewasa}
+              Dewasa
+              •
+              ${state.booking.anak}
+              Anak
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        ${pricing ? renderCompactPricing(pricing) : ""}
+
+
+        <!-- GUEST FORM -->
+
+        <div class="public-guest-form">
+
+          <div class="booking-field">
+
+            <label
+              for="guestNama"
+            >
+              NAMA TAMU *
+            </label>
+
+            <input
+              type="text"
+              id="guestNama"
+              maxlength="100"
+              autocomplete="name"
+              value="${escapeAttribute(state.booking.namaTamu)}"
+              placeholder="Nama lengkap"
+            />
+
+          </div>
+
+
+          <div class="booking-field">
+
+            <label
+              for="guestNoHp"
+            >
+              NO. WHATSAPP *
+            </label>
+
+            <input
+              type="tel"
+              id="guestNoHp"
+              maxlength="30"
+              autocomplete="tel"
+              value="${escapeAttribute(state.booking.noHp)}"
+              placeholder="08xxxxxxxxxx"
+            />
+
+          </div>
+
+
+          <div class="booking-field">
+
+            <label
+              for="guestEmail"
+            >
+              EMAIL
+            </label>
+
+            <input
+              type="email"
+              id="guestEmail"
+              maxlength="150"
+              autocomplete="email"
+              value="${escapeAttribute(state.booking.email)}"
+              placeholder="nama@email.com"
+            />
+
+          </div>
+
+
+          <div class="booking-field">
+
+            <label
+              for="guestCatatan"
+            >
+              CATATAN
+            </label>
+
+            <textarea
+              id="guestCatatan"
+              rows="4"
+              maxlength="500"
+              placeholder="Permintaan khusus (opsional)"
+            >${escapeHtml(state.booking.catatan)}</textarea>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `;
+
+    bindStep3Events();
+  }
+
+  /* ==========================================================
+     STEP 3 EVENTS
+  ========================================================== */
+
+  function bindStep3Events() {
+    const nama = document.getElementById("guestNama");
+
+    const noHp = document.getElementById("guestNoHp");
+
+    const email = document.getElementById("guestEmail");
+
+    const catatan = document.getElementById("guestCatatan");
+
+    if (nama) {
+      nama.addEventListener("input", () => {
+        state.booking.namaTamu = nama.value;
+      });
+    }
+
+    if (noHp) {
+      noHp.addEventListener("input", () => {
+        state.booking.noHp = noHp.value;
+      });
+    }
+
+    if (email) {
+      email.addEventListener("input", () => {
+        state.booking.email = email.value;
+      });
+    }
+
+    if (catatan) {
+      catatan.addEventListener("input", () => {
+        state.booking.catatan = catatan.value;
+      });
+    }
+  }
+
+  /* ==========================================================
+     STEP 4
+  ========================================================== */
+
+  function renderStep4() {
+    const unit = state.selectedUnit;
+
+    const pricing = state.pricing || {};
+
+    dom.wizardContent.innerHTML = `
+
+      <div class="public-wizard-panel">
+
+        <div class="public-wizard-panel-heading">
+
+          <span class="eyebrow eyebrow-dark">
+            STEP 4
+          </span>
+
+          <h3>
+            Confirm your booking
+          </h3>
+
+          <p>
+            Periksa kembali detail reservasi sebelum melanjutkan.
+          </p>
+
+        </div>
+
+
+        <!-- PROPERTY -->
+
+        <div class="public-confirm-section">
+
+          <span class="public-confirm-label">
+            STAY
+          </span>
+
+          <strong>
+            ${escapeHtml(state.penginapan?.nama || "-")}
+          </strong>
+
+        </div>
+
+
+        <!-- UNIT -->
+
+        <div class="public-confirm-section">
+
+          <span class="public-confirm-label">
+            UNIT
+          </span>
+
+          <strong>
+            ${escapeHtml(unit?.nama || "-")}
+          </strong>
+
+          ${
+            unit?.tipe
+              ? `
+                <span>
+                  ${escapeHtml(unit.tipe)}
+                </span>
+              `
+              : ""
+          }
+
+        </div>
+
+
+        <!-- DATES -->
+
+        <div class="public-confirm-grid">
+
+          <div class="public-confirm-section">
+
+            <span class="public-confirm-label">
+              CHECK-IN
+            </span>
+
+            <strong>
+              ${formatDate(state.booking.checkIn)}
+            </strong>
+
+          </div>
+
+
+          <div class="public-confirm-section">
+
+            <span class="public-confirm-label">
+              CHECK-OUT
+            </span>
+
+            <strong>
+              ${formatDate(state.booking.checkOut)}
+            </strong>
+
+          </div>
+
+
+          <div class="public-confirm-section">
+
+            <span class="public-confirm-label">
+              GUESTS
+            </span>
+
+            <strong>
+              ${state.booking.dewasa}
+              Dewasa
+              •
+              ${state.booking.anak}
+              Anak
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <!-- GUEST -->
+
+        <div class="public-confirm-section">
+
+          <span class="public-confirm-label">
+            GUEST
+          </span>
+
+          <strong>
+            ${escapeHtml(state.booking.namaTamu || "-")}
+          </strong>
+
+          <span>
+            ${escapeHtml(state.booking.noHp || "-")}
+          </span>
+
+          ${
+            state.booking.email
+              ? `
+                <span>
+                  ${escapeHtml(state.booking.email)}
+                </span>
+              `
+              : ""
+          }
+
+        </div>
+
+
+        <!-- PRICE -->
+
+        ${renderFullPricing(pricing)}
+
+
+        <!-- HOLD NOTICE -->
+
+        <div class="public-wizard-note">
+
+          <i
+            data-lucide="clock-3"
+            aria-hidden="true"
+          ></i>
+
+          <span>
+            Setelah reservasi dibuat, unit akan
+            ditahan sementara sesuai kebijakan sistem.
+          </span>
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* ==========================================================
+   UPLOAD PAYMENT PROOF
+========================================================== */
+
+  async function uploadPaymentProof() {
+    const file = state.payment.proofFile;
+
+    if (!file) {
+      showWizardError("Bukti pembayaran wajib diupload.");
+
+      return null;
+    }
+
+    if (!validatePaymentProof(file)) {
+      return null;
+    }
+
+    if (!state.result?.id) {
+      showWizardError("ID reservasi tidak ditemukan.");
+
+      return null;
+    }
+
+    state.payment.proofUploading = true;
+
+    try {
+      const base64 = await fileToBase64(file);
+
+      const payload = {
+        reservationId: state.result.id,
+
+        fileName: file.name,
+
+        mimeType: file.type,
+
+        base64,
+      };
+
+      console.log("[PublicPenginapanDetail] Payment proof upload:", {
+        reservationId: payload.reservationId,
+
+        fileName: payload.fileName,
+
+        mimeType: payload.mimeType,
+
+        size: file.size,
+      });
+
+      const result = await API.post("payment.proof.upload", payload);
+
+      console.log("[PublicPenginapanDetail] Payment proof result:", result);
+
+      if (!result || result.success === false) {
+        throw new Error(
+          result?.message || "Gagal mengupload bukti pembayaran.",
+        );
+      }
+
+      return result.data || result;
+    } catch (error) {
+      console.error(
+        "[PublicPenginapanDetail] Payment proof upload error:",
+        error,
+      );
+
+      showWizardError(error?.message || "Gagal mengupload bukti pembayaran.");
+
+      return null;
+    } finally {
+      state.payment.proofUploading = false;
+    }
+  }
+
+  /* ==========================================================
+     COMPACT PRICING
+  ========================================================== */
+
+  function renderCompactPricing(pricing = {}) {
+    const total = Number(pricing.total || pricing.grandTotal || 0);
+
+    return `
+
+      <div class="public-price-summary">
+
+        <div>
+
+          <span>
+            Total stay
+          </span>
+
+          <strong>
+            ${formatCurrency(total)}
+          </strong>
+
+        </div>
+
+        <span>
+          Harga dihitung oleh sistem.
         </span>
 
       </div>
 
+    `;
+  }
 
-      <!-- =================================
-           DESCRIPTION
-      ================================== -->
+  /* ==========================================================
+   CALCULATE PRICE
+========================================================== */
 
-      ${
-        deskripsi
-          ? `
+  async function calculatePrice() {
+    /* ======================================================
+     VALIDATE UNIT
+  ====================================================== */
 
-            <p class="room-card-description">
-              ${escapeHtml(deskripsi)}
-            </p>
+    if (!state.selectedUnit?.id) {
+      showWizardError("Silakan pilih unit terlebih dahulu.");
 
-          `
-          : ""
+      return null;
+    }
+
+    /* ======================================================
+     JIKA REQUEST SEDANG BERJALAN
+     
+     Tunggu request yang sama.
+     Jangan return null.
+  ====================================================== */
+
+    if (state.pricingLoading && state.pricingRequest) {
+      return await state.pricingRequest;
+    }
+
+    /* ======================================================
+     PAYLOAD
+  ====================================================== */
+
+    const payload = {
+      penginapanId: state.penginapan.id,
+
+      unitId: state.selectedUnit.id,
+
+      channel: CHANNEL,
+
+      checkIn: state.booking.checkIn,
+
+      checkOut: state.booking.checkOut,
+
+      dewasa: state.booking.dewasa,
+
+      anak: state.booking.anak,
+    };
+
+    console.log("[PublicPenginapanDetail] Pricing:", payload);
+
+    /* ======================================================
+     REQUEST
+  ====================================================== */
+
+    state.pricingLoading = true;
+
+    clearWizardError();
+
+    state.pricingRequest = (async () => {
+      try {
+        const result = await API.post("booking.price", payload);
+
+        console.log("[PublicPenginapanDetail] Pricing result:", result);
+
+        if (!result || result.success === false) {
+          throw new Error(result?.message || "Gagal menghitung harga.");
+        }
+
+        const pricing = result.data || result;
+
+        if (!pricing || Number(pricing.total) <= 0) {
+          throw new Error("Total harga reservasi tidak valid.");
+        }
+
+        state.pricing = pricing;
+
+        return pricing;
+      } catch (error) {
+        console.error("[PublicPenginapanDetail] Pricing error:", error);
+
+        state.pricing = null;
+
+        showWizardError(error?.message || "Gagal menghitung harga.");
+
+        return null;
+      } finally {
+        state.pricingLoading = false;
+
+        state.pricingRequest = null;
       }
+    })();
 
+    return await state.pricingRequest;
+  }
 
-      <!-- =================================
-           AMENITIES
-      ================================== -->
+  /* ==========================================================
+     FULL PRICING
+  ========================================================== */
 
-      <div class="room-amenities">
+  function renderFullPricing(pricing = {}) {
+    const nights = Array.isArray(pricing.nights) ? pricing.nights : [];
+
+    const jumlahMalam =
+      Number(pricing.jumlahMalam) ||
+      nights.length ||
+      calculateNightCount(state.booking.checkIn, state.booking.checkOut);
+
+    const subtotal = Number(pricing.subtotal) || Number(pricing.roomPrice) || 0;
+
+    const extraPerson =
+      Number(pricing.extraPersonPrice) || Number(pricing.extraPerson) || 0;
+
+    const discount = Number(pricing.discount) || 0;
+
+    const tax = Number(pricing.tax) || 0;
+
+    const total = Number(pricing.total) || Number(pricing.grandTotal) || 0;
+
+    return `
+
+      <div class="public-full-pricing">
+
+        <div class="public-full-pricing-header">
+
+          <span>
+            PRICE SUMMARY
+          </span>
+
+          <strong>
+            ${jumlahMalam}
+            ${jumlahMalam === 1 ? "night" : "nights"}
+          </strong>
+
+        </div>
 
 
         ${
-          capacityText
+          nights.length
             ? `
+              <div class="public-night-list">
 
-              <span class="room-amenity">
-                ${escapeHtml(capacityText)}
-              </span>
+                ${nights
+                  .map(
+                    (night) => `
 
+                      <div class="public-night-row">
+
+                        <span>
+                          ${formatDate(night.tanggal || night.date || "")}
+                        </span>
+
+                        <strong>
+                          ${formatCurrency(
+                            Number(
+                              night.harga || night.price || night.nominal || 0,
+                            ),
+                          )}
+                        </strong>
+
+                      </div>
+
+                    `,
+                  )
+                  .join("")}
+
+              </div>
+            `
+            : ""
+        }
+
+
+        <div class="public-price-line">
+
+          <span>
+            Room / Unit
+          </span>
+
+          <strong>
+            ${formatCurrency(subtotal)}
+          </strong>
+
+        </div>
+
+
+        ${
+          extraPerson > 0
+            ? `
+              <div class="public-price-line">
+
+                <span>
+                  Extra Person
+                </span>
+
+                <strong>
+                  ${formatCurrency(extraPerson)}
+                </strong>
+
+              </div>
             `
             : ""
         }
 
 
         ${
-          bedText
+          discount > 0
             ? `
+              <div class="public-price-line">
 
-              <span class="room-amenity">
-                ${escapeHtml(bedText)}
-              </span>
+                <span>
+                  Discount
+                </span>
 
+                <strong>
+                  -
+                  ${formatCurrency(discount)}
+                </strong>
+
+              </div>
             `
             : ""
         }
 
 
         ${
-          luas
+          tax > 0
             ? `
+              <div class="public-price-line">
 
-              <span class="room-amenity">
-                ${escapeHtml(String(luas))} m²
-              </span>
+                <span>
+                  Tax
+                </span>
 
+                <strong>
+                  ${formatCurrency(tax)}
+                </strong>
+
+              </div>
             `
             : ""
         }
 
 
-        ${fasilitas ? renderFacilityItems(fasilitas) : ""}
+        <div class="public-price-total">
+
+          <span>
+            TOTAL
+          </span>
+
+          <strong>
+            ${formatCurrency(total)}
+          </strong>
+
+        </div>
 
       </div>
 
+    `;
+  }
 
-      <!-- =================================
-           BOOKING ACTION
-      ================================== -->
+  function bindPaymentEvents() {
+    document
+      .getElementById("paymentProofFile")
+      ?.addEventListener("change", handlePaymentProofChange);
 
-      <div class="room-booking-action">
+    document
+      .getElementById("paymentSubmitButton")
+      ?.addEventListener("click", submitPayment);
+
+    document
+      .getElementById("backToStaysButton")
+      ?.addEventListener("click", () => {
+        window.location.href = "./penginapan.html";
+      });
+  }
+
+  /* ==========================================================
+     WIZARD FOOTER
+  ========================================================== */
+
+  function renderWizardFooter() {
+    if (!dom.wizardFooter) {
+      return;
+    }
+
+    let html = "";
+
+    /* ======================================================
+       STEP 1
+    ====================================================== */
+
+    if (state.step === 1) {
+      html = `
 
         <button
           type="button"
-          class="btn btn-dark room-select-button"
-          data-room-id="${escapeAttribute(roomId)}"
+          class="btn btn-outline"
+          id="wizardCancelButton"
         >
-          Select this room
+          Back to stays
         </button>
 
-      </div>
+        <button
+          type="button"
+          class="btn btn-dark"
+          id="wizardNextButton"
+        >
+          Search availability
+        </button>
 
-    </article>
+      `;
+    } else if (state.step === 2) {
+      /* ======================================================
+       STEP 2
+    ====================================================== */
+      html = `
 
-  `;
-  }
+        <button
+          type="button"
+          class="btn btn-outline"
+          id="wizardPreviousButton"
+        >
+          Back
+        </button>
 
-  /* ==========================================================
-     FACILITY ITEMS
-  ========================================================== */
+        <button
+          type="button"
+          class="btn btn-dark"
+          id="wizardNextButton"
+          ${!state.selectedUnit ? "disabled" : ""}
+        >
+          Continue
+        </button>
 
-  function renderFacilityItems(fasilitas) {
-    return fasilitas
-      .split(",")
-      .map((item) => String(item).trim())
-      .filter(Boolean)
-      .map(
-        (item) => `
+      `;
+    } else if (state.step === 3) {
+      /* ======================================================
+       STEP 3
+    ====================================================== */
+      html = `
 
-          <span class="room-amenity">
-            ${escapeHtml(item)}
-          </span>
+        <button
+          type="button"
+          class="btn btn-outline"
+          id="wizardPreviousButton"
+        >
+          Back
+        </button>
 
-        `,
-      )
-      .join("");
-  }
+        <button
+          type="button"
+          class="btn btn-dark"
+          id="wizardNextButton"
+        >
+          Review booking
+        </button>
 
-  /* ==========================================================
-     BIND ROOM BUTTONS
-  ========================================================== */
+      `;
+    } else if (state.step === 4) {
+      /* ======================================================
+       STEP 4
+    ====================================================== */
+      html = `
 
-  function bindRoomButtons() {
-    const buttons = dom.roomList?.querySelectorAll(".room-select-button");
+        <button
+          type="button"
+          class="btn btn-outline"
+          id="wizardPreviousButton"
+          ${state.submitting ? "disabled" : ""}
+        >
+          Back
+        </button>
 
-    if (!buttons) {
-      return;
+        <button
+          type="button"
+          class="btn btn-dark"
+          id="wizardSubmitButton"
+          ${state.submitting ? "disabled" : ""}
+        >
+          ${state.submitting ? "Creating booking..." : "Book now"}
+        </button>
+
+      `;
     }
 
-    buttons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const roomId = button.dataset.roomId;
+    dom.wizardFooter.innerHTML = html;
 
-        selectRoom(roomId);
+    bindWizardFooterEvents();
+  }
+
+  /* ==========================================================
+     FOOTER EVENTS
+  ========================================================== */
+
+  function bindWizardFooterEvents() {
+    document
+      .getElementById("wizardCancelButton")
+      ?.addEventListener("click", () => {
+        window.location.href = "./penginapan.html";
       });
-    });
+
+    document
+      .getElementById("wizardPreviousButton")
+      ?.addEventListener("click", () => {
+        previousStep();
+      });
+
+    document
+      .getElementById("wizardNextButton")
+      ?.addEventListener("click", () => {
+        nextStep();
+      });
+
+    document
+      .getElementById("wizardSubmitButton")
+      ?.addEventListener("click", () => {
+        submitBooking();
+      });
   }
 
   /* ==========================================================
-     SELECT ROOM
+     NEXT STEP
   ========================================================== */
 
-  function selectRoom(roomId) {
-    const room = state.rooms.find(
-      (item) => String(item.id || item.tipeKamarId || "") === String(roomId),
-    );
-
-    if (!room) {
-      console.warn("[PublicPenginapanDetail] Room not found:", roomId);
-
-      return;
-    }
+  async function nextStep() {
+    clearWizardError();
 
     /* ======================================================
-       SET STATE
+       STEP 1
     ====================================================== */
 
-    state.booking.selectedRoom = room;
+    if (state.step === 1) {
+      const valid = readAndValidateStep1();
 
-    state.booking.pricing = null;
-
-    state.booking.error = null;
-
-    /* ======================================================
-       UPDATE ROOM CARD
-    ====================================================== */
-
-    document.querySelectorAll(".room-card").forEach((card) => {
-      const isSelected = String(card.dataset.roomId) === String(roomId);
-
-      card.classList.toggle("is-selected", isSelected);
-
-      const button = card.querySelector(".room-select-button");
-
-      if (!button) {
+      if (!valid) {
         return;
       }
 
-      button.textContent = isSelected ? "Selected" : "Select this room";
-    });
+      await searchAvailability();
 
-    /* ======================================================
-       SET BOOKING ROOM
-    ====================================================== */
-
-    if (dom.bookingRoomName) {
-      dom.bookingRoomName.textContent = room.nama || "Tipe Kamar";
-    }
-
-    /* ======================================================
-       RESET OLD PRICE
-    ====================================================== */
-
-    resetBookingResult();
-
-    /* ======================================================
-       DEFAULT DATES
-    ====================================================== */
-
-    setDefaultBookingDates();
-
-    /* ======================================================
-       OPEN BOTTOM SHEET
-    ====================================================== */
-
-    openBookingSheet();
-  }
-
-  /* ==========================================================
-     BOOKING SHEET
-  ========================================================== */
-
-  function openBookingSheet() {
-    if (!dom.bookingSheet) {
       return;
     }
 
-    /*
-     * Pastikan sheet visible.
-     */
+    /* ======================================================
+   STEP 2
+====================================================== */
 
-    dom.bookingSheet.hidden = false;
+    if (state.step === 2) {
+      if (!state.selectedUnit) {
+        showWizardError("Silakan pilih unit terlebih dahulu.");
 
-    dom.bookingSheet.setAttribute("aria-hidden", "false");
-
-    /*
-     * Body lock.
-     */
-
-    document.body.classList.add("booking-sheet-open");
-
-    /*
-     * Mark open state.
-     */
-
-    dom.bookingSheet.classList.add("is-open");
-
-    /*
-     * Focus tanggal.
-     */
-
-    window.setTimeout(() => {
-      if (dom.bookingCheckIn && !dom.bookingCheckIn.disabled) {
-        dom.bookingCheckIn.focus({
-          preventScroll: true,
-        });
+        return;
       }
-    }, 120);
-  }
 
-  /* ==========================================================
-     CLOSE BOOKING SHEET
-  ========================================================== */
+      /* ====================================================
+     PASTIKAN PRICING SELESAI
+  ==================================================== */
 
-  function closeBookingSheet(options = {}) {
-    const { reset = true, restoreFocus = true } = options;
+      if (state.pricingLoading && state.pricingRequest) {
+        await state.pricingRequest;
+      }
 
-    if (!dom.bookingSheet) {
+      /* ====================================================
+     JIKA BELUM ADA PRICING
+  ==================================================== */
+
+      if (!state.pricing) {
+        const pricing = await calculatePrice();
+
+        if (!pricing) {
+          return;
+        }
+      }
+
+      /* ====================================================
+     NEXT
+  ==================================================== */
+
+      state.step = 3;
+
+      renderWizard();
+
+      scrollWizard();
+
       return;
     }
 
-    dom.bookingSheet.classList.remove("is-open");
+    /* ======================================================
+       STEP 3
+    ====================================================== */
 
-    dom.bookingSheet.hidden = true;
+    if (state.step === 3) {
+      const valid = readAndValidateStep3();
 
-    dom.bookingSheet.setAttribute("aria-hidden", "true");
+      if (!valid) {
+        return;
+      }
 
-    document.body.classList.remove("booking-sheet-open");
+      state.step = 4;
 
-    if (reset) {
-      resetBookingSheet();
+      renderWizard();
+
+      scrollWizard();
+
+      return;
     }
 
+    /* ======================================================
+       STEP 4
+    ====================================================== */
+
+    if (state.step === 4) {
+      await submitBooking();
+    }
+  }
+
+  /* ==========================================================
+     PREVIOUS STEP
+  ========================================================== */
+
+  function previousStep() {
+    if (state.step <= 1) {
+      return;
+    }
+
+    state.step -= 1;
+
+    renderWizard();
+
+    scrollWizard();
+  }
+
+  /* ==========================================================
+     READ + VALIDATE STEP 1
+  ========================================================== */
+
+  function readAndValidateStep1() {
+    const checkIn =
+      document.getElementById("wizardCheckIn")?.value || state.booking.checkIn;
+
+    const checkOut =
+      document.getElementById("wizardCheckOut")?.value ||
+      state.booking.checkOut;
+
+    const dewasa =
+      Number(
+        document.getElementById("wizardDewasa")?.value || state.booking.dewasa,
+      ) || 0;
+
+    const anak =
+      Number(
+        document.getElementById("wizardAnak")?.value || state.booking.anak,
+      ) || 0;
+
+    state.booking.checkIn = checkIn;
+
+    state.booking.checkOut = checkOut;
+
+    state.booking.dewasa = dewasa;
+
+    state.booking.anak = anak;
+
+    if (!checkIn) {
+      showWizardError("Tanggal check-in wajib dipilih.");
+
+      return false;
+    }
+
+    if (!checkOut) {
+      showWizardError("Tanggal check-out wajib dipilih.");
+
+      return false;
+    }
+
+    if (checkOut <= checkIn) {
+      showWizardError("Tanggal check-out harus setelah check-in.");
+
+      return false;
+    }
+
+    if (dewasa < 1) {
+      showWizardError("Minimal 1 tamu dewasa.");
+
+      return false;
+    }
+
+    if (anak < 0) {
+      showWizardError("Jumlah anak tidak valid.");
+
+      return false;
+    }
+
+    return true;
+  }
+
+  /* ==========================================================
+     SEARCH AVAILABILITY
+  ========================================================== */
+
+  async function searchAvailability() {
+    if (state.searching) {
+      return;
+    }
+
+    state.searching = true;
+
+    clearWizardError();
+
+    setSearchButtonLoading(true);
+
+    try {
+      const payload = {
+        penginapanId: state.penginapan.id,
+
+        checkIn: state.booking.checkIn,
+
+        checkOut: state.booking.checkOut,
+
+        dewasa: state.booking.dewasa,
+
+        anak: state.booking.anak,
+      };
+
+      console.log("[PublicPenginapanDetail] Availability:", payload);
+
+      const result = await API.post("reservation.availability", payload);
+
+      console.log("[PublicPenginapanDetail] Availability result:", result);
+
+      if (!result || result.success === false) {
+        throw new Error(result?.message || "Gagal mencari unit tersedia.");
+      }
+
+      const data = result.data;
+
+      state.units = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.rows)
+          ? data.rows
+          : [];
+
+      state.selectedUnit = null;
+
+      state.pricing = null;
+
+      state.step = 2;
+
+      renderWizard();
+
+      scrollWizard();
+    } catch (error) {
+      console.error("[PublicPenginapanDetail] Availability error:", error);
+
+      showWizardError(error?.message || "Gagal mencari unit tersedia.");
+    } finally {
+      state.searching = false;
+
+      setSearchButtonLoading(false);
+    }
+  }
+
+  /* ==========================================================
+   SELECT UNIT
+========================================================== */
+
+  async function selectUnit(unitId) {
+    const unit = state.units.find((item) => String(item.id) === String(unitId));
+
+    if (!unit) {
+      showWizardError("Unit tidak ditemukan.");
+
+      return;
+    }
+
+    /* ======================================================
+     SET SELECTED UNIT
+  ====================================================== */
+
+    state.selectedUnit = unit;
+
+    state.pricing = null;
+
+    clearWizardError();
+
+    /* ======================================================
+     RENDER SELECTED STATE
+  ====================================================== */
+
+    renderWizard();
+
+    /* ======================================================
+     CALCULATE PRICE
+  ====================================================== */
+
+    await calculatePrice();
+  }
+
+  /* ==========================================================
+     READ + VALIDATE STEP 3
+  ========================================================== */
+
+  function readAndValidateStep3() {
+    const nama = document.getElementById("guestNama")?.value?.trim() || "";
+
+    const noHpRaw = document.getElementById("guestNoHp")?.value?.trim() || "";
+
+    const email = document.getElementById("guestEmail")?.value?.trim() || "";
+
+    const catatan =
+      document.getElementById("guestCatatan")?.value?.trim() || "";
+
+    const noHp = normalizeWhatsapp(noHpRaw);
+
+    state.booking.namaTamu = nama;
+
+    state.booking.noHp = noHp;
+
+    state.booking.email = email;
+
+    state.booking.catatan = catatan;
+
+    if (!nama) {
+      showWizardError("Nama tamu wajib diisi.");
+
+      return false;
+    }
+
+    if (!noHp) {
+      showWizardError("Nomor WhatsApp wajib diisi.");
+
+      return false;
+    }
+
+    if (noHp.length < 10) {
+      showWizardError("Nomor WhatsApp tidak valid.");
+
+      return false;
+    }
+
+    if (email && !isValidEmail(email)) {
+      showWizardError("Format email tidak valid.");
+
+      return false;
+    }
+
+    return true;
+  }
+
+  /* ==========================================================
+     SUBMIT BOOKING
+  ========================================================== */
+
+  async function submitBooking() {
+    if (state.submitting) {
+      return;
+    }
+
+    clearWizardError();
+
     /*
-     * Kembalikan focus ke room
-     * yang dipilih jika memungkinkan.
+     * Pastikan semua data
+     * masih lengkap.
      */
 
-    if (restoreFocus && state.booking.selectedRoom) {
-      const roomId =
-        state.booking.selectedRoom.id ||
-        state.booking.selectedRoom.tipeKamarId ||
-        "";
+    if (!state.penginapan?.id) {
+      showWizardError("Data penginapan tidak valid.");
 
-      const button = dom.roomList?.querySelector(
-        `.room-select-button[data-room-id="${escapeSelectorValue(roomId)}"]`,
-      );
+      return;
+    }
 
-      if (button) {
-        window.setTimeout(() => button.focus(), 0);
+    if (!state.selectedUnit?.id) {
+      showWizardError("Unit belum dipilih.");
+
+      return;
+    }
+
+    if (!state.pricing) {
+      const pricing = await calculatePrice();
+
+      if (!pricing) {
+        return;
       }
     }
-  }
 
-  /* ==========================================================
-     RESET BOOKING SHEET
-  ========================================================== */
+    if (!state.booking.namaTamu || !state.booking.noHp) {
+      state.step = 3;
 
-  function resetBookingSheet() {
-    state.booking.checkIn = "";
+      renderWizard();
 
-    state.booking.checkOut = "";
+      showWizardError("Data tamu belum lengkap.");
 
-    state.booking.guests = Number(dom.bookingGuests?.value) || 2;
-
-    state.booking.pricing = null;
-
-    state.booking.loading = false;
-
-    state.booking.error = null;
-
-    resetBookingResult();
-
-    /*
-     * Room tetap selected.
-     *
-     * Kita tidak menghapus
-     * selectedRoom karena user
-     * masih memilih kamar tersebut.
-     */
-  }
-
-  /* ==========================================================
-     SET DEFAULT DATES
-  ========================================================== */
-
-  function setDefaultBookingDates() {
-    if (!dom.bookingCheckIn || !dom.bookingCheckOut) {
       return;
     }
 
+    state.submitting = true;
+
+    renderWizard();
+
+    try {
+      /*
+       * IMPORTANT:
+       *
+       * Jangan mengirim harga final
+       * dari frontend sebagai sumber
+       * kebenaran.
+       *
+       * Backend ReservationService.create()
+       * akan menghitung ulang pricing.
+       */
+
+      const payload = {
+        penginapanId: state.penginapan.id,
+
+        penginapanNama: state.penginapan.nama || "",
+
+        unitId: state.selectedUnit.id,
+
+        nomorKamar: state.selectedUnit.nama || "",
+
+        tipeKamar: state.selectedUnit.tipe || "",
+
+        namaTamu: state.booking.namaTamu,
+
+        noHp: state.booking.noHp,
+
+        email: state.booking.email,
+
+        catatan: state.booking.catatan,
+
+        checkIn: state.booking.checkIn,
+
+        checkOut: state.booking.checkOut,
+
+        dewasa: state.booking.dewasa,
+
+        anak: state.booking.anak,
+
+        channel: CHANNEL,
+      };
+
+      console.log("[PublicPenginapanDetail] reservation.store:", payload);
+
+      const result = await API.post("reservation.store", payload);
+
+      console.log("[PublicPenginapanDetail] reservation.store result:", result);
+
+      if (!result || result.success === false) {
+        throw new Error(result?.message || "Reservasi gagal dibuat.");
+      }
+
+      state.result = result.data || null;
+
+      showSuccess();
+    } catch (error) {
+      console.error("[PublicPenginapanDetail] Booking error:", error);
+
+      state.submitting = false;
+
+      renderWizard();
+
+      showWizardError(error?.message || "Gagal membuat reservasi.");
+    }
+  }
+
+  function normalizeWhatsapp(value) {
+    let phone = String(value || "")
+      .trim()
+      .replace(/\s+/g, "")
+      .replace(/-/g, "");
+
+    if (phone.startsWith("08")) {
+      phone = "62" + phone.substring(1);
+    }
+
+    if (phone.startsWith("+62")) {
+      phone = phone.substring(1);
+    }
+
+    return phone;
+  }
+
+  /* ==========================================================
+     SUCCESS
+  ========================================================== */
+
+  function showSuccess() {
+    state.submitting = false;
+
+    state.step = 4;
+
+    renderPaymentPage();
+
+    scrollWizard();
+  }
+
+  /* ==========================================================
+   PAYMENT PAGE
+========================================================== */
+
+  function renderPaymentPage() {
+    if (!dom.wizardContent) {
+      return;
+    }
+
+    const reservation = state.result || {};
+
+    const reservationId = reservation.id || reservation.kode || "";
+
+    const kode = reservation.kode || reservation.id || "-";
+
+    const penginapan =
+      reservation.penginapanNama || state.penginapan?.nama || "-";
+
+    const unit =
+      reservation.nomorKamar ||
+      reservation.unitNama ||
+      state.selectedUnit?.nama ||
+      "-";
+
+    const checkIn = reservation.checkIn || state.booking.checkIn;
+
+    const checkOut = reservation.checkOut || state.booking.checkOut;
+
+    const total = Number(reservation.grandTotal || 0);
+
+    dom.wizardContent.innerHTML = `
+
+    <div class="public-wizard-panel payment-result-panel">
+
+      <!-- =================================
+           SUCCESS
+      ================================== -->
+
+      <div class="payment-success-icon">
+        <i
+          data-lucide="check"
+          aria-hidden="true"
+        ></i>
+      </div>
+
+
+      <div class="public-wizard-panel-heading">
+
+        <span class="eyebrow eyebrow-dark">
+          RESERVATION CREATED
+        </span>
+
+        <h3>
+          Your stay is reserved.
+        </h3>
+
+        <p>
+          Reservasi berhasil dibuat dan unit
+          telah masuk ke proses hold.
+        </p>
+
+      </div>
+
+
+      <!-- =================================
+           RESERVATION SUMMARY
+      ================================== -->
+
+      <div class="public-booking-summary">
+
+        <div>
+
+          <span>
+            RESERVATION CODE
+          </span>
+
+          <strong>
+            ${escapeHtml(kode)}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            STAY
+          </span>
+
+          <strong>
+            ${escapeHtml(penginapan)}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            UNIT
+          </span>
+
+          <strong>
+            ${escapeHtml(unit)}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            CHECK-IN
+          </span>
+
+          <strong>
+            ${formatDate(checkIn)}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            CHECK-OUT
+          </span>
+
+          <strong>
+            ${formatDate(checkOut)}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            TOTAL
+          </span>
+
+          <strong>
+            ${formatCurrency(total)}
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- =================================
+           PAYMENT
+      ================================== -->
+
+      <div class="public-payment-box">
+
+        <span class="eyebrow eyebrow-dark">
+          PAYMENT
+        </span>
+
+        <h4>
+          Complete your payment.
+        </h4>
+
+        <p>
+          Silakan lakukan pembayaran sesuai
+          total reservasi untuk melanjutkan
+          proses booking.
+        </p>
+
+
+        <!-- TOTAL -->
+
+        <div class="public-payment-total">
+
+          <span>
+            TOTAL PEMBAYARAN
+          </span>
+
+          <strong>
+            ${formatCurrency(total)}
+          </strong>
+
+        </div>
+
+
+        <!-- =================================
+             TRANSFER INFO
+        ================================== -->
+
+        <div class="public-payment-method">
+
+          <div class="public-payment-method-heading">
+
+            <i
+              data-lucide="landmark"
+              aria-hidden="true"
+            ></i>
+
+            <div>
+
+              <strong>
+                Bank Transfer
+              </strong>
+
+              <span>
+                Transfer sesuai nominal di atas.
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="public-payment-bank">
+
+            <span>
+              BANK
+            </span>
+
+            <strong>
+              BCA
+            </strong>
+
+            <span>
+              NO. REKENING
+            </span>
+
+            <strong>
+              1234567890
+            </strong>
+
+            <span>
+              ATAS NAMA
+            </span>
+
+            <strong>
+              DIENG NET
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================
+             PAYMENT FORM
+        ================================== -->
+
+        <div class="public-payment-form">
+
+          <div class="booking-field">
+
+            <label for="paymentDate">
+              TANGGAL PEMBAYARAN *
+            </label>
+
+            <input
+              type="date"
+              id="paymentDate"
+            />
+
+          </div>
+
+
+          <div class="booking-field">
+
+            <label for="paymentAmount">
+              NOMINAL PEMBAYARAN *
+            </label>
+
+            <input
+              type="number"
+              id="paymentAmount"
+              min="1"
+              value="${total}"
+            />
+
+          </div>
+
+
+          <div class="booking-field">
+
+            <label for="paymentReference">
+              NOMOR REFERENSI *
+            </label>
+
+            <input
+              type="text"
+              id="paymentReference"
+              maxlength="100"
+              placeholder="Contoh: TRX123456"
+            />
+
+          </div>
+
+
+          <div class="booking-field">
+
+            <label for="paymentNote">
+              CATATAN
+            </label>
+
+            <textarea
+              id="paymentNote"
+              rows="3"
+              maxlength="500"
+              placeholder="Catatan pembayaran (opsional)"
+            ></textarea>
+
+          </div>
+
+
+          <div class="booking-field payment-proof-field">
+
+            <label for="paymentProofFile">
+              BUKTI PEMBAYARAN *
+            </label>
+
+            <input
+              type="file"
+              id="paymentProofFile"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+            />
+
+            <label
+              for="paymentProofFile"
+              class="payment-proof-upload"
+              id="paymentProofUpload"
+            >
+
+              <span class="payment-proof-upload-icon">
+                <i data-lucide="upload"></i>
+              </span>
+
+              <strong>
+                Upload bukti transfer
+              </strong>
+
+              <span>
+                JPG, PNG atau WEBP • Maks. 5 MB
+              </span>
+
+            </label>
+
+
+            <div
+              id="paymentProofPreview"
+              class="payment-proof-preview"
+              hidden
+            ></div>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================
+             PAYMENT ERROR
+        ================================== -->
+
+        <div
+          id="paymentError"
+          class="booking-error"
+          hidden
+        ></div>
+
+
+        <!-- =================================
+             PAYMENT ACTION
+        ================================== -->
+
+        <div class="public-payment-actions">
+
+          <button
+            type="button"
+            class="btn btn-dark"
+            id="paymentSubmitButton"
+          >
+            Submit payment
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-outline"
+            id="backToStaysButton"
+          >
+            Back to stays
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+
+    bindPaymentEvents();
+
+    setDefaultPaymentDate();
+
+    createIcons();
+  }
+
+  /* ==========================================================
+     DEFAULT DATES
+  ========================================================== */
+
+  function setDefaultDates() {
     const today = new Date();
 
     const tomorrow = new Date(today);
 
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const todayValue = formatInputDate(today);
+    state.booking.checkIn = formatInputDate(today);
 
-    const tomorrowValue = formatInputDate(tomorrow);
+    state.booking.checkOut = formatInputDate(tomorrow);
+  }
 
-    dom.bookingCheckIn.value = todayValue;
+  function setDefaultPaymentDate() {
+    const input = document.getElementById("paymentDate");
 
-    dom.bookingCheckOut.value = tomorrowValue;
+    if (!input) {
+      return;
+    }
 
-    state.booking.checkIn = todayValue;
+    const now = new Date();
 
-    state.booking.checkOut = tomorrowValue;
+    const year = now.getFullYear();
 
-    /*
-     * Pastikan checkout
-     * minimal besok.
-     */
+    const month = String(now.getMonth() + 1).padStart(2, "0");
 
-    dom.bookingCheckOut.min = tomorrowValue;
+    const day = String(now.getDate()).padStart(2, "0");
+
+    input.value = `${year}-${month}-${day}`;
   }
 
   /* ==========================================================
-     BOOKING EVENTS
-  ========================================================== */
+   SUBMIT PAYMENT
+========================================================== */
 
-  function initBookingEvents() {
-    /* ======================================================
-       CLOSE
-    ====================================================== */
+  /* ==========================================================
+   SUBMIT PAYMENT
+========================================================== */
 
-    if (dom.bookingSheetClose) {
-      dom.bookingSheetClose.addEventListener("click", () => {
-        closeBookingSheet();
-      });
+  async function submitPayment() {
+    if (state.paymentSubmitting) {
+      return;
     }
 
-    /* ======================================================
-       BACKDROP
-    ====================================================== */
+    clearWizardError();
 
-    if (dom.bookingSheetBackdrop) {
-      dom.bookingSheetBackdrop.addEventListener("click", () => {
-        closeBookingSheet();
-      });
+    const reservation = state.result || {};
+
+    const reservationId = reservation.id || reservation.kode || "";
+
+    if (!reservationId) {
+      showPaymentError("ID reservasi tidak ditemukan.");
+
+      return;
     }
 
-    /* ======================================================
-       ESC
-    ====================================================== */
+    const paymentDate =
+      document.getElementById("paymentDate")?.value?.trim() || "";
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key !== "Escape") {
-        return;
+    const paymentAmount =
+      Number(document.getElementById("paymentAmount")?.value) || 0;
+
+    const paymentReference =
+      document.getElementById("paymentReference")?.value?.trim() || "";
+
+    const paymentNote =
+      document.getElementById("paymentNote")?.value?.trim() || "";
+
+    const proofFile =
+      document.getElementById("paymentProofFile")?.files?.[0] || null;
+
+    /* =====================================
+     VALIDATE
+  ===================================== */
+
+    if (!paymentDate) {
+      showPaymentError("Tanggal pembayaran wajib diisi.");
+
+      return;
+    }
+
+    if (paymentAmount <= 0) {
+      showPaymentError("Nominal pembayaran tidak valid.");
+
+      return;
+    }
+
+    if (!paymentReference) {
+      showPaymentError("Nomor referensi wajib diisi.");
+
+      return;
+    }
+
+    if (!proofFile) {
+      showPaymentError("Bukti pembayaran wajib diupload.");
+
+      return;
+    }
+
+    if (!validatePaymentProof(proofFile)) {
+      return;
+    }
+
+    state.paymentSubmitting = true;
+
+    setPaymentSubmitLoading(true);
+
+    try {
+      /* =================================
+       1. FILE → BASE64
+    ================================= */
+
+      const base64 = await fileToBase64(proofFile);
+
+      /* =================================
+       2. UPLOAD GOOGLE DRIVE
+    ================================= */
+
+      const uploadPayload = {
+        reservationId,
+
+        fileName: proofFile.name,
+
+        mimeType: proofFile.type,
+
+        base64,
+      };
+
+      console.log("[PublicPayment] Upload proof:", {
+        reservationId,
+        fileName: proofFile.name,
+        mimeType: proofFile.type,
+        size: proofFile.size,
+      });
+
+      const uploadResult = await API.post(
+        "payment.proof.upload",
+        uploadPayload,
+      );
+
+      console.log("[PublicPayment] Upload result:", uploadResult);
+
+      if (!uploadResult || uploadResult.success === false) {
+        throw new Error(
+          uploadResult?.message || "Gagal mengupload bukti pembayaran.",
+        );
       }
 
-      if (dom.bookingSheet && !dom.bookingSheet.hidden) {
-        closeBookingSheet();
+      const proof = uploadResult.data || uploadResult;
+
+      /* =================================
+       3. AMBIL PROOF DATA
+    ================================= */
+
+      const proofFileId = proof.fileId || proof.id || "";
+
+      const proofUrl = proof.url || proof.proofUrl || proof.fileUrl || "";
+
+      if (!proofFileId && !proofUrl) {
+        throw new Error(
+          "Bukti pembayaran berhasil diupload tetapi data file tidak ditemukan.",
+        );
       }
-    });
 
-    /* ======================================================
-       CHECK IN
-    ====================================================== */
+      /* =================================
+       4. PAYMENT STORE
+    ================================= */
 
-    if (dom.bookingCheckIn) {
-      dom.bookingCheckIn.addEventListener("change", () => {
-        state.booking.checkIn = dom.bookingCheckIn.value;
+      const paymentPayload = {
+        reservationId,
 
-        /*
-         * Checkout tidak boleh
-         * sebelum check-in.
-         */
+        paymentDate,
 
-        updateCheckoutMin();
+        paymentMethod: "TRANSFER",
 
-        resetBookingResult();
+        paymentAmount,
+
+        paymentReference,
+
+        paymentNote,
+
+        proof: proofUrl,
+
+        proofFileId,
+
+        proofFileName: proof.fileName || proofFile.name,
+
+        proofMimeType: proof.mimeType || proofFile.type,
+
+        proofSize: proof.size || proofFile.size,
+      };
+
+      console.log("[PublicPayment] payment.store:", paymentPayload);
+
+      const paymentResult = await API.post("payment.store", paymentPayload);
+
+      console.log("[PublicPayment] payment.store result:", paymentResult);
+
+      if (!paymentResult || paymentResult.success === false) {
+        throw new Error(
+          paymentResult?.message || "Gagal menyimpan pembayaran.",
+        );
+      }
+
+      /* =================================
+       5. SUCCESS
+    ================================= */
+
+      state.paymentResult = paymentResult.data || paymentResult;
+
+      renderPaymentSubmitted();
+    } catch (error) {
+      console.error("[PublicPayment] Submit error:", error);
+
+      showPaymentError(error?.message || "Gagal mengirim pembayaran.");
+    } finally {
+      state.paymentSubmitting = false;
+
+      setPaymentSubmitLoading(false);
+    }
+  }
+
+  function setPaymentSubmitLoading(loading) {
+    const button = document.getElementById("paymentSubmitButton");
+
+    if (!button) {
+      return;
+    }
+
+    button.disabled = Boolean(loading);
+
+    button.textContent = loading ? "Uploading payment..." : "Submit payment";
+  }
+
+  function showPaymentError(message) {
+    const element = document.getElementById("paymentError");
+
+    if (!element) {
+      return;
+    }
+
+    element.textContent = message || "Terjadi kesalahan.";
+
+    element.hidden = false;
+  }
+
+  function clearPaymentError() {
+    const element = document.getElementById("paymentError");
+
+    if (!element) {
+      return;
+    }
+
+    element.textContent = "";
+
+    element.hidden = true;
+  }
+
+  function renderPaymentSubmitted() {
+    if (!dom.wizardContent) {
+      return;
+    }
+
+    const reservation = state.result || {};
+
+    const payment = state.payment || {};
+
+    const kode = reservation.kode || reservation.id || "-";
+
+    const total = Number(reservation.grandTotal || 0);
+
+    dom.wizardContent.innerHTML = `
+
+    <div class="public-wizard-panel payment-pending-panel">
+
+      <div class="payment-success-icon">
+
+        <i
+          data-lucide="clock-3"
+          aria-hidden="true"
+        ></i>
+
+      </div>
+
+
+      <div class="public-wizard-panel-heading">
+
+        <span class="eyebrow eyebrow-dark">
+          PAYMENT SUBMITTED
+        </span>
+
+        <h3>
+          Payment is pending.
+        </h3>
+
+        <p>
+          Bukti pembayaran berhasil dikirim
+          dan sedang menunggu verifikasi admin.
+        </p>
+
+      </div>
+
+
+      <div class="public-booking-summary">
+
+        <div>
+
+          <span>
+            RESERVATION CODE
+          </span>
+
+          <strong>
+            ${escapeHtml(kode)}
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            PAYMENT STATUS
+          </span>
+
+          <strong>
+            PENDING
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            PAYMENT METHOD
+          </span>
+
+          <strong>
+            TRANSFER
+          </strong>
+
+        </div>
+
+
+        <div>
+
+          <span>
+            AMOUNT
+          </span>
+
+          <strong>
+            ${formatCurrency(total)}
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <div class="public-payment-notice">
+
+        <i
+          data-lucide="info"
+          aria-hidden="true"
+        ></i>
+
+        <span>
+          Reservasi Anda masih dalam proses hold.
+          Simpan kode reservasi untuk proses
+          selanjutnya.
+        </span>
+
+      </div>
+
+
+      <div class="public-payment-actions">
+
+        <button
+          type="button"
+          class="btn btn-dark"
+          id="paymentBackToStays"
+        >
+          Back to stays
+        </button>
+
+      </div>
+
+    </div>
+
+  `;
+
+    document
+      .getElementById("paymentBackToStays")
+      ?.addEventListener("click", () => {
+        window.location.href = "./penginapan.html";
       });
-    }
 
-    /* ======================================================
-       CHECK OUT
-    ====================================================== */
-
-    if (dom.bookingCheckOut) {
-      dom.bookingCheckOut.addEventListener("change", () => {
-        state.booking.checkOut = dom.bookingCheckOut.value;
-
-        resetBookingResult();
-      });
-    }
-
-    /* ======================================================
-       GUESTS
-    ====================================================== */
-
-    if (dom.bookingGuests) {
-      dom.bookingGuests.addEventListener("change", () => {
-        state.booking.guests = Number(dom.bookingGuests.value) || 2;
-
-        resetBookingResult();
-      });
-    }
-
-    /* ======================================================
-       PRICE
-    ====================================================== */
-
-    if (dom.bookingPriceButton) {
-      dom.bookingPriceButton.addEventListener("click", calculatePrice);
-    }
-
-    /* ======================================================
-       BOOK
-    ====================================================== */
-
-    if (dom.bookingSubmitButton) {
-      dom.bookingSubmitButton.addEventListener("click", handleBookingSubmit);
-    }
+    createIcons();
   }
 
   /* ==========================================================
@@ -1091,13 +3158,12 @@ const PublicPenginapanDetail = (() => {
   ========================================================== */
 
   function updateCheckoutMin() {
-    if (!dom.bookingCheckIn || !dom.bookingCheckOut) {
-      return;
-    }
+    const checkIn =
+      document.getElementById("wizardCheckIn")?.value || state.booking.checkIn;
 
-    const checkIn = dom.bookingCheckIn.value;
+    const checkOut = document.getElementById("wizardCheckOut");
 
-    if (!checkIn) {
+    if (!checkIn || !checkOut) {
       return;
     }
 
@@ -1111,417 +3177,267 @@ const PublicPenginapanDetail = (() => {
 
     const minValue = formatInputDate(nextDay);
 
-    dom.bookingCheckOut.min = minValue;
+    checkOut.min = minValue;
 
-    /*
-     * Jika checkout sekarang
-     * invalid, otomatis geser
-     * ke hari berikutnya.
-     */
-
-    if (!dom.bookingCheckOut.value || dom.bookingCheckOut.value <= checkIn) {
-      dom.bookingCheckOut.value = minValue;
+    if (!checkOut.value || checkOut.value <= checkIn) {
+      checkOut.value = minValue;
 
       state.booking.checkOut = minValue;
     }
   }
 
   /* ==========================================================
-   MAP QUERY
+   FILE TO BASE64
 ========================================================== */
 
-  function getMapQuery(item = {}) {
-    /*
-     * Prioritas:
-     * 1. URL maps dari database
-     * 2. Nama + alamat
-     */
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
 
-    if (item.maps) {
-      try {
-        const url = new URL(item.maps);
+      reader.onload = () => {
+        const result = String(reader.result || "");
 
-        const match = url.pathname.match(/\/maps\/search\/(.+)/);
+        /*
+         * FileReader menghasilkan:
+         *
+         * data:image/png;base64,AAAA...
+         *
+         * Backend hanya membutuhkan:
+         *
+         * AAAA...
+         */
 
-        if (match && match[1]) {
-          return decodeURIComponent(match[1]);
-        }
-      } catch (err) {
-        console.warn("URL Google Maps tidak valid.", err);
-      }
-    }
+        const base64 = result.includes(",") ? result.split(",")[1] : result;
 
-    /*
-     * FALLBACK
-     */
-
-    return [item.nama, item.alamat, item.desa, item.kecamatan, item.kabupaten]
-      .filter(Boolean)
-      .join(", ");
-  }
-
-  /* ==========================================================
-     CALCULATE PRICE
-  ========================================================== */
-
-  async function calculatePrice() {
-    clearBookingError();
-
-    /* ======================================================
-       VALIDATE ROOM
-    ====================================================== */
-
-    if (!state.booking.selectedRoom) {
-      showBookingError("Silakan pilih kamar terlebih dahulu.");
-
-      return;
-    }
-
-    /* ======================================================
-       READ FORM
-    ====================================================== */
-
-    const checkIn = dom.bookingCheckIn?.value || "";
-
-    const checkOut = dom.bookingCheckOut?.value || "";
-
-    const guests = Number(dom.bookingGuests?.value) || 2;
-
-    state.booking.checkIn = checkIn;
-
-    state.booking.checkOut = checkOut;
-
-    state.booking.guests = guests;
-
-    /* ======================================================
-       VALIDATE CHECK-IN
-    ====================================================== */
-
-    if (!checkIn) {
-      showBookingError("Tanggal check-in wajib dipilih.");
-
-      dom.bookingCheckIn?.focus();
-
-      return;
-    }
-
-    /* ======================================================
-       VALIDATE CHECK-OUT
-    ====================================================== */
-
-    if (!checkOut) {
-      showBookingError("Tanggal check-out wajib dipilih.");
-
-      dom.bookingCheckOut?.focus();
-
-      return;
-    }
-
-    /* ======================================================
-       VALIDATE DATE
-    ====================================================== */
-
-    if (checkOut <= checkIn) {
-      showBookingError("Tanggal check-out harus setelah check-in.");
-
-      dom.bookingCheckOut?.focus();
-
-      return;
-    }
-
-    /* ======================================================
-       LOADING
-    ====================================================== */
-
-    setPriceLoading(true);
-
-    try {
-      const room = state.booking.selectedRoom;
-
-      const roomId = room.id || room.tipeKamarId || "";
-
-      if (!roomId) {
-        throw new Error("ID tipe kamar tidak ditemukan.");
-      }
-
-      /*
-       * IMPORTANT:
-       *
-       * Payload tetap sama
-       * seperti engine yang sudah
-       * kita tes sebelumnya.
-       *
-       * Tidak ada channel.
-       */
-
-      const payload = {
-        penginapanId: state.penginapan.id,
-
-        tipeKamarId: roomId,
-
-        checkIn: checkIn,
-
-        checkOut: checkOut,
-
-        jumlahTamu: guests,
+        resolve(base64);
       };
 
-      console.log("[PublicPenginapanDetail] booking.price:", payload);
+      reader.onerror = () => {
+        reject(new Error("Gagal membaca file bukti pembayaran."));
+      };
 
-      const result = await API.post("booking.price", payload);
-
-      console.log("[PublicPenginapanDetail] booking.price result:", result);
-
-      if (!result || result.success === false) {
-        throw new Error(result?.message || "Gagal menghitung harga.");
-      }
-
-      const pricing = result.data || result;
-
-      state.booking.pricing = pricing;
-
-      renderPriceResult(pricing);
-    } catch (error) {
-      console.error("[PublicPenginapanDetail] Price error:", error);
-
-      state.booking.error = error?.message || "Gagal menghitung harga.";
-
-      showBookingError(state.booking.error);
-    } finally {
-      setPriceLoading(false);
-    }
-  }
-
-  /* ==========================================================
-     RENDER PRICE
-  ========================================================== */
-
-  function renderPriceResult(pricing = {}) {
-    if (!dom.bookingPriceResult) {
-      return;
-    }
-
-    /* ======================================================
-       NIGHTS
-    ====================================================== */
-
-    const nights = Array.isArray(pricing.nights) ? pricing.nights : [];
-
-    const jumlahMalam = Number(pricing.jumlahMalam) || nights.length || 0;
-
-    if (dom.bookingNightCount) {
-      dom.bookingNightCount.textContent = `${jumlahMalam} ${
-        jumlahMalam === 1 ? "night" : "nights"
-      }`;
-    }
-
-    /* ======================================================
-       NIGHT LIST
-    ====================================================== */
-
-    if (dom.bookingNightList) {
-      if (!nights.length) {
-        dom.bookingNightList.innerHTML = "";
-      } else {
-        dom.bookingNightList.innerHTML = nights
-          .map((night) => renderNightRow(night))
-          .join("");
-      }
-    }
-
-    /* ======================================================
-       TOTAL
-    ====================================================== */
-
-    const total =
-      Number(pricing.total) ||
-      Number(pricing.grandTotal) ||
-      Number(pricing.subtotal) ||
-      0;
-
-    if (dom.bookingTotal) {
-      dom.bookingTotal.textContent = formatCurrency(total);
-    }
-
-    /* ======================================================
-       SHOW RESULT
-    ====================================================== */
-
-    dom.bookingPriceResult.hidden = false;
-
-    /* ======================================================
-       SHOW BOOK BUTTON
-    ====================================================== */
-
-    if (dom.bookingSubmitButton) {
-      dom.bookingSubmitButton.hidden = false;
-    }
-  }
-
-  /* ==========================================================
-     NIGHT ROW
-  ========================================================== */
-
-  function renderNightRow(night = {}) {
-    const date = night.tanggal || night.date || night.tanggalMenginap || "";
-
-    const price =
-      Number(night.harga) || Number(night.price) || Number(night.nominal) || 0;
-
-    return `
-
-      <div class="booking-price-row">
-
-        <span>
-          ${escapeHtml(formatDate(date))}
-        </span>
-
-        <strong>
-          ${formatCurrency(price)}
-        </strong>
-
-      </div>
-
-    `;
-  }
-
-  /* ==========================================================
-     RESET PRICE
-  ========================================================== */
-
-  function resetBookingResult() {
-    state.booking.pricing = null;
-
-    clearBookingError();
-
-    if (dom.bookingPriceResult) {
-      dom.bookingPriceResult.hidden = true;
-    }
-
-    if (dom.bookingSubmitButton) {
-      dom.bookingSubmitButton.hidden = true;
-    }
-  }
-
-  /* ==========================================================
-     PRICE LOADING
-  ========================================================== */
-
-  function setPriceLoading(loading) {
-    state.booking.loading = loading;
-
-    if (!dom.bookingPriceButton) {
-      return;
-    }
-
-    dom.bookingPriceButton.disabled = loading;
-
-    dom.bookingPriceButton.textContent = loading
-      ? "Checking price..."
-      : "Check availability";
-  }
-
-  /* ==========================================================
-     BOOKING ERROR
-  ========================================================== */
-
-  function showBookingError(message) {
-    if (!dom.bookingError) {
-      return;
-    }
-
-    dom.bookingError.textContent = message || "Terjadi kesalahan.";
-
-    dom.bookingError.hidden = false;
-  }
-
-  function clearBookingError() {
-    state.booking.error = null;
-
-    if (dom.bookingError) {
-      dom.bookingError.hidden = true;
-
-      dom.bookingError.textContent = "";
-    }
-  }
-
-  /* ==========================================================
-     BOOKING SUBMIT
-  ========================================================== */
-
-  function handleBookingSubmit() {
-    if (!state.booking.selectedRoom) {
-      showBookingError("Silakan pilih kamar terlebih dahulu.");
-
-      return;
-    }
-
-    if (!state.booking.pricing) {
-      showBookingError("Silakan cek harga terlebih dahulu.");
-
-      return;
-    }
-
-    /*
-     * STEP BERIKUTNYA:
-     *
-     * Di sini nanti kita buka
-     * guest information form:
-     *
-     * Nama tamu
-     * No HP
-     * Email
-     * Catatan
-     *
-     * Lalu create reservation.
-     *
-     * BELUM DIAKTIFKAN SEKARANG.
-     */
-
-    console.log("[PublicPenginapanDetail] Booking ready:", {
-      penginapan: state.penginapan,
-
-      room: state.booking.selectedRoom,
-
-      booking: state.booking,
+      reader.readAsDataURL(file);
     });
-
-    showBookingError(
-      "Harga sudah berhasil dihitung. Form pemesanan akan kita lanjutkan pada tahap berikutnya.",
-    );
   }
 
   /* ==========================================================
-     CAPACITY
-  ========================================================== */
+   VALIDATE PAYMENT PROOF
+========================================================== */
 
-  function formatCapacity(value) {
-    const number = Number(value);
+  function validatePaymentProof(file) {
+    if (!file) {
+      showPaymentError("Bukti pembayaran wajib diupload.");
 
-    if (Number.isFinite(number) && number > 0) {
-      return `${number} guests`;
+      return false;
     }
 
-    return String(value || "");
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+    if (!allowedTypes.includes(file.type)) {
+      showPaymentError("Format bukti harus JPG, PNG atau WEBP.");
+
+      return false;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      showPaymentError("Ukuran bukti maksimal 5 MB.");
+
+      return false;
+    }
+
+    return true;
   }
 
   /* ==========================================================
-     FASILITAS
+   PAYMENT PROOF FILE
+========================================================== */
+
+  function handlePaymentProofChange(event) {
+    clearPaymentError();
+
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (!validatePaymentProof(file)) {
+      event.target.value = "";
+
+      return;
+    }
+
+    const preview = document.getElementById("paymentProofPreview");
+
+    if (!preview) {
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+
+    preview.hidden = false;
+
+    preview.innerHTML = `
+
+    <div class="payment-proof-preview-image">
+
+      <img
+        src="${escapeAttribute(url)}"
+        alt="Preview bukti pembayaran"
+      />
+
+    </div>
+
+
+    <div class="payment-proof-preview-info">
+
+      <strong>
+        ${escapeHtml(file.name)}
+      </strong>
+
+      <span>
+        ${formatFileSize(file.size)}
+      </span>
+
+    </div>
+
+
+    <button
+      type="button"
+      class="btn btn-outline payment-proof-remove"
+      id="paymentProofRemove"
+    >
+      Hapus
+    </button>
+
+  `;
+
+    document
+      .getElementById("paymentProofRemove")
+      ?.addEventListener("click", () => {
+        event.target.value = "";
+
+        preview.hidden = true;
+
+        preview.innerHTML = "";
+
+        URL.revokeObjectURL(url);
+      });
+  }
+
+  function formatFileSize(bytes = 0) {
+    const size = Number(bytes) || 0;
+
+    if (size < 1024) {
+      return `${size} B`;
+    }
+
+    if (size < 1024 * 1024) {
+      return `${Math.round(size / 1024)} KB`;
+    }
+
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function removePaymentProof() {
+    const input = document.getElementById("paymentProofFile");
+
+    const preview = document.getElementById("paymentProofPreview");
+
+    if (state.payment.proofPreviewUrl) {
+      URL.revokeObjectURL(state.payment.proofPreviewUrl);
+    }
+
+    state.payment.proofFile = null;
+
+    state.payment.proofFileName = "";
+
+    state.payment.proofMimeType = "";
+
+    state.payment.proofPreviewUrl = "";
+
+    if (input) {
+      input.value = "";
+    }
+
+    if (preview) {
+      preview.hidden = true;
+
+      preview.innerHTML = "";
+    }
+  }
+
+  /* ==========================================================
+     SEARCH BUTTON LOADING
   ========================================================== */
 
-  function normalizeFasilitas(value) {
-    if (!value) {
-      return "";
+  function setSearchButtonLoading(loading) {
+    const button = document.getElementById("wizardNextButton");
+
+    if (!button) {
+      return;
     }
 
-    if (Array.isArray(value)) {
-      return value
-        .map((item) => String(item).trim())
-        .filter(Boolean)
-        .join(", ");
+    button.disabled = loading;
+
+    button.textContent = loading
+      ? "Checking availability..."
+      : "Search availability";
+  }
+
+  /* ==========================================================
+     WIZARD ERROR
+  ========================================================== */
+
+  function showWizardError(message) {
+    if (!dom.wizardError) {
+      return;
     }
 
-    return String(value).trim();
+    dom.wizardError.textContent = message || "Terjadi kesalahan.";
+
+    dom.wizardError.hidden = false;
+
+    dom.wizardError.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+    });
+  }
+
+  function clearWizardError() {
+    if (!dom.wizardError) {
+      return;
+    }
+
+    dom.wizardError.textContent = "";
+
+    dom.wizardError.hidden = true;
+  }
+
+  /* ==========================================================
+     RENDER GUEST OPTIONS
+  ========================================================== */
+
+  function renderGuestOptions(selected, min, max) {
+    let html = "";
+
+    for (let i = min; i <= max; i++) {
+      html += `
+
+        <option
+          value="${i}"
+          ${Number(selected) === i ? "selected" : ""}
+        >
+          ${i}
+          ${i === 1 ? "Guest" : "Guests"}
+        </option>
+
+      `;
+    }
+
+    return html;
   }
 
   /* ==========================================================
@@ -1552,6 +3468,30 @@ const PublicPenginapanDetail = (() => {
     }
 
     return parts.join(", ");
+  }
+
+  /* ==========================================================
+     MAP QUERY
+  ========================================================== */
+
+  function getMapQuery(item = {}) {
+    if (item.maps) {
+      try {
+        const url = new URL(item.maps);
+
+        const match = url.pathname.match(/\/maps\/search\/(.+)/);
+
+        if (match && match[1]) {
+          return decodeURIComponent(match[1]);
+        }
+      } catch (error) {
+        console.warn("[PublicPenginapanDetail] Invalid Maps URL.");
+      }
+    }
+
+    return [item.nama, item.alamat, item.desa, item.kecamatan, item.kabupaten]
+      .filter(Boolean)
+      .join(", ");
   }
 
   /* ==========================================================
@@ -1611,6 +3551,119 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
+     FACILITAS
+  ========================================================== */
+
+  function normalizeFasilitas(value) {
+    if (!value) {
+      return "";
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map((item) => String(item).trim())
+        .filter(Boolean)
+        .join(", ");
+    }
+
+    return String(value).trim();
+  }
+
+  /* ==========================================================
+     FORMAT CURRENCY
+  ========================================================== */
+
+  function formatCurrency(value) {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+
+      currency: "IDR",
+
+      maximumFractionDigits: 0,
+    }).format(Number(value || 0));
+  }
+
+  /* ==========================================================
+     FORMAT DATE
+  ========================================================== */
+
+  function formatDate(value) {
+    if (!value) {
+      return "-";
+    }
+
+    const date = new Date(`${value}T00:00:00`);
+
+    if (Number.isNaN(date.getTime())) {
+      return String(value);
+    }
+
+    return new Intl.DateTimeFormat("id-ID", {
+      day: "2-digit",
+
+      month: "short",
+
+      year: "numeric",
+    }).format(date);
+  }
+
+  /* ==========================================================
+     FORMAT INPUT DATE
+  ========================================================== */
+
+  function formatInputDate(date) {
+    const year = date.getFullYear();
+
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  }
+
+  /* ==========================================================
+     CALCULATE NIGHT COUNT
+  ========================================================== */
+
+  function calculateNightCount(checkIn, checkOut) {
+    if (!checkIn || !checkOut) {
+      return 0;
+    }
+
+    const start = new Date(`${checkIn}T00:00:00`);
+
+    const end = new Date(`${checkOut}T00:00:00`);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+      return 0;
+    }
+
+    const diff = end.getTime() - start.getTime();
+
+    return Math.max(Math.round(diff / (1000 * 60 * 60 * 24)), 0);
+  }
+
+  /* ==========================================================
+     VALIDATE EMAIL
+  ========================================================== */
+
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  }
+
+  /* ==========================================================
+     DOCUMENT TITLE
+  ========================================================== */
+
+  function updateDocumentTitle(nama) {
+    if (!nama) {
+      return;
+    }
+
+    document.title = `Dieng Net — ${nama}`;
+  }
+
+  /* ==========================================================
      LOADING
   ========================================================== */
 
@@ -1627,11 +3680,6 @@ const PublicPenginapanDetail = (() => {
       dom.footer.hidden = true;
     }
 
-    closeBookingSheet({
-      reset: false,
-      restoreFocus: false,
-    });
-
     hideError();
   }
 
@@ -1647,11 +3695,6 @@ const PublicPenginapanDetail = (() => {
 
   function showError(message) {
     hideLoading();
-
-    closeBookingSheet({
-      reset: false,
-      restoreFocus: false,
-    });
 
     if (dom.content) {
       dom.content.hidden = true;
@@ -1677,15 +3720,25 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
-     DOCUMENT TITLE
+     SCROLL WIZARD
   ========================================================== */
 
-  function updateDocumentTitle(nama) {
-    if (!nama) {
+  function scrollWizard() {
+    const wizard = document.getElementById("reservationWizard");
+
+    if (!wizard) {
       return;
     }
 
-    document.title = `Dieng Net — ${nama}`;
+    window.setTimeout(() => {
+      const top = wizard.getBoundingClientRect().top + window.scrollY - 100;
+
+      window.scrollTo({
+        top,
+
+        behavior: "smooth",
+      });
+    }, 80);
   }
 
   /* ==========================================================
@@ -1717,53 +3770,16 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
-     FORMAT CURRENCY
+     LUCIDE
   ========================================================== */
 
-  function formatCurrency(value) {
-    const number = Number(value) || 0;
-
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      maximumFractionDigits: 0,
-    }).format(number);
-  }
-
-  /* ==========================================================
-     FORMAT DATE
-  ========================================================== */
-
-  function formatDate(value) {
-    if (!value) {
-      return "-";
+  function createIcons() {
+    if (
+      typeof lucide !== "undefined" &&
+      typeof lucide.createIcons === "function"
+    ) {
+      lucide.createIcons();
     }
-
-    const date = new Date(`${value}T00:00:00`);
-
-    if (Number.isNaN(date.getTime())) {
-      return value;
-    }
-
-    return new Intl.DateTimeFormat("id-ID", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    }).format(date);
-  }
-
-  /* ==========================================================
-     FORMAT INPUT DATE
-  ========================================================== */
-
-  function formatInputDate(date) {
-    const year = date.getFullYear();
-
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-
-    const day = String(date.getDate()).padStart(2, "0");
-
-    return `${year}-${month}-${day}`;
   }
 
   /* ==========================================================
@@ -1792,20 +3808,6 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
-     ESCAPE CSS SELECTOR VALUE
-  ========================================================== */
-
-  function escapeSelectorValue(value) {
-    const stringValue = String(value ?? "");
-
-    if (window.CSS && typeof window.CSS.escape === "function") {
-      return window.CSS.escape(stringValue);
-    }
-
-    return stringValue.replace(/["\\]/g, "\\$&");
-  }
-
-  /* ==========================================================
      PUBLIC API
   ========================================================== */
 
@@ -1814,15 +3816,15 @@ const PublicPenginapanDetail = (() => {
 
     load,
 
-    openBookingSheet,
+    nextStep,
 
-    closeBookingSheet,
+    previousStep,
 
     getState() {
       return {
         ...state,
 
-        rooms: [...state.rooms],
+        units: [...state.units],
 
         booking: {
           ...state.booking,

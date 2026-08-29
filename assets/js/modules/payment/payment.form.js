@@ -7,217 +7,292 @@ const PaymentForm = (() => {
      RENDER
   ===================================== */
 
-  function render(booking = {}) {
+  function render(reservation = {}) {
     const today = new Date().toISOString().split("T")[0];
+
+    const grandTotal = Number(reservation.grandTotal || 0);
+
+    const formattedTotal = ReservasiHelper.formatCurrency(grandTotal);
 
     return `
 
-        <form
-            id="paymentForm"
-            class="form">
+      <form
+        id="paymentForm"
+        class="form">
 
-            <div class="form-group">
+        <!-- =================================
+             RESERVATION SUMMARY
+        ================================== -->
 
-                <label class="form-label">
+        <div class="summary-section">
 
-                    Tanggal
+          <div class="summary-section-title">
+            Ringkasan Reservasi
+          </div>
 
-                </label>
+          <div class="budget-list">
 
-                <input
-                    type="date"
-                    id="paymentDate"
-                    class="form-control"
-                    value="${today}">
+            <div class="budget-item">
 
-            </div>
+              <span>
+                Kode Reservasi
+              </span>
 
-            <div class="form-group">
-
-                <label class="form-label">
-
-                    Metode Pembayaran
-
-                </label>
-
-                <select
-                    id="paymentMethod"
-                    class="form-control">
-
-                    <option value="${PaymentMethod.CASH}">
-                        Cash
-                    </option>
-
-                    <option value="${PaymentMethod.TRANSFER}">
-                        Transfer
-                    </option>
-
-                    <option value="${PaymentMethod.QRIS}">
-                        QRIS
-                    </option>
-
-                    <option value="${PaymentMethod.CREDIT_CARD}">
-                        Credit Card
-                    </option>
-
-                </select>
+              <strong>
+                ${reservation.kodeReservasi || "-"}
+              </strong>
 
             </div>
 
-            <div class="form-group">
+            <div class="budget-item">
 
-                <label class="form-label">
+              <span>
+                Tamu
+              </span>
 
-                    Nominal
-
-                </label>
-
-                <input
-                    type="number"
-                    id="paymentAmount"
-                    class="form-control"
-                    placeholder="0">
+              <strong>
+                ${reservation.namaTamu || "-"}
+              </strong>
 
             </div>
 
-            <div
-                id="paymentReferenceSection"
-                class="form-group"
-                style="display:none;">
+            <div class="budget-total">
 
-                <label class="form-label">
+              <div>
+                Total Reservasi
+              </div>
 
-                    Nomor Referensi
-
-                </label>
-
-                <input
-                    type="text"
-                    id="paymentReference"
-                    class="form-control"
-                    placeholder="Nomor Referensi">
+              <strong>
+                ${formattedTotal}
+              </strong>
 
             </div>
 
+          </div>
 
-            <div
-                id="paymentProofSection"
-                class="form-group"
-                style="display:none;">
+        </div>
 
-                <label class="form-label">
 
-                    Bukti Pembayaran
+        <!-- =================================
+             PAYMENT DATE
+        ================================== -->
 
-                </label>
+        <div class="form-group">
 
-                <div
-                    class="upload"
-                    data-upload="paymentProof">
+          <label class="form-label">
+            Tanggal Pembayaran
+          </label>
 
-                    <input
-                        type="file"
-                        accept="image/*"
-                        hidden>
+          <input
+            type="date"
+            id="paymentDate"
+            class="form-control"
+            value="${today}">
 
-                    <label class="upload-box">
+        </div>
 
-                        <div class="upload-icon">
 
-                            <i data-lucide="image-plus"></i>
+        <!-- =================================
+             PAYMENT METHOD
+        ================================== -->
 
-                        </div>
+        <div class="form-group">
 
-                        <div class="upload-title">
+          <label class="form-label">
+            Metode Pembayaran
+          </label>
 
-                            Klik untuk memilih file
+          <select
+            id="paymentMethod"
+            class="form-control">
 
-                        </div>
+            <option value="${PaymentMethod.CASH}">
+              Cash
+            </option>
 
-                        <div class="upload-text">
+            <option value="${PaymentMethod.TRANSFER}">
+              Transfer
+            </option>
 
-                            JPG, PNG maksimal 5 MB
+            <option value="${PaymentMethod.QRIS}">
+              QRIS
+            </option>
 
-                        </div>
+            <option value="${PaymentMethod.CREDIT_CARD}">
+              Credit Card
+            </option>
 
-                    </label>
+          </select>
 
-                    <div class="upload-preview">
+        </div>
 
-                        <img
-                            class="upload-image"
-                            src=""
-                            alt="Preview">
 
-                        <div class="upload-info">
+        <!-- =================================
+             PAYMENT AMOUNT
+        ================================== -->
 
-                            <div class="upload-name">
+        <div class="form-group">
 
-                                -
+          <label class="form-label">
+            Nominal Pembayaran
+          </label>
 
-                            </div>
+          <input
+            type="number"
+            id="paymentAmount"
+            class="form-control"
+            value="${grandTotal}"
+            readonly>
 
-                            <div class="upload-size">
+          <small class="form-help">
+            Pembayaran wajib dilakukan secara penuh.
+          </small>
 
-                                -
+        </div>
 
-                            </div>
 
-                        </div>
+        <!-- =================================
+             REFERENCE
+        ================================== -->
 
-                        <button
-                            type="button"
-                            class="upload-remove">
+        <div
+          id="paymentReferenceSection"
+          class="form-group"
+          style="display:none;">
 
-                            <i data-lucide="trash-2"></i>
+          <label class="form-label">
+            Nomor Referensi
+          </label>
 
-                        </button>
+          <input
+            type="text"
+            id="paymentReference"
+            class="form-control"
+            placeholder="Nomor Referensi">
 
-                    </div>
+        </div>
 
+
+        <!-- =================================
+             PAYMENT PROOF
+        ================================== -->
+
+        <div
+          id="paymentProofSection"
+          class="form-group"
+          style="display:none;">
+
+          <label class="form-label">
+            Bukti Pembayaran
+          </label>
+
+          <div
+            class="upload"
+            data-upload="paymentProof">
+
+            <input
+              type="file"
+              accept="image/*"
+              hidden>
+
+            <label class="upload-box">
+
+              <div class="upload-icon">
+
+                <i data-lucide="image-plus"></i>
+
+              </div>
+
+              <div class="upload-title">
+                Klik untuk memilih file
+              </div>
+
+              <div class="upload-text">
+                JPG, PNG maksimal 5 MB
+              </div>
+
+            </label>
+
+            <div class="upload-preview">
+
+              <img
+                class="upload-image"
+                src=""
+                alt="Preview">
+
+              <div class="upload-info">
+
+                <div class="upload-name">
+                  -
                 </div>
 
-            </div>
+                <div class="upload-size">
+                  -
+                </div>
 
-            <div class="form-group">
+              </div>
 
-                <label class="form-label">
+              <button
+                type="button"
+                class="upload-remove">
 
-                    Catatan
+                <i data-lucide="trash-2"></i>
 
-                </label>
-
-                <textarea
-                    id="paymentNote"
-                    class="form-control"
-                    rows="3"
-                    placeholder="Catatan pembayaran"></textarea>
+              </button>
 
             </div>
 
-            <div class="form-footer">
+          </div>
 
-                <button
-                    type="button"
-                    id="btnCancelPayment"
-                    class="btn btn-secondary">
+        </div>
 
-                    Batal
 
-                </button>
+        <!-- =================================
+             NOTE
+        ================================== -->
 
-                <button
-                    type="button"
-                    id="btnSavePayment"
-                    class="btn btn-primary">
+        <div class="form-group">
 
-                    Simpan
+          <label class="form-label">
+            Catatan
+          </label>
 
-                </button>
+          <textarea
+            id="paymentNote"
+            class="form-control"
+            rows="3"
+            placeholder="Catatan pembayaran"></textarea>
 
-            </div>
+        </div>
 
-        </form>
+
+        <!-- =================================
+             FOOTER
+        ================================== -->
+
+        <div class="form-footer">
+
+          <button
+            type="button"
+            id="btnCancelPayment"
+            class="btn btn-secondary">
+
+            Batal
+
+          </button>
+
+          <button
+            type="button"
+            id="btnSavePayment"
+            class="btn btn-primary">
+
+            Kirim Pembayaran
+
+          </button>
+
+        </div>
+
+      </form>
 
     `;
   }

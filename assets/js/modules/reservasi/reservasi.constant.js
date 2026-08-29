@@ -1,5 +1,9 @@
 /* =========================================
-   RESERVASI STATUS
+   RESERVASI CONSTANT
+========================================= */
+
+/* =========================================
+   RESERVATION STATUS
 ========================================= */
 
 const ReservasiStatus = Object.freeze({
@@ -7,11 +11,13 @@ const ReservasiStatus = Object.freeze({
 
   BOOKED: "BOOKED",
 
-  CHECK_IN: "CHECK IN",
+  CHECK_IN: "CHECK_IN",
 
-  CHECK_OUT: "CHECK OUT",
+  CHECK_OUT: "CHECK_OUT",
 
   CANCELLED: "CANCELLED",
+
+  EXPIRED: "EXPIRED",
 });
 
 /* =========================================
@@ -42,6 +48,22 @@ const BookingChannel = Object.freeze({
   OWNER: "OWNER",
 
   AGEN: "AGEN",
+});
 
-  WALK_IN: "WALK IN",
+/* =========================================
+   RESERVATION HOLD
+========================================= */
+
+const ReservationHold = Object.freeze({
+  DURATION_HOURS: 12,
+});
+
+/* =========================================
+   DEFAULT
+========================================= */
+
+const ReservasiDefault = Object.freeze({
+  PAGE: 1,
+
+  LIMIT: 10,
 });

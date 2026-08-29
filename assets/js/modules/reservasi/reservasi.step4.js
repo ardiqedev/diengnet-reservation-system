@@ -5,6 +5,12 @@
 
 const ReservasiStep4 = {
   /* =====================================
+     STATE
+  ===================================== */
+
+  pricing: null,
+
+  /* =====================================
      RENDER
   ===================================== */
 
@@ -24,584 +30,827 @@ const ReservasiStep4 = {
      INIT
   ===================================== */
 
-  init() {
-    this.renderSummary();
+  async init() {
+    Loading.show();
+
+    try {
+      const booking = Reservasi.booking || {};
+
+      /* ===============================
+       CALCULATE PRICING
+    =============================== */
+
+      this.pricing = await BookingService.calculatePrice(booking);
+
+      /* ===============================
+       SAVE PRICING TO BOOKING
+    =============================== */
+
+      Reservasi.booking = {
+        ...booking,
+
+        subtotal: this.pricing.subtotal,
+
+        extraPerson: this.pricing.extraPersonPrice,
+
+        discount: this.pricing.discount,
+
+        tax: this.pricing.tax,
+
+        grandTotal: this.pricing.total,
+
+        total: this.pricing.total,
+
+        jumlahMalam: this.pricing.jumlahMalam,
+
+        minimumStay: this.pricing.minimumStay,
+
+        mataUang: this.pricing.mataUang,
+
+        nights: this.pricing.nights,
+      };
+
+      this.renderSummary();
+    } catch (error) {
+      console.error("[STEP4] PRICING ERROR:", error);
+
+      Toast.error(error.message || "Gagal menghitung harga reservasi.");
+    } finally {
+      Loading.hide();
+    }
   },
 
   /* =====================================
      RENDER SUMMARY
   ===================================== */
 
-  /* =====================================
-   RENDER SUMMARY
-===================================== */
   renderSummary() {
-    const booking = Reservasi.booking;
+    const booking = Reservasi.booking || {};
 
-    const pricing = ReservasiPricing.calculate(booking);
+    const pricing = this.pricing;
 
     const container = document.getElementById("reservationSummary");
 
-    if (!container) return;
+    if (!container) {
+      return;
+    }
+
+    if (!pricing) {
+      container.innerHTML = `
+
+        <div class="empty-state">
+
+          Harga reservasi belum dapat dihitung.
+
+        </div>
+
+      `;
+
+      return;
+    }
 
     container.innerHTML = `
 
-        <div class="card">
+      <div class="card">
 
-            <div class="card-header">
+        <div class="card-header">
 
-                <h3>Review Draft Reservasi</h3>
+          <h3>
+            Review Draft Reservasi
+          </h3>
 
-                    <p>
-                        Pastikan seluruh informasi sudah benar sebelum draft reservasi dibuat.
-                    </p>
-
-            </div>
-
-            <div class="card-body">
-
-                ${this.renderReservationSection(booking)}
-
-                ${this.renderRoomSection(booking)}
-                ${this.renderGuestSection(booking)}
-                ${this.renderBudgetSection(pricing)}
-
-            </div>
+          <p>
+            Pastikan seluruh informasi sudah benar
+            sebelum draft reservasi dibuat.
+          </p>
 
         </div>
+
+
+        <div class="card-body">
+
+          ${this.renderReservationSection(booking)}
+
+          ${this.renderUnitSection(booking)}
+
+          ${this.renderGuestSection(booking)}
+
+          ${this.renderNightlyPriceSection(pricing)}
+
+          ${this.renderBudgetSection(pricing)}
+
+        </div>
+
+      </div>
 
     `;
   },
 
   /* =====================================
-   RENDER RESERVATION CARD
-===================================== */
+     RESERVATION SECTION
+  ===================================== */
+
   renderReservationSection(booking) {
     return `
 
-    <div class="summary-section">
+      <div class="summary-section">
 
         <div class="summary-section-title">
-
-            Detail Reservasi
-
+          Detail Reservasi
         </div>
+
 
         <div class="summary-grid">
 
-            <div class="summary-row">
 
-                <div class="summary-label">
+          <div class="summary-row">
 
-                    Penginapan
+            <div class="summary-label">
+              Penginapan
+            </div>
 
-                </div>
+            <div class="summary-value">
 
-                <div class="summary-value">
-
-                    ${booking.penginapanNama || "-"}
-
-                </div>
+              ${booking.penginapanNama || booking.penginapan || "-"}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Nomor Kamar
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Channel
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.nomorKamar || "-"}
-
-                </div>
+              ${booking.channelNama || booking.channel || "-"}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Tipe Kamar
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Check In
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.tipeKamar || "-"}
-
-                </div>
+              ${ReservasiHelper.formatDate(booking.checkIn)}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Check In
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Check Out
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${ReservasiHelper.formatDate(booking.checkIn)}
-
-                </div>
+              ${ReservasiHelper.formatDate(booking.checkOut)}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Check Out
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Jumlah Malam
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${ReservasiHelper.formatDate(booking.checkOut)}
-
-                </div>
+              ${booking.jumlahMalam || 0}
+              Malam
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Jumlah Malam
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Dewasa
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${ReservasiHelper.countNight(
-                      booking.checkIn,
-                      booking.checkOut,
-                    )} Malam
+              ${Number(booking.dewasa) || 0}
 
-                </div>
+              Orang
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Nama Pemesan
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Anak
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.namaTamu || "-"}
+              ${Number(booking.anak) || 0}
 
-                </div>
+              Orang
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
-
-                    No HP
-
-                </div>
-
-                <div class="summary-value">
-
-                    ${booking.noHp || "-"}
-
-                </div>
-
-            </div>
-
-            <div class="summary-row">
-
-                <div class="summary-label">
-
-                    Channel
-
-                </div>
-
-                <div class="summary-value">
-
-                    ${booking.channelNama || "-"}
-
-                </div>
-
-            </div>
 
         </div>
 
-    </div>
+      </div>
 
-  `;
+    `;
   },
 
   /* =====================================
-   RENDER ROOM CARD
-===================================== */
+     UNIT SECTION
+  ===================================== */
 
-  renderRoomSection(booking) {
+  renderUnitSection(booking) {
     return `
 
-    <div class="summary-section">
+      <div class="summary-section">
 
         <div class="summary-section-title">
-
-            Detail Kamar
-
+          Detail Unit
         </div>
+
 
         <div class="summary-grid">
 
-            <div class="summary-row">
 
-                <div class="summary-label">
+          <div class="summary-row">
 
-                    Nomor Kamar
+            <div class="summary-label">
+              Unit
+            </div>
 
-                </div>
+            <div class="summary-value">
 
-                <div class="summary-value">
-
-                    ${booking.nomorKamar || "-"}
-
-                </div>
+              ${booking.unitNama || booking.unit || "-"}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Tipe Kamar
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Tipe Unit
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.tipeKamar || "-"}
-
-                </div>
+              ${booking.unitTipe || booking.tipe || "-"}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Kapasitas
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Kapasitas Unit
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.dewasa || 0} Dewasa
-                    •
-                    ${booking.anak || 0} Anak
+              ${Number(booking.kapasitasDewasa) || 0}
 
-                </div>
+              Dewasa
+
+              •
+
+              ${Number(booking.kapasitasAnak) || 0}
+
+              Anak
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Harga / Malam
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Bed
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${ReservasiHelper.formatCurrency(booking.roomPrice || 0)}
+              ${Number(booking.jumlahBed) || 0}
 
-                </div>
+              ${booking.jenisBed || "-"}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Extra Person
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Luas
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${ReservasiHelper.formatCurrency(booking.extraPerson || 0)}
-
-                </div>
+              ${booking.luas ? `${booking.luas} m²` : "-"}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Minimal Menginap
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Minimal Menginap
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.minimalMalam || 1} Malam
+              ${pricingMinimumStay(booking, this.pricing)}
 
-                </div>
+              Malam
 
             </div>
+
+          </div>
+
 
         </div>
 
-    </div>
+      </div>
 
-  `;
+    `;
   },
 
   /* =====================================
-   RENDER GUEST CARD
-===================================== */
-
-  /* =====================================
-   RENDER GUEST CARD
-===================================== */
+     GUEST SECTION
+  ===================================== */
 
   renderGuestSection(booking) {
     return `
 
-    <div class="summary-section">
+      <div class="summary-section">
 
         <div class="summary-section-title">
-
-            Data Tamu
-
+          Data Tamu
         </div>
+
 
         <div class="summary-grid">
 
-            <div class="summary-row">
 
-                <div class="summary-label">
+          <div class="summary-row">
 
-                    Nama Pemesan
+            <div class="summary-label">
+              Nama Pemesan
+            </div>
 
-                </div>
+            <div class="summary-value">
 
-                <div class="summary-value">
-
-                    ${booking.namaTamu || "-"}
-
-                </div>
+              ${booking.namaTamu || "-"}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Nomor HP
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Nomor HP
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.noHp || "-"}
-
-                </div>
+              ${booking.noHp || "-"}
 
             </div>
 
-            <div class="summary-row">
+          </div>
 
-                <div class="summary-label">
 
-                    Email
+          <div class="summary-row">
 
-                </div>
+            <div class="summary-label">
+              Email
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.email || "-"}
-
-                </div>
+              ${booking.email || "-"}
 
             </div>
 
-            <div class="summary-row summary-full">
+          </div>
 
-                <div class="summary-label">
 
-                    Permintaan Khusus
+          <div
+            class="summary-row summary-full"
+          >
 
-                </div>
+            <div class="summary-label">
+              Permintaan Khusus
+            </div>
 
-                <div class="summary-value">
+            <div class="summary-value">
 
-                    ${booking.catatan || "-"}
-
-                </div>
+              ${booking.catatan || "-"}
 
             </div>
+
+          </div>
+
 
         </div>
 
-    </div>
+      </div>
 
-  `;
+    `;
   },
 
   /* =====================================
-   RENDER BUDGET SECTION
-===================================== */
+     NIGHTLY PRICE
+  ===================================== */
+
+  renderNightlyPriceSection(pricing) {
+    const nights = Array.isArray(pricing.nights) ? pricing.nights : [];
+
+    if (!nights.length) {
+      return "";
+    }
+
+    const rows = nights
+      .map(
+        (night) => `
+
+          <div class="budget-item">
+
+            <div>
+
+              <strong>
+                ${ReservasiHelper.formatDate(night.tanggal)}
+              </strong>
+
+              <small
+                style="
+                  display:block;
+                  opacity:.7;
+                "
+              >
+
+                ${night.hari}
+                •
+                ${night.jenisHarga}
+
+              </small>
+
+            </div>
+
+
+            <strong>
+
+              ${ReservasiHelper.formatCurrency(night.harga)}
+
+            </strong>
+
+          </div>
+
+        `,
+      )
+      .join("");
+
+    return `
+
+      <div class="summary-section">
+
+        <div class="summary-section-title">
+          Rincian Harga per Malam
+        </div>
+
+
+        <div class="summary-section-desc">
+          Harga dihitung berdasarkan musim
+          yang berlaku pada setiap tanggal.
+        </div>
+
+
+        <div class="budget-list">
+
+          ${rows}
+
+        </div>
+
+      </div>
+
+    `;
+  },
+
+  /* =====================================
+     BUDGET SECTION
+  ===================================== */
 
   renderBudgetSection(pricing) {
     return `
 
-    <div class="summary-section">
+      <div class="summary-section">
 
-      <div class="summary-section-title">
+        <div class="summary-section-title">
+          Ringkasan Biaya
+        </div>
 
-        Ringkasan Biaya
+
+        <div class="summary-section-desc">
+          Ringkasan biaya reservasi.
+        </div>
+
+
+        <div class="budget-list">
+
+
+          <div class="budget-item">
+
+            <span>
+              Harga Unit
+            </span>
+
+            <strong>
+
+              ${ReservasiHelper.formatCurrency(pricing.subtotal)}
+
+            </strong>
+
+          </div>
+
+
+          <div class="budget-item">
+
+            <span>
+              Extra Person
+            </span>
+
+            <strong>
+
+              ${ReservasiHelper.formatCurrency(pricing.extraPersonPrice || 0)}
+
+            </strong>
+
+          </div>
+
+
+          <div class="budget-item">
+
+            <span>
+              Diskon
+            </span>
+
+            <strong class="text-success">
+
+              -
+
+              ${ReservasiHelper.formatCurrency(pricing.discount || 0)}
+
+            </strong>
+
+          </div>
+
+
+          <div class="budget-item">
+
+            <span>
+              Pajak
+            </span>
+
+            <strong>
+
+              ${ReservasiHelper.formatCurrency(pricing.tax || 0)}
+
+            </strong>
+
+          </div>
+
+
+        </div>
+
+
+        <div class="budget-total">
+
+          <div>
+            Grand Total
+          </div>
+
+          <div>
+
+            ${ReservasiHelper.formatCurrency(pricing.total)}
+
+          </div>
+
+        </div>
 
       </div>
 
-      <div class="summary-section-desc">
-
-        Ringkasan biaya reservasi.
-
-      </div>
-
-      <div class="budget-list">
-
-        <div class="budget-item">
-
-          <span>Harga Kamar</span>
-
-          <strong>
-
-            ${ReservasiHelper.formatCurrency(pricing.roomPrice)}
-
-          </strong>
-
-        </div>
-
-        <div class="budget-item">
-
-          <span>Extra Person</span>
-
-          <strong>
-
-            ${ReservasiHelper.formatCurrency(pricing.extraPerson)}
-
-          </strong>
-
-        </div>
-
-        <div class="budget-item">
-
-          <span>Diskon</span>
-
-          <strong class="text-success">
-
-            - ${ReservasiHelper.formatCurrency(pricing.discount)}
-
-          </strong>
-
-        </div>
-
-        <div class="budget-item">
-
-          <span>Pajak</span>
-
-          <strong>
-
-            ${ReservasiHelper.formatCurrency(pricing.tax)}
-
-          </strong>
-
-        </div>
-
-      </div>
-
-      <div class="budget-total">
-
-        <div>
-
-          Grand Total
-
-        </div>
-
-        <div>
-
-          ${ReservasiHelper.formatCurrency(pricing.total)}
-
-        </div>
-
-      </div>
-
-    </div>
-
-  `;
+    `;
   },
 
   /* =====================================
      SAVE
   ===================================== */
+
   async save() {
-    if (!this.validateBooking()) return;
+    if (this.submitting) {
+      return;
+    }
 
-    const booking = this.prepareBooking();
+    this.submitting = true;
 
-    const result = await this.saveBooking(booking);
+    try {
+      const booking = {
+        ...Reservasi.booking,
+      };
 
-    if (!result.success) return;
+      console.log("[STEP4] SAVE BOOKING:", booking);
 
-    this.afterSave(result);
+      /* ==============================
+       VALIDASI
+    ============================== */
+
+      if (!ReservasiValidator.step4(booking)) {
+        return;
+      }
+
+      /* ==============================
+       SIMPAN RESERVASI
+    ============================== */
+
+      const result = await ReservasiService.save(booking);
+
+      console.log("[STEP4] RESERVATION CREATED:", result);
+
+      Toast.success("Reservasi berhasil dibuat.");
+
+      /* ==============================
+       SELESAI
+    ============================== */
+
+      if (typeof Reservasi.reset === "function") {
+        Reservasi.reset();
+      }
+
+      Router.navigate("reservasi");
+    } catch (error) {
+      console.error("[STEP4] SAVE ERROR:", error);
+
+      Toast.error(error.message || "Gagal menyimpan reservasi.");
+    } finally {
+      this.submitting = false;
+    }
   },
+
+  /* =====================================
+     VALIDATE
+  ===================================== */
 
   validateBooking() {
     return ReservasiValidator.step4(Reservasi.booking);
   },
 
-  prepareBooking() {
-    const booking = Reservasi.booking;
+  /* =====================================
+     PREPARE BOOKING
+  ===================================== */
 
-    const pricing = ReservasiPricing.calculate(booking);
+  prepareBooking() {
+    const booking = Reservasi.booking || {};
+
+    const pricing = this.pricing;
+
+    if (!pricing) {
+      throw new Error("Pricing reservasi belum dihitung.");
+    }
 
     return {
-      id: crypto.randomUUID(),
+      id: booking.id || crypto.randomUUID(),
 
-      bookingCode: ReservasiHelper.generateBookingCode(),
+      kodeReservasi:
+        booking.kodeReservasi ||
+        booking.bookingCode ||
+        ReservasiHelper.generateBookingCode(),
 
-      status: "DRAFT",
+      penginapanId: booking.penginapanId || "",
+
+      penginapan: booking.penginapanNama || booking.penginapan || "",
+
+      unitId: booking.unitId || booking.kamarId || "",
+
+      unit: booking.unitNama || booking.unit || "",
+
+      unitTipe: booking.unitTipe || booking.tipe || "",
+
+      musimId: pricing.nights?.[0]?.musimId || booking.musimId || "",
+
+      musim: booking.musim || "",
+
+      channel: booking.channel || "",
+
+      channelNama: booking.channelNama || "",
+
+      tamuId: booking.tamuId || "",
+
+      namaTamu: booking.namaTamu || "",
+
+      noHp: booking.noHp || "",
+
+      email: booking.email || "",
+
+      checkIn: booking.checkIn || "",
+
+      checkOut: booking.checkOut || "",
+
+      jumlahMalam: pricing.jumlahMalam || 0,
+
+      dewasa: Number(booking.dewasa || 0),
+
+      anak: Number(booking.anak || 0),
+
+      kapasitasDewasa: Number(booking.kapasitasDewasa || 0),
+
+      kapasitasAnak: Number(booking.kapasitasAnak || 0),
+
+      roomPrice: Number(pricing.subtotal || 0),
+
+      extraPerson: Number(pricing.extraPersonPrice || 0),
+
+      subtotal: Number(pricing.subtotal || 0),
+
+      diskon: Number(pricing.discount || 0),
+
+      pajak: Number(pricing.tax || 0),
+
+      grandTotal: Number(pricing.total || 0),
+
+      mataUang: pricing.mataUang || "IDR",
+
+      nights: pricing.nights || [],
+
+      status: ReservasiStatus.DRAFT,
 
       paymentStatus: "UNPAID",
 
-      createdAt: new Date(),
+      createdAt: new Date().toISOString(),
 
-      updatedAt: new Date(),
+      updatedAt: new Date().toISOString(),
 
-      ...booking,
-
-      ...pricing,
+      catatan: booking.catatan || "",
     };
   },
+
+  /* =====================================
+     SAVE BOOKING
+  ===================================== */
+
   async saveBooking(data) {
     return await ReservasiService.save(data);
   },
 
+  /* =====================================
+     AFTER SAVE
+  ===================================== */
+
   afterSave(result) {
-    Toast.success("Draft reservasi berhasil dibuat.");
+    Toast.success(result.message || "Draft reservasi berhasil dibuat.");
 
     Reservasi.resetBooking();
 
     Reservasi.closeWizard();
   },
 };
+
+/* =========================================
+   HELPER
+========================================= */
+
+function pricingMinimumStay(booking, pricing) {
+  return pricing?.minimumStay || booking?.minimalMalam || 1;
+}
