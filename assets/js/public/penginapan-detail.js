@@ -3638,6 +3638,7 @@ const PublicPenginapanDetail = (() => {
       }
 
       state.result = result.data || null;
+      openWhatsappBooking();
 
       showSuccess();
     } catch (error) {
