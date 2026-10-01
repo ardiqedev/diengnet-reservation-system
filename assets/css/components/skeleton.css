@@ -204,3 +204,268 @@
     gap: 12px;
   }
 }
+
+/* =========================================================
+   SKELETON — DETAIL PENGINAPAN
+========================================================= */
+
+.skeleton-detail {
+  width: 100%;
+}
+
+/* =========================================================
+   BASE
+========================================================= */
+
+.skeleton-detail .skeleton {
+  border-radius: 8px;
+
+  background: linear-gradient(90deg, #eeece7 25%, #f7f5f0 50%, #eeece7 75%);
+
+  background-size: 200% 100%;
+
+  animation: skeletonDetailShimmer 1.4s infinite;
+}
+
+@keyframes skeletonDetailShimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* =========================================================
+   COVER
+========================================================= */
+
+.skeleton-detail-cover {
+  width: 100%;
+}
+
+.skeleton-detail-image {
+  width: 100%;
+  height: 420px;
+
+  border-radius: 0;
+}
+
+/* =========================================================
+   INFO
+========================================================= */
+
+.skeleton-detail-info {
+  padding: 42px 0 60px;
+}
+
+/* LOCATION */
+
+.skeleton-detail-location {
+  display: block;
+
+  width: 180px;
+  height: 11px;
+
+  margin-bottom: 18px;
+}
+
+/* TITLE */
+
+.skeleton-detail-title {
+  display: block;
+
+  width: 52%;
+  height: 48px;
+
+  margin-bottom: 14px;
+}
+
+/* TYPE */
+
+.skeleton-detail-type {
+  display: block;
+
+  width: 120px;
+  height: 13px;
+
+  margin-bottom: 28px;
+}
+
+/* DESCRIPTION */
+
+.skeleton-detail-description {
+  display: block;
+
+  width: 82%;
+  height: 12px;
+
+  margin-bottom: 10px;
+}
+
+.skeleton-detail-description.short {
+  width: 58%;
+
+  margin-bottom: 34px;
+}
+
+/* =========================================================
+   META
+========================================================= */
+
+.skeleton-detail-meta {
+  display: grid;
+
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 20px;
+
+  margin-bottom: 55px;
+}
+
+.skeleton-detail-meta-item {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 10px;
+}
+
+.skeleton-detail-meta-label {
+  width: 80px;
+  height: 9px;
+}
+
+.skeleton-detail-meta-value {
+  width: 70%;
+  height: 12px;
+}
+
+/* =========================================================
+   RESERVATION
+========================================================= */
+
+.skeleton-detail-reservation {
+  padding-top: 10px;
+}
+
+.skeleton-detail-section-title {
+  width: 240px;
+  height: 28px;
+
+  margin-bottom: 14px;
+}
+
+.skeleton-detail-section-text {
+  width: 360px;
+  height: 11px;
+
+  margin-bottom: 30px;
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.skeleton-detail-form {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 16px;
+
+  margin-bottom: 24px;
+}
+
+.skeleton-detail-field {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 9px;
+}
+
+.skeleton-detail-label {
+  width: 75px;
+  height: 9px;
+}
+
+.skeleton-detail-input {
+  width: 100%;
+  height: 48px;
+
+  border-radius: 8px !important;
+}
+
+/* =========================================================
+   BUTTON
+========================================================= */
+
+.skeleton-detail-button {
+  width: 180px;
+  height: 48px;
+
+  border-radius: 999px !important;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 768px) {
+  .skeleton-detail-image {
+    height: 260px;
+  }
+
+  .skeleton-detail-info {
+    padding: 30px 0 45px;
+  }
+
+  .skeleton-detail-title {
+    width: 78%;
+    height: 34px;
+  }
+
+  .skeleton-detail-description {
+    width: 95%;
+  }
+
+  .skeleton-detail-description.short {
+    width: 75%;
+  }
+
+  .skeleton-detail-meta {
+    grid-template-columns: 1fr;
+
+    gap: 16px;
+
+    margin-bottom: 40px;
+  }
+
+  .skeleton-detail-form {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .skeleton-detail-section-text {
+    width: 80%;
+  }
+}
+
+@media (max-width: 480px) {
+  .skeleton-detail-image {
+    height: 220px;
+  }
+
+  .skeleton-detail-form {
+    grid-template-columns: 1fr;
+  }
+
+  .skeleton-detail-title {
+    width: 90%;
+  }
+
+  .skeleton-detail-button {
+    width: 100%;
+  }
+}

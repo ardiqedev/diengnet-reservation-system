@@ -46,11 +46,8 @@ const PublicPenginapanDetail = (() => {
   /* ==========================================================
      CONSTANT
   ========================================================== */
-
   const CHANNEL = "WEBSITE";
-
   const TOTAL_STEPS = 4;
-
   /* ==========================================================
      STATE
   ========================================================== */
@@ -68,7 +65,25 @@ const PublicPenginapanDetail = (() => {
 
     units: [],
 
+    /*
+     * Semua unit aktif milik penginapan.
+     *
+     * Digunakan untuk:
+     * - Unit showcase
+     * - Menampilkan semua unit
+     * - Menentukan status availability
+     */
+    allUnits: [],
+
+    /*
+     * Reservation yang terkait
+     * dengan penginapan ini.
+     */
+    reservations: [],
+
     selectedUnit: null,
+
+    selectedFromShowcase: false,
 
     pricing: null,
 
@@ -134,12 +149,18 @@ const PublicPenginapanDetail = (() => {
 
     initMobileMenu();
 
-    state.slug = getSlugFromUrl();
+    const params = new URLSearchParams(window.location.search);
+
+    const propertyId = String(params.get("id") || "").trim();
+
+    state.slug = String(params.get("slug") || "").trim();
+
+    console.log("[PublicPenginapanDetail] Property ID:", propertyId);
 
     console.log("[PublicPenginapanDetail] Slug:", state.slug);
 
-    if (!state.slug) {
-      showError("Slug penginapan tidak ditemukan.");
+    if (!propertyId && !state.slug) {
+      showError("Penginapan tidak ditemukan.");
 
       return;
     }
@@ -178,6 +199,8 @@ const PublicPenginapanDetail = (() => {
 
     dom.meta = document.getElementById("detailMeta");
 
+    dom.unitShowcase = document.getElementById("unitShowcase");
+
     dom.stepper = document.getElementById("wizardStepper");
 
     dom.wizardContent = document.getElementById("wizardContent");
@@ -198,7 +221,73 @@ const PublicPenginapanDetail = (() => {
   function getSlugFromUrl() {
     const params = new URLSearchParams(window.location.search);
 
-    return String(params.get("slug") || "").trim();
+    return String(params.get("slug") || params.get("id") || "").trim();
+  }
+
+  /* ==========================================================
+   BIND SHOWCASE UNIT EVENTS
+========================================================== */
+
+  function bindShowcaseUnitEvents() {
+    if (!dom.unitShowcase) {
+      return;
+    }
+
+    dom.unitShowcase
+      .querySelectorAll(".public-unit-showcase-select")
+      .forEach((button) => {
+        button.addEventListener("click", async () => {
+          const unitId = button.dataset.unitId;
+
+          if (!unitId) {
+            return;
+          }
+
+          await selectShowcaseUnit(unitId);
+        });
+      });
+  }
+
+  /* ==========================================================
+   SELECT SHOWCASE UNIT
+========================================================== */
+
+  /* ==========================================================
+   SELECT SHOWCASE UNIT
+========================================================== */
+
+  function selectShowcaseUnit(unitId) {
+    const unit = state.allUnits.find(
+      (item) => String(item.id) === String(unitId),
+    );
+
+    if (!unit) {
+      return;
+    }
+
+    const status = getShowcaseUnitStatus(unit);
+
+    if (status.code !== "AVAILABLE") {
+      return;
+    }
+
+    /* ========================================================
+     SIMPAN UNIT YANG DIPILIH DARI OUR ROOMS
+  ======================================================== */
+
+    state.selectedUnit = unit;
+
+    state.selectedFromShowcase = true;
+
+    state.units = [unit];
+
+    state.pricing = null;
+
+    state.step = 1;
+
+    renderWizard();
+
+    scrollWizard();
   }
 
   /* ==========================================================
@@ -215,9 +304,17 @@ const PublicPenginapanDetail = (() => {
     showLoading();
 
     try {
-      const result = await API.post("penginapan.detail", {
-        slug: state.slug,
-      });
+      const params = new URLSearchParams(window.location.search);
+
+      const id = String(params.get("id") || "").trim();
+
+      const slug = String(params.get("slug") || "").trim();
+
+      const detailPayload = id ? { id } : { slug };
+
+      console.log("[PublicPenginapanDetail] Detail payload:", detailPayload);
+
+      const result = await API.post("penginapan.detail", detailPayload);
 
       console.log("[PublicPenginapanDetail] Property:", result);
 
@@ -229,7 +326,25 @@ const PublicPenginapanDetail = (() => {
 
       state.penginapan = penginapan;
 
+      /*
+       * Load data tambahan secara paralel.
+       *
+       * Ketiga proses ini tidak perlu menunggu
+       * satu sama lain.
+       */
+      const [startingPrice] = await Promise.all([
+        loadStartingPrice(),
+
+        loadUnitShowcase(),
+
+        loadInitialAvailability(),
+      ]);
+
+      state.startingPrice = startingPrice;
+
       renderProperty();
+
+      await restoreReservationPayment();
     } catch (error) {
       console.error("[PublicPenginapanDetail] Load error:", error);
 
@@ -240,6 +355,195 @@ const PublicPenginapanDetail = (() => {
       state.loading = false;
 
       hideLoading();
+    }
+  }
+
+  async function restoreReservationPayment() {
+    const params = new URLSearchParams(window.location.search);
+
+    const reservationCode = String(params.get("reservation") || "").trim();
+
+    if (!reservationCode) {
+      return false;
+    }
+
+    const stored = sessionStorage.getItem("publicReservationRecovery");
+
+    if (!stored) {
+      console.warn(
+        "[PublicPenginapanDetail] Reservation recovery data tidak ditemukan.",
+      );
+
+      return false;
+    }
+
+    try {
+      const reservation = JSON.parse(stored);
+
+      if (!reservation || reservation.kode !== reservationCode) {
+        console.warn(
+          "[PublicPenginapanDetail] Reservation recovery tidak cocok.",
+        );
+
+        return false;
+      }
+
+      /*
+       * Pastikan reservasi memang milik
+       * penginapan yang sedang dibuka.
+       */
+      if (
+        String(reservation.penginapanId || "").trim() !==
+        String(state.penginapan?.id || "").trim()
+      ) {
+        console.warn(
+          "[PublicPenginapanDetail] Reservation bukan milik penginapan ini.",
+        );
+
+        return false;
+      }
+
+      state.result = reservation;
+
+      state.step = 4;
+
+      renderPaymentPage();
+
+      sessionStorage.removeItem("publicReservationRecovery");
+
+      scrollWizard();
+
+      return true;
+    } catch (error) {
+      console.error(
+        "[PublicPenginapanDetail] Reservation recovery error:",
+        error,
+      );
+
+      sessionStorage.removeItem("publicReservationRecovery");
+
+      return false;
+    }
+  }
+
+  /* ==========================================================
+   LOAD STARTING PRICE
+========================================================== */
+
+  async function loadStartingPrice() {
+    try {
+      const result = await API.post("harga.list", {
+        page: 1,
+        limit: 100,
+        keyword: "",
+        status: "ACTIVE",
+        penginapanId: state.penginapan.id,
+      });
+
+      const rows = Array.isArray(result?.data?.rows) ? result.data.rows : [];
+
+      const penginapanId = String(state.penginapan?.id || "").trim();
+
+      const prices = rows
+        .filter((row) => {
+          const status = String(row.status || "")
+            .trim()
+            .toUpperCase();
+
+          if (status && status !== "ACTIVE") {
+            return false;
+          }
+
+          return String(row.penginapanId || "").trim() === penginapanId;
+        })
+        .flatMap((row) => [
+          Number(row.hargaWeekday) || 0,
+          Number(row.hargaWeekend) || 0,
+          Number(row.hargaLongWeekend) || 0,
+        ])
+        .filter((price) => price > 0);
+
+      return prices.length ? Math.min(...prices) : 0;
+    } catch (error) {
+      console.error("[PublicPenginapanDetail] Starting price error:", error);
+
+      return 0;
+    }
+  }
+  /* ==========================================================
+   LOAD UNIT SHOWCASE
+========================================================== */
+
+  async function loadUnitShowcase() {
+    if (!state.penginapan?.id) {
+      return;
+    }
+
+    try {
+      console.log(
+        "[PublicPenginapanDetail] Load unit showcase:",
+        state.penginapan.id,
+      );
+
+      /* =========================================
+       LOAD ACTIVE UNIT
+    ========================================= */
+
+      const unitResult = await API.post("unit.active", {
+        penginapanId: state.penginapan.id,
+      });
+
+      console.log("[PublicPenginapanDetail] Unit showcase result:", unitResult);
+
+      const unitData = unitResult?.data || [];
+
+      if (Array.isArray(unitData)) {
+        state.allUnits = unitData;
+      } else if (Array.isArray(unitData.rows)) {
+        state.allUnits = unitData.rows;
+      } else {
+        state.allUnits = [];
+      }
+
+      /* =========================================
+       LOAD RESERVATIONS
+    ========================================= */
+
+      const reservationResult = await API.post("reservation.list", {
+        penginapanId: state.penginapan.id,
+
+        limit: 100,
+      });
+
+      console.log(
+        "[PublicPenginapanDetail] Unit reservations:",
+        reservationResult,
+      );
+
+      const reservationData = reservationResult?.data || [];
+
+      if (Array.isArray(reservationData)) {
+        state.reservations = reservationData;
+      } else if (Array.isArray(reservationData.rows)) {
+        state.reservations = reservationData.rows;
+      } else {
+        state.reservations = [];
+      }
+
+      console.log("[PublicPenginapanDetail] All units:", state.allUnits);
+
+      console.log("[PublicPenginapanDetail] Reservations:", state.reservations);
+    } catch (error) {
+      console.error("[PublicPenginapanDetail] Unit showcase error:", error);
+
+      /*
+       * Jangan membuat detail penginapan
+       * gagal hanya karena showcase unit gagal.
+       */
+
+      state.allUnits = [];
+
+      state.reservations = [];
     }
   }
 
@@ -261,6 +565,8 @@ const PublicPenginapanDetail = (() => {
     renderInfo(item);
 
     renderMeta(item);
+
+    renderUnitShowcase();
 
     hideError();
 
@@ -419,10 +725,637 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
+   RENDER UNIT SHOWCASE
+========================================================== */
+
+  function renderUnitShowcase() {
+    if (!dom.unitShowcase) {
+      return;
+    }
+
+    const units = Array.isArray(state.allUnits) ? state.allUnits : [];
+
+    if (!units.length) {
+      dom.unitShowcase.innerHTML = `
+      <div class="public-unit-showcase-empty">
+
+        <i
+          data-lucide="bed-double"
+          aria-hidden="true"
+        ></i>
+
+        <strong>
+          No rooms available
+        </strong>
+
+        <span>
+          Belum ada unit aktif untuk penginapan ini.
+        </span>
+
+      </div>
+    `;
+
+      createIcons();
+
+      return;
+    }
+
+    dom.unitShowcase.innerHTML = units
+      .map((unit, index) => renderShowcaseCard(unit, index))
+      .join("");
+
+    bindShowcaseUnitEvents();
+
+    createIcons();
+  }
+
+  /* ==========================================================
+   GET UNIT STARTING PRICE
+========================================================== */
+
+  function getUnitStartingPrice(unit = {}) {
+    /*
+     * PRIORITAS 1
+     * Jika unit langsung membawa harga.
+     */
+    const directPrice =
+      Number(unit.startingPrice) ||
+      Number(unit.harga) ||
+      Number(unit.price) ||
+      0;
+
+    if (directPrice > 0) {
+      return directPrice;
+    }
+
+    /*
+     * PRIORITAS 2
+     * Jika unit membawa daftar harga.
+     */
+    const hargaMusim = Array.isArray(unit.hargaMusim) ? unit.hargaMusim : [];
+
+    const values = hargaMusim
+      .flatMap((row) => [
+        Number(row.hargaWeekday) || 0,
+        Number(row.hargaWeekend) || 0,
+        Number(row.hargaLongWeekend) || 0,
+        Number(row.weekday) || 0,
+        Number(row.weekend) || 0,
+        Number(row.harga) || 0,
+      ])
+      .filter((price) => price > 0);
+
+    if (values.length) {
+      return Math.min(...values);
+    }
+
+    /*
+     * PRIORITAS 3
+     * Fallback ke harga public penginapan
+     * yang sudah tersedia di state.
+     *
+     * Ini hanya untuk tampilan card.
+     * Harga final booking tetap dari
+     * booking.price / backend.
+     */
+    const penginapanId = String(state.penginapan?.id || "").trim();
+
+    const groupedPrices = state.pricesByPenginapan?.[penginapanId] || [];
+
+    if (groupedPrices.length) {
+      const prices = groupedPrices
+        .flatMap((row) => [
+          Number(row.hargaWeekday) || 0,
+          Number(row.hargaWeekend) || 0,
+          Number(row.hargaLongWeekend) || 0,
+        ])
+        .filter((price) => price > 0);
+
+      if (prices.length) {
+        return Math.min(...prices);
+      }
+    }
+
+    /*
+     * Tidak ada harga.
+     */
+    return 0;
+  }
+
+  /* ==========================================================
+   RENDER SHOWCASE CARD
+========================================================== */
+
+  function renderShowcaseCard(unit = {}, index = 0) {
+    const id = String(unit.id || "").trim();
+
+    const nama = unit.nama || `Unit ${index + 1}`;
+
+    const tipe = unit.tipe || unit.jenis || "";
+
+    const description =
+      unit.deskripsi ||
+      unit.description ||
+      "Unit nyaman dengan fasilitas yang siap menemani pengalaman menginap Anda.";
+
+    const image = resolveImage(unit);
+
+    const dewasa = Number(unit.kapasitasDewasa) || 0;
+
+    const anak = Number(unit.kapasitasAnak) || 0;
+
+    const bedCount = Number(unit.jumlahBed) || 0;
+
+    const bedType = unit.jenisBed || "";
+
+    const luas = Number(unit.luas) || 0;
+
+    const fasilitas = normalizeFasilitas(unit.fasilitas);
+
+    const status = getShowcaseUnitStatus(unit);
+
+    const statusClass = status.className;
+
+    const isAvailable = status.code === "AVAILABLE";
+
+    const startingPrice =
+      getUnitStartingPrice(unit) || Number(state.startingPrice) || 0;
+
+    return `
+    <article
+      class="
+        public-unit-showcase-card
+        ${statusClass}
+      "
+      data-unit-id="${escapeAttribute(id)}"
+    >
+
+      <!-- =====================================
+           IMAGE
+      ====================================== -->
+
+      <div class="public-unit-showcase-image">
+
+        ${
+          image
+            ? `
+              <img
+                src="${escapeAttribute(image)}"
+                alt="${escapeAttribute(nama)}"
+                loading="lazy"
+              />
+            `
+            : `
+              <div
+                class="
+                  public-unit-showcase-image-placeholder
+                "
+                aria-hidden="true"
+              >
+                <i
+                  data-lucide="image"
+                  aria-hidden="true"
+                ></i>
+              </div>
+            `
+        }
+
+        <span
+          class="
+            public-unit-showcase-status
+            ${statusClass}
+          "
+        >
+          <span
+            class="public-unit-status-dot"
+          ></span>
+
+          ${escapeHtml(status.label)}
+        </span>
+
+      </div>
+
+
+      <!-- =====================================
+           CONTENT
+      ====================================== -->
+
+      <div class="public-unit-showcase-content">
+
+        <div class="public-unit-showcase-heading">
+
+          <div>
+
+            <span class="public-unit-number">
+              ${String(index + 1).padStart(2, "0")}
+            </span>
+
+            <h3>
+              ${escapeHtml(nama)}
+            </h3>
+
+            ${
+              tipe
+                ? `
+                  <span
+                    class="public-unit-type"
+                  >
+                    ${escapeHtml(tipe)}
+                  </span>
+                `
+                : ""
+            }
+
+          </div>
+
+        </div>
+
+
+        <!-- ===================================
+             DESCRIPTION
+        ==================================== -->
+
+        <p
+          class="public-unit-description"
+        >
+          ${escapeHtml(description)}
+        </p>
+
+
+        <!-- ===================================
+             META
+        ==================================== -->
+
+        <div
+          class="public-unit-meta"
+        >
+
+          ${
+            dewasa
+              ? `
+                <span>
+                  <i
+                    data-lucide="users"
+                    aria-hidden="true"
+                  ></i>
+
+                  ${dewasa} Dewasa
+                </span>
+              `
+              : ""
+          }
+
+          ${
+            anak
+              ? `
+                <span>
+                  <i
+                    data-lucide="baby"
+                    aria-hidden="true"
+                  ></i>
+
+                  ${anak} Anak
+                </span>
+              `
+              : ""
+          }
+
+          ${
+            bedCount
+              ? `
+                <span>
+                  <i
+                    data-lucide="bed-double"
+                    aria-hidden="true"
+                  ></i>
+
+                  ${bedCount}
+                  ${escapeHtml(bedType)}
+                </span>
+              `
+              : ""
+          }
+
+          ${
+            luas
+              ? `
+                <span>
+                  <i
+                    data-lucide="maximize"
+                    aria-hidden="true"
+                  ></i>
+
+                  ${luas} m²
+                </span>
+              `
+              : ""
+          }
+
+        </div>
+
+
+        <!-- ===================================
+             FACILITIES
+        ==================================== -->
+
+        ${
+          fasilitas
+            ? `
+              <div
+                class="
+                  public-unit-facilities
+                "
+              >
+
+                ${fasilitas
+                  .split(",")
+                  .map(
+                    (item) => `
+                      <span>
+                        ${escapeHtml(item.trim())}
+                      </span>
+                    `,
+                  )
+                  .join("")}
+
+              </div>
+            `
+            : ""
+        }
+
+
+        <!-- ===================================
+             PRICE
+        ==================================== -->
+
+        ${
+          startingPrice > 0
+            ? `
+              <div
+                class="
+                  public-unit-starting-price
+                "
+              >
+
+                <span>
+                  Mulai dari
+                </span>
+
+                <strong>
+                  ${formatCurrency(startingPrice)}
+                </strong>
+
+                <small>
+                  /kamar/malam
+                </small>
+
+              </div>
+            `
+            : ""
+        }
+
+
+        <!-- ===================================
+             ACTION
+        ==================================== -->
+
+        <div
+          class="
+            public-unit-showcase-action
+          "
+        >
+
+          <button
+            type="button"
+            class="btn btn-dark public-unit-showcase-select"
+            data-unit-id="${escapeAttribute(id)}"
+            ${!isAvailable ? "disabled" : ""}
+          >
+            ${isAvailable ? "Select this room" : "Not available"}
+
+            ${
+              isAvailable
+                ? `
+                  <span aria-hidden="true">
+                    →
+                  </span>
+                `
+                : ""
+            }
+
+          </button>
+
+        </div>
+
+      </div>
+
+    </article>
+  `;
+  }
+
+  /* ==========================================================
+   GET SHOWCASE UNIT STATUS
+========================================================== */
+
+  function getShowcaseUnitStatus(unit = {}) {
+    const unitId = String(unit.id || "").trim();
+
+    const reservations = state.reservations.filter(
+      (reservation) => String(reservation.unitId || "").trim() === unitId,
+    );
+
+    /*
+     * Belum ada reservasi.
+     */
+
+    if (!reservations.length) {
+      return {
+        code: "AVAILABLE",
+        label: "Available",
+        className: "is-available",
+      };
+    }
+
+    /*
+     * Cek apakah ada reservation
+     * yang sedang blocking.
+     */
+
+    const blocking = reservations.some((reservation) =>
+      isShowcaseReservationBlocking(
+        reservation,
+        state.booking.checkIn,
+        state.booking.checkOut,
+      ),
+    );
+
+    if (blocking) {
+      /*
+       * Bedakan BOOKED dengan HOLD.
+       */
+
+      const hasBooked = reservations.some((reservation) => {
+        const status = String(reservation.status || "")
+          .trim()
+          .toUpperCase();
+
+        return (
+          (status === "BOOKED" || status === "CHECK_IN") &&
+          isShowcaseDateOverlap(
+            reservation,
+            state.booking.checkIn,
+            state.booking.checkOut,
+          )
+        );
+      });
+
+      if (hasBooked) {
+        return {
+          code: "BOOKED",
+          label: "Booked",
+          className: "is-booked",
+        };
+      }
+
+      return {
+        code: "HOLD",
+        label: "Temporarily unavailable",
+        className: "is-hold",
+      };
+    }
+
+    return {
+      code: "AVAILABLE",
+      label: "Available",
+      className: "is-available",
+    };
+  }
+
+  /* ==========================================================
+   CHECK RESERVATION BLOCKING
+========================================================== */
+
+  function isShowcaseReservationBlocking(
+    reservation = {},
+    requestedCheckIn,
+    requestedCheckOut,
+  ) {
+    const status = String(reservation.status || "")
+      .trim()
+      .toUpperCase();
+
+    /*
+     * BOOKED
+     */
+
+    if (status === "BOOKED") {
+      return isShowcaseDateOverlap(
+        reservation,
+        requestedCheckIn,
+        requestedCheckOut,
+      );
+    }
+
+    /*
+     * CHECK IN
+     */
+
+    if (status === "CHECK_IN") {
+      return isShowcaseDateOverlap(
+        reservation,
+        requestedCheckIn,
+        requestedCheckOut,
+      );
+    }
+
+    /*
+     * DRAFT + HOLD
+     */
+
+    if (status === "DRAFT") {
+      if (!reservation.holdUntil) {
+        return false;
+      }
+
+      const holdUntil = new Date(reservation.holdUntil);
+
+      if (Number.isNaN(holdUntil.getTime())) {
+        return false;
+      }
+
+      /*
+       * HOLD EXPIRED
+       */
+
+      if (holdUntil.getTime() <= Date.now()) {
+        return false;
+      }
+
+      return isShowcaseDateOverlap(
+        reservation,
+        requestedCheckIn,
+        requestedCheckOut,
+      );
+    }
+
+    /*
+     * Status lainnya tidak blocking.
+     */
+
+    return false;
+  }
+
+  /* ==========================================================
+   DATE OVERLAP
+========================================================== */
+
+  function isShowcaseDateOverlap(
+    reservation = {},
+    requestedCheckIn,
+    requestedCheckOut,
+  ) {
+    if (!reservation.checkIn || !reservation.checkOut) {
+      return false;
+    }
+
+    const reservationIn = new Date(`${reservation.checkIn}T00:00:00`);
+
+    const reservationOut = new Date(`${reservation.checkOut}T00:00:00`);
+
+    const requestedIn = new Date(`${requestedCheckIn}T00:00:00`);
+
+    const requestedOut = new Date(`${requestedCheckOut}T00:00:00`);
+
+    if (
+      Number.isNaN(reservationIn.getTime()) ||
+      Number.isNaN(reservationOut.getTime()) ||
+      Number.isNaN(requestedIn.getTime()) ||
+      Number.isNaN(requestedOut.getTime())
+    ) {
+      return false;
+    }
+
+    return requestedIn < reservationOut && requestedOut > reservationIn;
+  }
+
+  /* ==========================================================
      WIZARD
   ========================================================== */
 
   function renderWizard() {
+    /* ==========================================================
+     OUR ROOMS VISIBILITY
+     Showcase hanya tampil pada STEP 1
+  ========================================================== */
+
+    if (dom.unitShowcase) {
+      const showcaseSection = dom.unitShowcase.closest(".stay-detail-rooms");
+
+      if (showcaseSection) {
+        showcaseSection.hidden = state.step !== 1;
+      }
+    }
+
     updateStepper();
 
     if (!dom.wizardContent) {
@@ -438,16 +1371,11 @@ const PublicPenginapanDetail = (() => {
         break;
 
       case 2:
-        renderStep2();
-
-        break;
-
-      case 3:
         renderStep3();
 
         break;
 
-      case 4:
+      case 3:
         renderStep4();
 
         break;
@@ -487,133 +1415,248 @@ const PublicPenginapanDetail = (() => {
      STEP 1
   ========================================================== */
 
+  /* ==========================================================
+   STEP 1
+========================================================== */
+
   function renderStep1() {
+    const selectedUnit = state.selectedUnit;
+
+    const hasSelectedUnit = !!selectedUnit;
+
+    const selectedUnitName =
+      selectedUnit?.nama ||
+      selectedUnit?.namaUnit ||
+      selectedUnit?.name ||
+      selectedUnit?.kode ||
+      "Room selected";
+
+    const selectedUnitType =
+      selectedUnit?.tipe || selectedUnit?.type || selectedUnit?.jenis || "";
+
     dom.wizardContent.innerHTML = `
 
-      <div class="public-wizard-panel">
+    <div class="public-wizard-panel">
 
-        <div class="public-wizard-panel-heading">
+      <div class="public-wizard-panel-heading">
 
-          <span class="eyebrow eyebrow-dark">
-            STEP 1
-          </span>
+        <span class="eyebrow eyebrow-dark">
+          STEP 1
+        </span>
 
-          <h3>
-            Find your stay
-          </h3>
+        <h3>
+          Find your stay
+        </h3>
 
-          <p>
-            Choose your dates and number of guests.
-          </p>
+        <p>
+          Choose your dates and number of guests.
+        </p>
 
-        </div>
-
-
-        <div class="booking-fields">
-
-          <!-- CHECK IN -->
-
-          <div class="booking-field">
-
-            <label
-              for="wizardCheckIn"
-            >
-              CHECK-IN
-            </label>
-
-            <input
-              type="date"
-              id="wizardCheckIn"
-              value="${escapeAttribute(state.booking.checkIn)}"
-            />
-
-          </div>
+      </div>
 
 
-          <!-- CHECK OUT -->
+      ${
+        hasSelectedUnit
+          ? `
+            <!-- SELECTED ROOM -->
 
-          <div class="booking-field">
+            <div class="public-wizard-selected-unit">
 
-            <label
-              for="wizardCheckOut"
-            >
-              CHECK-OUT
-            </label>
+              <div class="public-wizard-selected-unit-icon">
+                <i
+                  data-lucide="bed-double"
+                  aria-hidden="true"
+                ></i>
+              </div>
 
-            <input
-              type="date"
-              id="wizardCheckOut"
-              value="${escapeAttribute(state.booking.checkOut)}"
-            />
+              <div class="public-wizard-selected-unit-info">
 
-          </div>
+                <span class="public-wizard-selected-unit-label">
+                  ROOM SELECTED
+                </span>
+
+                <strong>
+                  ${escapeHtml(selectedUnitName)}
+                </strong>
+
+                ${
+                  selectedUnitType
+                    ? `
+                      <small>
+                        ${escapeHtml(selectedUnitType)}
+                      </small>
+                    `
+                    : ""
+                }
+
+              </div>
+
+              <span class="public-wizard-selected-unit-check">
+                <i
+                  data-lucide="check"
+                  aria-hidden="true"
+                ></i>
+              </span>
+
+            </div>
+          `
+          : ""
+      }
 
 
-          <!-- ADULT -->
+      <div class="booking-fields">
 
-          <div class="booking-field">
+        <!-- CHECK IN -->
 
-            <label
-              for="wizardDewasa"
-            >
-              ADULTS
-            </label>
+        <div class="booking-field">
 
-            <select
-              id="wizardDewasa"
-            >
+          <label
+            for="wizardCheckIn"
+          >
+            CHECK-IN
+          </label>
 
-              ${renderGuestOptions(state.booking.dewasa, 1, 10)}
-
-            </select>
-
-          </div>
-
-
-          <!-- CHILD -->
-
-          <div class="booking-field">
-
-            <label
-              for="wizardAnak"
-            >
-              CHILDREN
-            </label>
-
-            <select
-              id="wizardAnak"
-            >
-
-              ${renderGuestOptions(state.booking.anak, 0, 10)}
-
-            </select>
-
-          </div>
+          <input
+            type="date"
+            id="wizardCheckIn"
+            value="${escapeAttribute(state.booking.checkIn)}"
+          />
 
         </div>
 
 
-        <div class="public-wizard-note">
+        <!-- CHECK OUT -->
 
-          <i
-            data-lucide="info"
-            aria-hidden="true"
-          ></i>
+        <div class="booking-field">
 
-          <span>
-            Ketersediaan unit akan dicek berdasarkan
-            tanggal dan kapasitas tamu.
-          </span>
+          <label
+            for="wizardCheckOut"
+          >
+            CHECK-OUT
+          </label>
+
+          <input
+            type="date"
+            id="wizardCheckOut"
+            value="${escapeAttribute(state.booking.checkOut)}"
+          />
+
+        </div>
+
+
+        <!-- ADULT -->
+
+        <div class="booking-field">
+
+          <label
+            for="wizardDewasa"
+          >
+            ADULTS
+          </label>
+
+          <select
+            id="wizardDewasa"
+          >
+
+            ${renderGuestOptions(state.booking.dewasa, 1, 10)}
+
+          </select>
+
+        </div>
+
+
+        <!-- CHILD -->
+
+        <div class="booking-field">
+
+          <label
+            for="wizardAnak"
+          >
+            CHILDREN
+          </label>
+
+          <select
+            id="wizardAnak"
+          >
+
+            ${renderGuestOptions(state.booking.anak, 0, 10)}
+
+          </select>
 
         </div>
 
       </div>
 
-    `;
+
+      <div class="public-wizard-availability-action">
+
+        <button
+          type="button"
+          class="btn btn-dark"
+          id="checkAvailabilityButton"
+        >
+          Check Availability
+        </button>
+
+      </div>
+
+
+      <div class="public-wizard-note">
+
+        <i
+          data-lucide="info"
+          aria-hidden="true"
+        ></i>
+
+        <span>
+          Ketersediaan unit akan dicek berdasarkan
+          tanggal dan kapasitas tamu.
+        </span>
+
+      </div>
+
+      ${
+        state.units.length
+          ? `
+        <div class="public-availability-result">
+
+          <div class="public-wizard-panel-heading">
+
+            <span class="eyebrow eyebrow-dark">
+              AVAILABLE ROOMS
+            </span>
+
+            <h3>
+              Choose your room.
+            </h3>
+
+            <p>
+              ${state.units.length}
+              unit tersedia untuk pilihan Anda.
+            </p>
+
+          </div>
+
+
+          <div class="public-unit-list">
+
+            ${state.units
+              .map((unit, index) => renderUnitCard(unit, index))
+              .join("")}
+
+          </div>
+
+        </div>
+      `
+          : ""
+      }      
+
+    </div>
+
+  `;
 
     bindStep1Events();
   }
-
   /* ==========================================================
      STEP 1 EVENTS
   ========================================================== */
@@ -627,6 +1670,50 @@ const PublicPenginapanDetail = (() => {
 
     const anak = document.getElementById("wizardAnak");
 
+    const checkAvailabilityButton = document.getElementById(
+      "checkAvailabilityButton",
+    );
+
+    const continueStep1Button = document.getElementById("continueStep1Button");
+
+    /* =====================================
+     CHECK AVAILABILITY
+  ===================================== */
+
+    checkAvailabilityButton?.addEventListener("click", async () => {
+      const valid = readAndValidateStep1();
+
+      if (!valid) {
+        return;
+      }
+
+      await searchAvailability();
+    });
+
+    /* =====================================
+     CONTINUE STEP 1
+  ===================================== */
+
+    continueStep1Button?.addEventListener("click", () => {
+      if (!state.selectedUnit) {
+        showWizardError("Silakan pilih kamar terlebih dahulu.");
+
+        return;
+      }
+
+      clearWizardError();
+
+      state.step = 2;
+
+      renderWizard();
+
+      scrollWizard();
+    });
+
+    /* =====================================
+     CHECK IN
+  ===================================== */
+
     if (checkIn) {
       checkIn.addEventListener("change", () => {
         state.booking.checkIn = checkIn.value;
@@ -635,11 +1722,19 @@ const PublicPenginapanDetail = (() => {
       });
     }
 
+    /* =====================================
+     CHECK OUT
+  ===================================== */
+
     if (checkOut) {
       checkOut.addEventListener("change", () => {
         state.booking.checkOut = checkOut.value;
       });
     }
+
+    /* =====================================
+     DEWASA
+  ===================================== */
 
     if (dewasa) {
       dewasa.addEventListener("change", () => {
@@ -647,13 +1742,32 @@ const PublicPenginapanDetail = (() => {
       });
     }
 
+    /* =====================================
+     ANAK
+  ===================================== */
+
     if (anak) {
       anak.addEventListener("change", () => {
         state.booking.anak = Number(anak.value) || 0;
       });
     }
 
+    /* =====================================
+     CHECKOUT MINIMUM
+  ===================================== */
+
     updateCheckoutMin();
+
+    /* =====================================
+     UNIT EVENTS
+
+     Availability sekarang berada
+     tetap di STEP 1.
+  ===================================== */
+
+    if (state.units.length) {
+      bindUnitEvents();
+    }
   }
 
   /* ==========================================================
@@ -666,52 +1780,6 @@ const PublicPenginapanDetail = (() => {
     if (!units.length) {
       dom.wizardContent.innerHTML = `
 
-        <div class="public-wizard-panel">
-
-          <div class="public-wizard-panel-heading">
-
-            <span class="eyebrow eyebrow-dark">
-              STEP 2
-            </span>
-
-            <h3>
-              No unit available
-            </h3>
-
-            <p>
-              Tidak ada unit yang tersedia
-              untuk tanggal dan jumlah tamu tersebut.
-            </p>
-
-          </div>
-
-
-          <div class="public-wizard-empty">
-
-            <i
-              data-lucide="calendar-x"
-              aria-hidden="true"
-            ></i>
-
-            <strong>
-              Tidak ada unit tersedia.
-            </strong>
-
-            <span>
-              Coba tanggal atau jumlah tamu yang berbeda.
-            </span>
-
-          </div>
-
-        </div>
-
-      `;
-
-      return;
-    }
-
-    dom.wizardContent.innerHTML = `
-
       <div class="public-wizard-panel">
 
         <div class="public-wizard-panel-heading">
@@ -721,26 +1789,72 @@ const PublicPenginapanDetail = (() => {
           </span>
 
           <h3>
-            Choose your unit
+            No unit available
           </h3>
 
           <p>
-            ${units.length}
-            unit tersedia untuk pilihan Anda.
+            Tidak ada unit yang tersedia
+            untuk tanggal dan jumlah tamu tersebut.
           </p>
 
         </div>
 
 
-        <div class="public-unit-list">
+        <div class="public-wizard-empty">
 
-          ${units.map((unit, index) => renderUnitCard(unit, index)).join("")}
+          <i
+            data-lucide="calendar-x"
+            aria-hidden="true"
+          ></i>
+
+          <strong>
+            Tidak ada unit tersedia.
+          </strong>
+
+          <span>
+            Coba tanggal atau jumlah tamu yang berbeda.
+          </span>
 
         </div>
 
       </div>
 
     `;
+
+      return;
+    }
+
+    dom.wizardContent.innerHTML = `
+
+    <div class="public-wizard-panel">
+
+      <div class="public-wizard-panel-heading">
+
+        <span class="eyebrow eyebrow-dark">
+          STEP 2
+        </span>
+
+        <h3>
+          Available rooms
+        </h3>
+
+        <p>
+          ${units.length}
+          unit tersedia untuk pilihan Anda.
+        </p>
+
+      </div>
+
+
+      <div class="public-unit-list">
+
+        ${units.map((unit, index) => renderUnitCard(unit, index)).join("")}
+
+      </div>
+
+    </div>
+
+  `;
 
     bindUnitEvents();
   }
@@ -913,9 +2027,7 @@ const PublicPenginapanDetail = (() => {
             class="btn btn-dark public-unit-select"
             data-unit-id="${escapeAttribute(id)}"
           >
-
             ${selected ? "Selected" : "Select this unit"}
-
           </button>
 
         </div>
@@ -1177,6 +2289,10 @@ const PublicPenginapanDetail = (() => {
      STEP 4
   ========================================================== */
 
+  /* ==========================================================
+   STEP 4
+========================================================== */
+
   function renderStep4() {
     const unit = state.selectedUnit;
 
@@ -1184,28 +2300,30 @@ const PublicPenginapanDetail = (() => {
 
     dom.wizardContent.innerHTML = `
 
-      <div class="public-wizard-panel">
+    <div class="public-wizard-panel public-confirm-panel">
 
-        <div class="public-wizard-panel-heading">
+      <div class="public-wizard-panel-heading">
 
-          <span class="eyebrow eyebrow-dark">
-            STEP 4
-          </span>
+        <span class="eyebrow eyebrow-dark">
+          STEP 4
+        </span>
 
-          <h3>
-            Confirm your booking
-          </h3>
+        <h3>
+          Confirm your booking
+        </h3>
 
-          <p>
-            Periksa kembali detail reservasi sebelum melanjutkan.
-          </p>
+        <p>
+          Periksa kembali detail reservasi sebelum melanjutkan.
+        </p>
 
-        </div>
+      </div>
 
 
-        <!-- PROPERTY -->
+      <!-- CONFIRMATION HEADER -->
 
-        <div class="public-confirm-section">
+      <div class="public-confirm-header">
+
+        <div class="public-confirm-property">
 
           <span class="public-confirm-label">
             STAY
@@ -1218,9 +2336,7 @@ const PublicPenginapanDetail = (() => {
         </div>
 
 
-        <!-- UNIT -->
-
-        <div class="public-confirm-section">
+        <div class="public-confirm-room">
 
           <span class="public-confirm-label">
             UNIT
@@ -1233,7 +2349,7 @@ const PublicPenginapanDetail = (() => {
           ${
             unit?.tipe
               ? `
-                <span>
+                <span class="public-confirm-secondary">
                   ${escapeHtml(unit.tipe)}
                 </span>
               `
@@ -1242,63 +2358,77 @@ const PublicPenginapanDetail = (() => {
 
         </div>
 
-
-        <!-- DATES -->
-
-        <div class="public-confirm-grid">
-
-          <div class="public-confirm-section">
-
-            <span class="public-confirm-label">
-              CHECK-IN
-            </span>
-
-            <strong>
-              ${formatDate(state.booking.checkIn)}
-            </strong>
-
-          </div>
+      </div>
 
 
-          <div class="public-confirm-section">
+      <!-- STAY DETAILS -->
 
-            <span class="public-confirm-label">
-              CHECK-OUT
-            </span>
+      <div class="public-confirm-details">
 
-            <strong>
-              ${formatDate(state.booking.checkOut)}
-            </strong>
+        <div class="public-confirm-detail">
 
-          </div>
+          <span class="public-confirm-label">
+            CHECK-IN
+          </span>
 
-
-          <div class="public-confirm-section">
-
-            <span class="public-confirm-label">
-              GUESTS
-            </span>
-
-            <strong>
-              ${state.booking.dewasa}
-              Dewasa
-              •
-              ${state.booking.anak}
-              Anak
-            </strong>
-
-          </div>
+          <strong>
+            ${formatDate(state.booking.checkIn)}
+          </strong>
 
         </div>
 
 
-        <!-- GUEST -->
+        <div class="public-confirm-detail">
 
-        <div class="public-confirm-section">
+          <span class="public-confirm-label">
+            CHECK-OUT
+          </span>
+
+          <strong>
+            ${formatDate(state.booking.checkOut)}
+          </strong>
+
+        </div>
+
+
+        <div class="public-confirm-detail">
+
+          <span class="public-confirm-label">
+            GUESTS
+          </span>
+
+          <strong>
+            ${state.booking.dewasa}
+            Dewasa
+            <span class="public-confirm-dot">•</span>
+            ${state.booking.anak}
+            Anak
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- GUEST -->
+
+      <div class="public-confirm-guest">
+
+        <div class="public-confirm-guest-heading">
 
           <span class="public-confirm-label">
             GUEST
           </span>
+
+          <i
+            data-lucide="user-round"
+            aria-hidden="true"
+          ></i>
+
+        </div>
+
+
+        <div class="public-confirm-guest-info">
 
           <strong>
             ${escapeHtml(state.booking.namaTamu || "-")}
@@ -1320,20 +2450,32 @@ const PublicPenginapanDetail = (() => {
 
         </div>
 
-
-        <!-- PRICE -->
-
-        ${renderFullPricing(pricing)}
+      </div>
 
 
-        <!-- HOLD NOTICE -->
+      <!-- PRICE -->
 
-        <div class="public-wizard-note">
+      ${renderFullPricing(pricing)}
+
+
+      <!-- HOLD NOTICE -->
+
+      <div class="public-confirm-notice">
+
+        <div class="public-confirm-notice-icon">
 
           <i
             data-lucide="clock-3"
             aria-hidden="true"
           ></i>
+
+        </div>
+
+        <div>
+
+          <strong>
+            Temporary hold
+          </strong>
 
           <span>
             Setelah reservasi dibuat, unit akan
@@ -1344,7 +2486,10 @@ const PublicPenginapanDetail = (() => {
 
       </div>
 
-    `;
+
+    </div>
+
+  `;
   }
 
   /* ==========================================================
@@ -1756,7 +2901,7 @@ const PublicPenginapanDetail = (() => {
           class="btn btn-dark"
           id="wizardNextButton"
         >
-          Search availability
+          Continue →
         </button>
 
       `;
@@ -1877,8 +3022,8 @@ const PublicPenginapanDetail = (() => {
     clearWizardError();
 
     /* ======================================================
-       STEP 1
-    ====================================================== */
+     STEP 1
+  ====================================================== */
 
     if (state.step === 1) {
       const valid = readAndValidateStep1();
@@ -1887,45 +3032,53 @@ const PublicPenginapanDetail = (() => {
         return;
       }
 
-      await searchAvailability();
+      /*
+       * User memilih kamar dari OUR ROOMS.
+       *
+       * Server tetap melakukan validasi
+       * availability dan pricing.
+       */
+
+      if (state.selectedFromShowcase && state.selectedUnit?.id) {
+        await continueWithSelectedUnit();
+
+        return;
+      }
+
+      /*
+       * Jika belum memilih kamar,
+       * untuk sementara jangan lanjut.
+       *
+       * Room selection sekarang berasal
+       * dari OUR ROOMS.
+       */
+
+      if (!state.selectedUnit?.id) {
+        showWizardError("Silakan pilih kamar terlebih dahulu dari OUR ROOMS.");
+
+        return;
+      }
+
+      /*
+       * Validasi availability + pricing
+       * untuk kamar yang sudah dipilih.
+       */
+
+      await continueWithSelectedUnit();
 
       return;
     }
 
     /* ======================================================
-   STEP 2
-====================================================== */
+     STEP 2 — GUEST
+  ====================================================== */
 
     if (state.step === 2) {
-      if (!state.selectedUnit) {
-        showWizardError("Silakan pilih unit terlebih dahulu.");
+      const valid = readAndValidateStep3();
 
+      if (!valid) {
         return;
       }
-
-      /* ====================================================
-     PASTIKAN PRICING SELESAI
-  ==================================================== */
-
-      if (state.pricingLoading && state.pricingRequest) {
-        await state.pricingRequest;
-      }
-
-      /* ====================================================
-     JIKA BELUM ADA PRICING
-  ==================================================== */
-
-      if (!state.pricing) {
-        const pricing = await calculatePrice();
-
-        if (!pricing) {
-          return;
-        }
-      }
-
-      /* ====================================================
-     NEXT
-  ==================================================== */
 
       state.step = 3;
 
@@ -1937,31 +3090,128 @@ const PublicPenginapanDetail = (() => {
     }
 
     /* ======================================================
-       STEP 3
-    ====================================================== */
+     STEP 3 — CONFIRM
+  ====================================================== */
 
     if (state.step === 3) {
-      const valid = readAndValidateStep3();
+      await submitBooking();
 
-      if (!valid) {
+      return;
+    }
+  }
+
+  /* ==========================================================
+   CONTINUE WITH SELECTED SHOWCASE UNIT
+========================================================== */
+
+  async function continueWithSelectedUnit() {
+    if (state.searching) {
+      return;
+    }
+
+    state.searching = true;
+
+    clearWizardError();
+
+    setSearchButtonLoading(true);
+
+    try {
+      const payload = {
+        penginapanId: state.penginapan.id,
+
+        checkIn: state.booking.checkIn,
+
+        checkOut: state.booking.checkOut,
+
+        dewasa: state.booking.dewasa,
+
+        anak: state.booking.anak,
+      };
+
+      console.log("[PublicPenginapanDetail] Checking selected unit:", payload);
+
+      const result = await API.post("reservation.availability", payload);
+
+      console.log(
+        "[PublicPenginapanDetail] Selected unit availability:",
+        result,
+      );
+
+      if (!result || result.success === false) {
+        throw new Error(result?.message || "Gagal mengecek ketersediaan unit.");
+      }
+
+      const data = result.data;
+
+      const availableUnits = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.rows)
+          ? data.rows
+          : [];
+
+      /*
+       * Cari kembali unit yang sebelumnya
+       * dipilih dari OUR ROOMS.
+       */
+      const availableUnit = availableUnits.find(
+        (item) => String(item.id) === String(state.selectedUnit.id),
+      );
+
+      /*
+       * Unit sudah tidak tersedia
+       * untuk tanggal / kapasitas ini.
+       */
+      if (!availableUnit) {
+        showWizardError(
+          "Kamar yang dipilih tidak tersedia pada tanggal tersebut. Silakan pilih tanggal lain.",
+        );
+
         return;
       }
 
-      state.step = 4;
+      /*
+       * Gunakan data unit hasil pengecekan server.
+       */
+      state.selectedUnit = availableUnit;
+
+      state.units = [availableUnit];
+
+      state.pricing = null;
+
+      /*
+       * Hitung harga berdasarkan:
+       * - penginapan
+       * - unit
+       * - tanggal
+       * - jumlah tamu
+       */
+      const pricing = await calculatePrice();
+
+      if (!pricing) {
+        return;
+      }
+
+      /*
+       * Semua valid.
+       * Karena kamar sudah dipilih dari OUR ROOMS,
+       * lanjut ke STEP 2 — GUEST.
+       */
+      state.step = 2;
 
       renderWizard();
 
       scrollWizard();
+    } catch (error) {
+      console.error(
+        "[PublicPenginapanDetail] Selected unit availability error:",
+        error,
+      );
 
-      return;
-    }
+      showWizardError(error?.message || "Gagal mengecek ketersediaan unit.");
+    } finally {
+      state.searching = false;
 
-    /* ======================================================
-       STEP 4
-    ====================================================== */
-
-    if (state.step === 4) {
-      await submitBooking();
+      setSearchButtonLoading(false);
     }
   }
 
@@ -2045,6 +3295,87 @@ const PublicPenginapanDetail = (() => {
   }
 
   /* ==========================================================
+   LOAD INITIAL AVAILABILITY
+   Dipanggil otomatis saat detail penginapan dibuka.
+   Availability tetap berada di STEP 1.
+========================================================== */
+
+  async function loadInitialAvailability() {
+    if (!state.penginapan?.id) {
+      return;
+    }
+
+    if (!state.booking.checkIn || !state.booking.checkOut) {
+      return;
+    }
+
+    try {
+      const payload = {
+        penginapanId: state.penginapan.id,
+        checkIn: state.booking.checkIn,
+        checkOut: state.booking.checkOut,
+        dewasa: state.booking.dewasa,
+        anak: state.booking.anak,
+      };
+
+      console.log("[PublicPenginapanDetail] Initial availability:", payload);
+
+      const result = await API.post("reservation.availability", payload);
+
+      console.log(
+        "[PublicPenginapanDetail] Initial availability result:",
+        result,
+      );
+
+      if (!result || result.success === false) {
+        throw new Error(result?.message || "Gagal memuat ketersediaan unit.");
+      }
+
+      const data = result.data;
+
+      /*
+       * HASIL AVAILABILITY LANGSUNG
+       * MENJADI SUMBER DATA UNIT.
+       *
+       * Tidak lagi menggunakan:
+       * - availableUnitIds
+       * - availabilityChecked
+       * - allUnits untuk menentukan availability
+       */
+
+      state.units = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.rows)
+          ? data.rows
+          : [];
+
+      state.selectedUnit = null;
+
+      state.selectedFromShowcase = false;
+
+      state.pricing = null;
+
+      state.step = 1;
+
+      renderWizard();
+    } catch (error) {
+      console.error(
+        "[PublicPenginapanDetail] Initial availability error:",
+        error,
+      );
+
+      /*
+       * Jangan membuat halaman detail gagal
+       * hanya karena availability gagal dimuat.
+       */
+
+      state.units = [];
+
+      renderWizard();
+    }
+  }
+
+  /* ==========================================================
      SEARCH AVAILABILITY
   ========================================================== */
 
@@ -2090,11 +3421,17 @@ const PublicPenginapanDetail = (() => {
           ? data.rows
           : [];
 
+      /* =========================================
+   HASIL AVAILABILITY ADALAH SUMBER KEBENARAN
+========================================= */
+
       state.selectedUnit = null;
+
+      state.selectedFromShowcase = false;
 
       state.pricing = null;
 
-      state.step = 2;
+      state.step = 1;
 
       renderWizard();
 
@@ -2128,6 +3465,7 @@ const PublicPenginapanDetail = (() => {
   ====================================================== */
 
     state.selectedUnit = unit;
+    state.selectedFromShowcase = false;
 
     state.pricing = null;
 
@@ -2311,6 +3649,42 @@ const PublicPenginapanDetail = (() => {
 
       showWizardError(error?.message || "Gagal membuat reservasi.");
     }
+  }
+
+  function openWhatsappBooking() {
+    const reservation = state.result || {};
+
+    const kode = reservation.kode || reservation.id || "";
+
+    const phone = normalizeWhatsapp(state.booking.noHp);
+
+    if (!kode || !phone) {
+      console.warn("[PublicPenginapanDetail] WhatsApp data tidak lengkap.");
+      return;
+    }
+
+    const lookupUrl = `${window.location.origin}/public/reservation-lookup?kode=${encodeURIComponent(kode)}`;
+
+    const message = [
+      "Booking Anda berhasil dibuat 🎉",
+      "",
+      `Nomor Reservasi: ${kode}`,
+      "",
+      "Silakan lanjutkan proses booking dengan melakukan pembayaran.",
+      "",
+      "Untuk melihat detail reservasi dan melanjutkan pembayaran, silakan buka link berikut:",
+      "",
+      lookupUrl,
+      "",
+      "Gunakan nomor reservasi dan nomor telepon yang digunakan saat melakukan booking.",
+      "",
+      "Terima kasih 🙏",
+      "Dieng Net",
+    ].join("\n");
+
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   }
 
   function normalizeWhatsapp(value) {
@@ -3382,9 +4756,9 @@ const PublicPenginapanDetail = (() => {
 
     button.disabled = loading;
 
-    button.textContent = loading
-      ? "Checking availability..."
-      : "Search availability";
+    if (loading) {
+      button.textContent = "Checking availability...";
+    }
   }
 
   /* ==========================================================
@@ -3667,9 +5041,15 @@ const PublicPenginapanDetail = (() => {
      LOADING
   ========================================================== */
 
+  /* ==========================================================
+   LOADING
+========================================================== */
+
   function showLoading() {
     if (dom.loading) {
       dom.loading.hidden = false;
+
+      Skeleton.detail("#detailLoading");
     }
 
     if (dom.content) {

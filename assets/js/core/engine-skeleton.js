@@ -280,6 +280,242 @@ const Skeleton = {
   },
 
   /* =====================================
+   DETAIL PENGINAPAN
+===================================== */
+
+  detail(target) {
+    const el = document.querySelector(target);
+
+    if (!el) return;
+
+    el.innerHTML = `
+
+    <div class="skeleton-detail">
+
+      <!-- ================================
+           COVER
+      ================================= -->
+
+      <div class="skeleton-detail-cover">
+
+        <div class="skeleton skeleton-detail-image"></div>
+
+      </div>
+
+
+      <!-- ================================
+           PROPERTY INFO
+      ================================= -->
+
+      <div class="skeleton-detail-info">
+
+        <!-- LOCATION -->
+
+        <div
+          class="
+            skeleton
+            skeleton-detail-location
+          "
+        ></div>
+
+
+        <!-- TITLE -->
+
+        <div
+          class="
+            skeleton
+            skeleton-detail-title
+          "
+        ></div>
+
+
+        <!-- TYPE -->
+
+        <div
+          class="
+            skeleton
+            skeleton-detail-type
+          "
+        ></div>
+
+
+        <!-- DESCRIPTION -->
+
+        <div
+          class="
+            skeleton
+            skeleton-detail-description
+          "
+        ></div>
+
+        <div
+          class="
+            skeleton
+            skeleton-detail-description short
+          "
+        ></div>
+
+
+        <!-- ================================
+             META
+        ================================= -->
+
+        <div class="skeleton-detail-meta">
+
+          <div class="skeleton-detail-meta-item">
+
+            <div
+              class="
+                skeleton
+                skeleton-detail-meta-label
+              "
+            ></div>
+
+            <div
+              class="
+                skeleton
+                skeleton-detail-meta-value
+              "
+            ></div>
+
+          </div>
+
+
+          <div class="skeleton-detail-meta-item">
+
+            <div
+              class="
+                skeleton
+                skeleton-detail-meta-label
+              "
+            ></div>
+
+            <div
+              class="
+                skeleton
+                skeleton-detail-meta-value
+              "
+            ></div>
+
+          </div>
+
+        </div>
+
+
+        <!-- ================================
+             RESERVATION
+        ================================= -->
+
+        <div class="skeleton-detail-reservation">
+
+          <div
+            class="
+              skeleton
+              skeleton-detail-section-title
+            "
+          ></div>
+
+          <div
+            class="
+              skeleton
+              skeleton-detail-section-text
+            "
+          ></div>
+
+
+          <!-- FORM -->
+
+          <div class="skeleton-detail-form">
+
+            <div class="skeleton-detail-field">
+              <div
+                class="
+                  skeleton
+                  skeleton-detail-label
+                "
+              ></div>
+
+              <div
+                class="
+                  skeleton
+                  skeleton-detail-input
+                "
+              ></div>
+            </div>
+
+
+            <div class="skeleton-detail-field">
+              <div
+                class="
+                  skeleton
+                  skeleton-detail-label
+                "
+              ></div>
+
+              <div
+                class="
+                  skeleton
+                  skeleton-detail-input
+                "
+              ></div>
+            </div>
+
+
+            <div class="skeleton-detail-field">
+              <div
+                class="
+                  skeleton
+                  skeleton-detail-label
+                "
+              ></div>
+
+              <div
+                class="
+                  skeleton
+                  skeleton-detail-input
+                "
+              ></div>
+            </div>
+
+
+            <div class="skeleton-detail-field">
+              <div
+                class="
+                  skeleton
+                  skeleton-detail-label
+                "
+              ></div>
+
+              <div
+                class="
+                  skeleton
+                  skeleton-detail-input
+                "
+              ></div>
+            </div>
+
+          </div>
+
+
+          <!-- BUTTON -->
+
+          <div
+            class="
+              skeleton
+              skeleton-detail-button
+            "
+          ></div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  `;
+  },
+
+  /* =====================================
      HIDE
   ===================================== */
 

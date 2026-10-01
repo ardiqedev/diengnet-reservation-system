@@ -1,0 +1,243 @@
+/* =========================================================
+   FINAL PATCH — OUR ROOMS VISUAL POLISH
+   BLUE + ORANGE ACCENT
+   ========================================================= */
+
+/* ---------------------------------------------------------
+   ROOM CARD
+--------------------------------------------------------- */
+
+.public-unit-showcase-card {
+  position: relative;
+
+  background: #ffffff;
+
+  border: 1px solid #e4e9ec;
+  border-radius: 18px;
+
+  overflow: hidden;
+
+  box-shadow: 0 8px 24px rgba(20, 45, 60, 0.04);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.public-unit-showcase-card:hover {
+  transform: translateY(-3px);
+
+  border-color: #d4e0e8;
+
+  box-shadow: 0 16px 35px rgba(20, 45, 60, 0.08);
+}
+
+/* ---------------------------------------------------------
+   ROOM IMAGE
+--------------------------------------------------------- */
+
+.public-unit-showcase-image {
+  position: relative;
+
+  overflow: hidden;
+
+  background: #f1f4f5;
+}
+
+.public-unit-showcase-image img {
+  transition: transform 0.35s ease;
+}
+
+.public-unit-showcase-card:hover .public-unit-showcase-image img {
+  transform: scale(1.025);
+}
+
+/* ---------------------------------------------------------
+   ROOM CONTENT
+--------------------------------------------------------- */
+
+.public-unit-showcase-content {
+  padding: 16px 0 18px;
+}
+
+/* ---------------------------------------------------------
+   ROOM NUMBER
+--------------------------------------------------------- */
+
+.public-unit-showcase-number {
+  color: #7d92a0;
+}
+
+/* ---------------------------------------------------------
+   ROOM NAME
+--------------------------------------------------------- */
+
+.public-unit-showcase-name {
+  color: #173f68 !important;
+
+  font-weight: 700;
+
+  transition: color 0.2s ease;
+}
+
+.public-unit-showcase-card:hover .public-unit-showcase-name {
+  color: #1267a8 !important;
+}
+
+/* ---------------------------------------------------------
+   ROOM DESCRIPTION
+--------------------------------------------------------- */
+
+.public-unit-showcase-description {
+  color: #3f4f5b;
+}
+
+/* ---------------------------------------------------------
+   ROOM META / ICON INFO
+--------------------------------------------------------- */
+
+.public-unit-showcase-meta {
+  color: #4d6575;
+}
+
+.public-unit-showcase-meta svg {
+  color: #176fb5;
+}
+
+/* ---------------------------------------------------------
+   FACILITIES
+--------------------------------------------------------- */
+
+.public-unit-showcase-facilities span {
+  background: #f0f6fb;
+
+  border: 1px solid #e2edf5;
+
+  color: #27658d;
+}
+
+/* ---------------------------------------------------------
+   STARTING PRICE
+--------------------------------------------------------- */
+
+.public-unit-starting-price {
+  border-top-color: #e5e9e8;
+}
+
+.public-unit-starting-price span {
+  color: #71808a;
+}
+
+.public-unit-starting-price strong {
+  color: #e7651c !important;
+
+  font-size: 17px;
+
+  font-weight: 750;
+}
+
+.public-unit-starting-price small {
+  color: #7b8991;
+}
+
+/* ---------------------------------------------------------
+   SELECT ROOM BUTTON
+--------------------------------------------------------- */
+
+.public-unit-showcase-select {
+  background: #123b63 !important;
+
+  border: 1px solid #123b63;
+
+  color: #ffffff;
+
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.public-unit-showcase-select:hover:not(:disabled) {
+  background: #185a8f !important;
+
+  border-color: #185a8f;
+
+  transform: translateY(-1px);
+}
+
+/* ---------------------------------------------------------
+   NOT AVAILABLE
+--------------------------------------------------------- */
+
+.public-unit-showcase-select:disabled {
+  background: #f1f3f2 !important;
+
+  border-color: #e0e4e2;
+
+  color: #7b837f;
+
+  opacity: 1;
+
+  cursor: not-allowed;
+
+  box-shadow: none;
+
+  transform: none;
+}
+
+/* ---------------------------------------------------------
+   STATUS BADGE — AVAILABLE
+--------------------------------------------------------- */
+
+.public-unit-showcase-status.is-available {
+  background: rgba(238, 250, 243, 0.96);
+
+  color: #25804c;
+
+  border-color: rgba(65, 151, 96, 0.18);
+}
+
+/* ---------------------------------------------------------
+   STATUS BADGE — HOLD
+--------------------------------------------------------- */
+
+.public-unit-showcase-status.is-hold {
+  background: rgba(255, 247, 233, 0.96);
+
+  color: #a06b1f;
+
+  border-color: rgba(194, 138, 47, 0.18);
+}
+
+/* ---------------------------------------------------------
+   STATUS BADGE — BOOKED
+--------------------------------------------------------- */
+
+.public-unit-showcase-status.is-booked {
+  background: rgba(245, 246, 246, 0.96);
+
+  color: #66716d;
+
+  border-color: rgba(110, 120, 115, 0.16);
+}
+
+/* ---------------------------------------------------------
+   MOBILE
+--------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .public-unit-showcase-content {
+    padding: 15px 0 16px;
+  }
+
+  .public-unit-starting-price strong {
+    font-size: 16px;
+  }
+
+  .public-unit-showcase-card:hover {
+    transform: none;
+
+    box-shadow: 0 8px 24px rgba(20, 45, 60, 0.04);
+  }
+}

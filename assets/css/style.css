@@ -38,6 +38,8 @@
 @import url("pages/pengaturan.css");
 @import url("pages/reservasi.css");
 @import url("pages/invoice.css");
+@import url("public/reservation-lookup.css");
+@import url("public/penginapan-detail.css");
 
 /* =========================================
    RESPONSIVE

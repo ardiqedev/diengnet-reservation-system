@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="description"
+      content="Manage and track your reservation at Dieng Net."
+    />
+
+    <title>Dieng Net — Reservation Center</title>
+
+    <!-- =========================================
+         FONTS
+    ========================================== -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- =========================================
+         PUBLIC CSS
+    ========================================== -->
+
+    <link rel="stylesheet" href="../assets/css/public/public.css" />
+
+    <link rel="stylesheet" href="../assets/css/public/reservation-lookup.css" />
+  </head>
+
+  <body>
+    <!-- =========================================
+         NAVBAR
+    ========================================== -->
+
+    <header class="public-navbar public-navbar-light">
+      <div class="container navbar-inner">
+        <!-- BRAND -->
+
+        <a href="./index.html" class="brand">
+          <span class="brand-mark"> DN </span>
+
+          <span class="brand-name"> Dieng Net </span>
+        </a>
+
+        <!-- DESKTOP NAV -->
+
+        <nav class="desktop-nav">
+          <a href="./index.html#stay"> Stay </a>
+
+          <a href="./index.html#explore"> Explore </a>
+
+          <a href="./index.html#experience"> Experience </a>
+        </nav>
+
+        <!-- ACTION -->
+
+        <div class="navbar-actions">
+          <a href="./index.html#booking" class="btn btn-dark">
+            Book Your Stay
+          </a>
+
+          <button
+            type="button"
+            class="mobile-menu-btn"
+            id="mobileMenuBtn"
+            aria-label="Buka menu"
+            aria-expanded="false"
+          >
+            ☰
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- =========================================
+         MOBILE MENU
+    ========================================== -->
+
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="./index.html#stay"> Stay </a>
+
+      <a href="./index.html#explore"> Explore </a>
+
+      <a href="./index.html#experience"> Experience </a>
+
+      <a href="./index.html#booking" class="btn btn-dark"> Book Your Stay </a>
+    </div>
+
+    <!-- =========================================
+         MAIN
+    ========================================== -->
+
+    <main>
+      <section class="reservation-center">
+        <div class="container">
+          <!-- =====================================
+               HERO
+          ====================================== -->
+
+          <section class="reservation-center-hero">
+            <div class="reservation-center-hero-content">
+              <span class="eyebrow eyebrow-dark"> RESERVATION CENTER </span>
+
+              <h1>
+                Your reservation,
+                <br />
+                all in one place.
+              </h1>
+
+              <p>
+                Lihat detail reservasi, status pembayaran, dan perkembangan masa
+                inap Anda.
+              </p>
+            </div>
+          </section>
+
+          <!-- =====================================
+               LOOKUP
+          ====================================== -->
+
+          <section class="reservation-center-search">
+            <div class="reservation-lookup-card" id="lookupCard">
+              <div class="reservation-search-heading">
+                <div class="reservation-search-icon" aria-hidden="true">
+                  <span>⌕</span>
+                </div>
+
+                <div>
+                  <h2>Find your reservation</h2>
+
+                  <p>
+                    Masukkan kode reservasi dan nomor WhatsApp yang digunakan
+                    saat booking.
+                  </p>
+                </div>
+              </div>
+
+              <!-- FORM -->
+
+              <form id="reservationLookupForm" novalidate>
+                <div class="reservation-lookup-fields">
+                  <!-- RESERVATION CODE -->
+
+                  <div class="reservation-lookup-field">
+                    <label for="reservationCode"> KODE RESERVASI * </label>
+
+                    <input
+                      type="text"
+                      id="reservationCode"
+                      name="reservationCode"
+                      placeholder="RSV-260930-7409"
+                      autocomplete="off"
+                      required
+                    />
+                  </div>
+
+                  <!-- WHATSAPP -->
+
+                  <div class="reservation-lookup-field">
+                    <label for="reservationWhatsapp"> NOMOR WHATSAPP * </label>
+
+                    <input
+                      type="tel"
+                      id="reservationWhatsapp"
+                      name="reservationWhatsapp"
+                      placeholder="628xxxxxxxxxx"
+                      autocomplete="tel"
+                      required
+                    />
+                  </div>
+
+                  <!-- BUTTON -->
+
+                  <button
+                    type="submit"
+                    id="reservationLookupButton"
+                    class="reservation-lookup-button"
+                  >
+                    <span> Find Reservation </span>
+
+                    <span aria-hidden="true"> → </span>
+                  </button>
+                </div>
+
+                <!-- ERROR -->
+
+                <div
+                  id="reservationLookupError"
+                  class="reservation-lookup-error"
+                  hidden
+                ></div>
+
+                <!-- HELP -->
+
+                <p class="reservation-lookup-help">
+                  <span aria-hidden="true"> ● </span>
+
+                  Gunakan nomor WhatsApp yang sama saat melakukan reservasi.
+                </p>
+              </form>
+            </div>
+          </section>
+
+          <!-- =====================================
+               RESULT
+               
+               NOTE:
+               Isi section ini tetap dirender
+               oleh reservation-lookup.js
+          ====================================== -->
+
+          <section
+            id="reservationLookupResult"
+            class="reservation-lookup-result"
+            hidden
+          ></section>
+
+          <!-- =====================================
+               RESERVATION STATUS GUIDE
+          ====================================== -->
+
+          <section class="reservation-status-guide">
+            <div class="reservation-status-heading">
+              <span class="eyebrow eyebrow-dark"> STATUS RESERVATION </span>
+
+              <h2>Tahapan Reservasi</h2>
+
+              <p>Berikut adalah tahapan reservasi dan makna setiap status.</p>
+            </div>
+
+            <!-- STATUS GRID -->
+
+            <div class="reservation-status-grid">
+              <!-- =================================
+                   ON HOLD
+              ================================== -->
+
+              <article class="reservation-status-card status-on-hold">
+                <div class="reservation-status-label">
+                  <span class="reservation-status-icon" aria-hidden="true">
+                    ◷
+                  </span>
+
+                  <span> ON HOLD </span>
+                </div>
+
+                <h3>Payment Required</h3>
+
+                <p>
+                  Reservasi berhasil dibuat. Silakan selesaikan pembayaran untuk
+                  melanjutkan.
+                </p>
+              </article>
+
+              <!-- =================================
+                   PAYMENT PENDING
+              ================================== -->
+
+              <article class="reservation-status-card status-payment">
+                <div class="reservation-status-label">
+                  <span class="reservation-status-icon" aria-hidden="true">
+                    ◷
+                  </span>
+
+                  <span> PAYMENT PENDING </span>
+                </div>
+
+                <h3>Payment Submitted</h3>
+
+                <p>
+                  Bukti pembayaran telah dikirim dan sedang menunggu verifikasi
+                  admin.
+                </p>
+              </article>
+
+              <!-- =================================
+                   CONFIRMED
+              ================================== -->
+
+              <article class="reservation-status-card status-confirmed">
+                <div class="reservation-status-label">
+                  <span class="reservation-status-icon" aria-hidden="true">
+                    ✓
+                  </span>
+
+                  <span> CONFIRMED </span>
+                </div>
+
+                <h3>Reservation Confirmed</h3>
+
+                <p>
+                  Pembayaran telah diverifikasi. Reservasi Anda telah
+                  dikonfirmasi.
+                </p>
+              </article>
+
+              <!-- =================================
+                   CHECKED IN
+              ================================== -->
+
+              <article class="reservation-status-card status-checked-in">
+                <div class="reservation-status-label">
+                  <span class="reservation-status-icon" aria-hidden="true">
+                    ▣
+                  </span>
+
+                  <span> CHECKED IN </span>
+                </div>
+
+                <h3>Currently Staying</h3>
+
+                <p>
+                  Anda telah melakukan check-in. Selamat menikmati masa inap
+                  Anda.
+                </p>
+              </article>
+
+              <!-- =================================
+                   COMPLETED
+              ================================== -->
+
+              <article class="reservation-status-card status-completed">
+                <div class="reservation-status-label">
+                  <span class="reservation-status-icon" aria-hidden="true">
+                    ✓
+                  </span>
+
+                  <span> COMPLETED </span>
+                </div>
+
+                <h3>Stay Completed</h3>
+
+                <p>
+                  Terima kasih telah menginap di Dieng Net. Semoga berjumpa
+                  lagi!
+                </p>
+              </article>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <!-- =========================================
+         FOOTER
+    ========================================== -->
+
+    <footer class="public-footer" id="publicFooter">
+      <div class="container">
+        <div class="footer-grid">
+          <!-- BRAND -->
+
+          <div class="footer-brand">
+            <a href="./index.html" class="brand">
+              <span class="brand-mark"> DN </span>
+
+              <span class="brand-name"> Dieng Net </span>
+            </a>
+
+            <p>Discover Dieng through stay, nature and experience.</p>
+          </div>
+
+          <!-- STAY -->
+
+          <div class="footer-column">
+            <span class="footer-title"> STAY </span>
+
+            <a href="./penginapan.html"> Penginapan </a>
+
+            <a href="./penginapan.html"> Find a stay </a>
+          </div>
+
+          <!-- EXPLORE -->
+
+          <div class="footer-column">
+            <span class="footer-title"> EXPLORE </span>
+
+            <a href="./index.html#explore"> Destinations </a>
+
+            <a href="./index.html#explore"> Jeep </a>
+
+            <a href="./index.html#experience"> Experiences </a>
+          </div>
+
+          <!-- INFORMATION -->
+
+          <div class="footer-column">
+            <span class="footer-title"> DIENG </span>
+
+            <a href="#"> About Dieng </a>
+
+            <a href="#"> Contact </a>
+          </div>
+        </div>
+
+        <!-- FOOTER BOTTOM -->
+
+        <div class="footer-bottom">
+          <span> © 2026 Dieng Net </span>
+
+          <span> Explore Dieng, Your Way. </span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- =========================================
+         CORE
+    ========================================== -->
+
+    <script src="../assets/js/core/config.js"></script>
+
+    <script src="../assets/js/core/api.js"></script>
+
+    <!-- =========================================
+         PUBLIC LOOKUP
+    ========================================== -->
+
+    <script src="../assets/js/public/reservation-lookup.js"></script>
+  </body>
+</html>

@@ -303,6 +303,27 @@
 }
 
 /* =========================================================
+   ADDRESS
+========================================================= */
+
+.stay-address {
+  margin: 10px 0 0;
+
+  font-family: "DM Sans", sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+  font-weight: 400;
+
+  color: #737a76;
+
+  display: -webkit-box;
+  overflow: hidden;
+
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* =========================================================
    DESCRIPTION
 ========================================================= */
 
@@ -976,4 +997,38 @@
 .public-navbar.public-navbar-light .btn-dark {
   background: #14201c;
   color: #fff;
+}
+
+/* =========================================================
+   FINAL FIX — PUBLIC UNIT GRID
+   3 COLUMNS DESKTOP
+========================================================= */
+
+.public-unit-list {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 20px;
+  width: 100%;
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+  .public-unit-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px;
+  }
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 640px) {
+  .public-unit-list {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
 }

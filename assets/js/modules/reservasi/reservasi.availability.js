@@ -244,54 +244,98 @@ const ReservasiAvailability = {
       .toUpperCase();
 
     /* ================================
-       STATUS YANG TIDAK MENGUNCI UNIT
+       BOOKED
     ================================= */
 
-    const ignoredStatuses = [
-      "CANCELLED",
-
-      "CANCELED",
-
-      "REJECTED",
-
-      "CHECK OUT",
-
-      "CHECK_OUT",
-
-      "COMPLETED",
-    ];
-
-    if (ignoredStatuses.includes(status)) {
-      return false;
+    if (status === "BOOKED") {
+      return this.isReservationDateOverlap(
+        reservation,
+        requestedCheckIn,
+        requestedCheckOut,
+      );
     }
 
     /* ================================
-       HOLD
+       CHECK IN
     ================================= */
 
-    if (status === "HOLD") {
-      if (reservation.holdUntil) {
-        const holdUntil = new Date(reservation.holdUntil);
+    if (status === "CHECK_IN") {
+      return this.isReservationDateOverlap(
+        reservation,
+        requestedCheckIn,
+        requestedCheckOut,
+      );
+    }
 
-        if (isNaN(holdUntil.getTime())) {
-          return false;
-        }
+    /* ================================
+       DRAFT + HOLD
+    ================================= */
 
-        /*
-         * HOLD yang sudah expired
-         * tidak lagi mengunci unit.
-         */
+    if (status === "DRAFT") {
+      /*
+       * DRAFT tanpa hold
+       * tidak mengunci unit.
+       */
 
-        if (holdUntil <= new Date()) {
-          return false;
-        }
+      if (!reservation.holdUntil) {
+        return false;
       }
+
+      const holdUntil = this.toDate(reservation.holdUntil);
+
+      /*
+       * holdUntil tidak valid
+       * dianggap tidak mengunci.
+       */
+
+      if (!holdUntil) {
+        return false;
+      }
+
+      /*
+       * HOLD sudah expired
+       * tidak lagi mengunci unit.
+       */
+
+      if (holdUntil.getTime() <= Date.now()) {
+        return false;
+      }
+
+      /*
+       * HOLD masih aktif.
+       * Sekarang cek collision tanggal.
+       */
+
+      return this.isReservationDateOverlap(
+        reservation,
+        requestedCheckIn,
+        requestedCheckOut,
+      );
     }
 
     /* ================================
-       VALIDASI TANGGAL RESERVASI
+       STATUS LAIN
     ================================= */
 
+    /*
+     * CANCELLED
+     * CANCELED
+     * CHECK_OUT
+     * COMPLETED
+     * REJECTED
+     * dan status lain
+     *
+     * tidak mengunci unit.
+     */
+
+    return false;
+  },
+
+  /* =====================================
+     CHECK RESERVATION DATE OVERLAP
+  ===================================== */
+
+  isReservationDateOverlap(reservation, requestedCheckIn, requestedCheckOut) {
     if (!reservation.checkIn || !reservation.checkOut) {
       return false;
     }

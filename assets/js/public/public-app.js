@@ -40,7 +40,15 @@ const PublicApp = (() => {
       return "penginapan";
     }
 
-    if (path.endsWith("/") || path.endsWith("/index.html")) {
+    if (path.endsWith("/penginapan-detail.html")) {
+      return "penginapan-detail";
+    }
+
+    if (
+      path === "/public" ||
+      path.endsWith("/") ||
+      path.endsWith("/index.html")
+    ) {
       return "home";
     }
 
@@ -97,6 +105,20 @@ const PublicApp = (() => {
             typeof PenginapanPublic.init === "function"
           ) {
             await PenginapanPublic.init();
+          }
+
+          break;
+
+        /* ============================================
+   PENGINAPAN DETAIL
+   ============================================ */
+
+        case "penginapan-detail":
+          if (
+            typeof PublicPenginapanDetail !== "undefined" &&
+            typeof PublicPenginapanDetail.init === "function"
+          ) {
+            await PublicPenginapanDetail.init();
           }
 
           break;

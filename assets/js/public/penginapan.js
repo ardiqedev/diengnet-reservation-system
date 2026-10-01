@@ -308,19 +308,17 @@ const PublicPenginapan = (() => {
    LOAD PUBLIC PRICES
 ========================================================== */
 
+  /* ==========================================================
+     LOAD PUBLIC PRICES
+  ========================================================== */
+
   async function loadPrices() {
     try {
       console.log("[PublicPenginapan] Request harga public");
 
       const result = await API.post("harga.list", {
         page: 1,
-
-        /*
-         * Ambil semua harga dalam satu request.
-         * Bukan request satu-satu per penginapan.
-         */
         limit: 1000,
-
         keyword: "",
       });
 
@@ -329,34 +327,49 @@ const PublicPenginapan = (() => {
       const rows = Array.isArray(result?.data?.rows) ? result.data.rows : [];
 
       /*
-       * Reset
+       * RESET
        */
+
       state.pricesByPenginapan = {};
 
       /*
-       * Hanya harga yang bisa ditampilkan
+       * HANYA HARGA YANG BISA DITAMPILKAN PUBLIC
        */
+
       const validPrices = rows.filter((row) => {
-        /*
-         * STATUS
-         */
+        /* ================================
+           STATUS
+        ================================= */
+
         const status = String(row.status || "")
           .trim()
           .toUpperCase();
 
-        if (status && status !== "AKTIF") {
+        /*
+         * Database menggunakan:
+         *
+         * ACTIVE
+         * INACTIVE
+         *
+         * Jadi public hanya menerima ACTIVE.
+         */
+
+        if (status && status !== "ACTIVE") {
           return false;
         }
 
+        /* ================================
+           CHANNEL PUBLIC
+        ================================= */
+
         /*
-         * CHANNEL PUBLIC
-         *
          * Jika channel tersedia,
          * gunakan WEBSITE.
          *
-         * Jika data lama belum memiliki channel,
-         * tetap kita izinkan agar backward compatible.
+         * Jika data lama belum memiliki
+         * channel, tetap diizinkan.
          */
+
         const channel = String(row.channelId || row.channel || "")
           .trim()
           .toUpperCase();
@@ -365,9 +378,10 @@ const PublicPenginapan = (() => {
           return false;
         }
 
-        /*
-         * Minimal harus punya penginapan
-         */
+        /* ================================
+           PENGINAPAN
+        ================================= */
+
         if (!row.penginapanId) {
           return false;
         }
@@ -378,6 +392,7 @@ const PublicPenginapan = (() => {
       /*
        * GROUP BY PENGINAPAN
        */
+
       validPrices.forEach((row) => {
         const penginapanId = String(row.penginapanId).trim();
 
@@ -387,6 +402,8 @@ const PublicPenginapan = (() => {
 
         state.pricesByPenginapan[penginapanId].push(row);
       });
+
+      console.log("[PublicPenginapan] Valid prices:", validPrices);
 
       console.log(
         "[PublicPenginapan] Prices grouped:",
@@ -403,7 +420,6 @@ const PublicPenginapan = (() => {
       state.pricesByPenginapan = {};
     }
   }
-
   /* ==========================================================
      APPLY FILTER
   ========================================================== */
@@ -853,13 +869,18 @@ const PublicPenginapan = (() => {
    GET STARTING PRICE
 ========================================================= */
 
+  /* =========================================================
+     GET STARTING PRICE
+  ========================================================= */
+
   function getStartingPrice(item = {}) {
     const penginapanId = String(item.id || "").trim();
 
     /*
+     * =========================================
      * PRIORITAS 1
-     * Harga public yang sudah di-load dan
-     * sudah di-group berdasarkan penginapan.
+     * Harga dari master_harga
+     * =========================================
      */
 
     const groupedPrices = state.pricesByPenginapan?.[penginapanId] || [];
@@ -868,6 +889,7 @@ const PublicPenginapan = (() => {
       const values = groupedPrices.flatMap((row) => [
         Number(row.hargaWeekday) || 0,
         Number(row.hargaWeekend) || 0,
+        Number(row.hargaLongWeekend) || 0,
       ]);
 
       const validValues = values.filter((price) => price > 0);
@@ -878,9 +900,10 @@ const PublicPenginapan = (() => {
     }
 
     /*
+     * =========================================
      * PRIORITAS 2
-     * Jika backend suatu saat langsung mengirim
-     * startingPrice.
+     * Direct starting price
+     * =========================================
      */
 
     const directPrice =
@@ -894,8 +917,10 @@ const PublicPenginapan = (() => {
     }
 
     /*
+     * =========================================
      * PRIORITAS 3
-     * Fallback jika item membawa daftar harga.
+     * Fallback daftar harga
+     * =========================================
      */
 
     const prices = Array.isArray(item.hargaMusim) ? item.hargaMusim : [];
@@ -904,8 +929,10 @@ const PublicPenginapan = (() => {
       .flatMap((price) => [
         Number(price.hargaWeekday) || 0,
         Number(price.hargaWeekend) || 0,
+        Number(price.hargaLongWeekend) || 0,
         Number(price.weekday) || 0,
         Number(price.weekend) || 0,
+        Number(price.longWeekend) || 0,
         Number(price.harga) || 0,
       ])
       .filter((price) => price > 0);
