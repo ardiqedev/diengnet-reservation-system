@@ -516,6 +516,104 @@ const Skeleton = {
   },
 
   /* =====================================
+     RESERVASI TABLE
+  ===================================== */
+
+  reservasiTable(target, rows = 6) {
+    const el = document.querySelector(target);
+
+    if (!el) return;
+
+    let html = `
+      <div class="reservasi-table">
+        <div class="reservasi-table-wrapper">
+
+          <table class="table">
+
+            <thead class="reservasi-table-head">
+              <tr>
+                <th>No</th>
+                <th>Kode</th>
+                <th>Tamu</th>
+                <th>Penginapan</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Status</th>
+                <th>Pembayaran</th>
+                <th>Channel</th>
+                <th>Total</th>
+                <th class="text-center">Aksi</th>
+              </tr>
+            </thead>
+
+            <tbody>
+    `;
+
+    for (let i = 0; i < rows; i++) {
+      html += `
+        <tr class="reservasi-row">
+
+          <td>
+            <div class="skeleton skeleton-sm"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton-lg"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton-lg"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton-lg"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton-sm"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton-sm"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton-sm"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton"></div>
+          </td>
+
+          <td>
+            <div class="skeleton skeleton-sm"></div>
+          </td>
+
+        </tr>
+      `;
+    }
+
+    html += `
+            </tbody>
+
+          </table>
+
+        </div>
+      </div>
+    `;
+
+    el.innerHTML = html;
+  },
+
+  /* =====================================
      HIDE
   ===================================== */
 

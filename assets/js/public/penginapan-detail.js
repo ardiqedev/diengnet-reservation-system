@@ -246,6 +246,106 @@ const PublicPenginapanDetail = (() => {
           await selectShowcaseUnit(unitId);
         });
       });
+
+    /* =========================================
+      GALLERY FOTO UNIT
+    ========================================= */
+
+    dom.unitShowcase
+      .querySelectorAll(".public-unit-showcase-card")
+      .forEach((card) => {
+        const unitId = card.dataset.unitId;
+
+        const unit = state.allUnits.find(
+          (item) => String(item.id) === String(unitId),
+        );
+
+        if (!unit) {
+          return;
+        }
+
+        const photos = getUnitPhotos(unit);
+
+        console.log("[PublicPenginapanDetail] FOTO LIST UNIT:", {
+          unitId,
+          nama: unit.nama,
+          fotoList: unit.fotoList,
+          photos,
+          total: photos.length,
+        });
+
+        if (photos.length <= 1) {
+          return;
+        }
+
+        const image = card.querySelector("[data-gallery-image]");
+
+        const counter = card.querySelector("[data-gallery-counter]");
+
+        const prevButton = card.querySelector("[data-gallery-prev]");
+
+        const nextButton = card.querySelector("[data-gallery-next]");
+
+        if (!image || !counter || !prevButton || !nextButton) {
+          return;
+        }
+
+        let currentIndex = 0;
+
+        /* =====================================
+       RENDER FOTO
+    ===================================== */
+
+        function renderGalleryPhoto() {
+          const photo = photos[currentIndex];
+
+          if (!photo) {
+            return;
+          }
+
+          image.src = photo.url;
+
+          image.alt = photo.name || unit.nama || "Foto Unit";
+
+          counter.textContent = `${currentIndex + 1} / ${photos.length}`;
+        }
+
+        /* =====================================
+       PREVIOUS
+    ===================================== */
+
+        prevButton.addEventListener("click", function (event) {
+          event.preventDefault();
+
+          event.stopPropagation();
+
+          currentIndex--;
+
+          if (currentIndex < 0) {
+            currentIndex = photos.length - 1;
+          }
+
+          renderGalleryPhoto();
+        });
+
+        /* =====================================
+       NEXT
+    ===================================== */
+
+        nextButton.addEventListener("click", function (event) {
+          event.preventDefault();
+
+          event.stopPropagation();
+
+          currentIndex++;
+
+          if (currentIndex >= photos.length) {
+            currentIndex = 0;
+          }
+
+          renderGalleryPhoto();
+        });
+      });
   }
 
   /* ==========================================================
@@ -858,7 +958,16 @@ const PublicPenginapanDetail = (() => {
       unit.description ||
       "Unit nyaman dengan fasilitas yang siap menemani pengalaman menginap Anda.";
 
-    const image = resolveImage(unit);
+    const photos = getUnitPhotos(unit);
+
+    const image = photos[0]?.url || "";
+
+    console.log("[PublicPenginapanDetail] Unit photos:", {
+      unitId: id,
+      nama,
+      total: photos.length,
+      photos,
+    });
 
     const dewasa = Number(unit.kapasitasDewasa) || 0;
 
@@ -894,12 +1003,17 @@ const PublicPenginapanDetail = (() => {
            IMAGE
       ====================================== -->
 
-      <div class="public-unit-showcase-image">
+      <div
+        class="public-unit-showcase-image"
+        data-gallery-index="0"
+      >
 
         ${
           image
             ? `
               <img
+                class="public-unit-gallery-image"
+                data-gallery-image
                 src="${escapeAttribute(image)}"
                 alt="${escapeAttribute(nama)}"
                 loading="lazy"
@@ -919,6 +1033,49 @@ const PublicPenginapanDetail = (() => {
               </div>
             `
         }
+
+
+        ${
+          photos.length > 1
+            ? `
+
+              <button
+                type="button"
+                class="
+                  public-unit-gallery-button
+                  public-unit-gallery-prev
+                "
+                data-gallery-prev
+                aria-label="Foto sebelumnya"
+              >
+                ‹
+              </button>
+
+              <button
+                type="button"
+                class="
+                  public-unit-gallery-button
+                  public-unit-gallery-next
+                "
+                data-gallery-next
+                aria-label="Foto berikutnya"
+              >
+                ›
+              </button>
+
+              <span
+                class="
+                  public-unit-gallery-counter
+                "
+                data-gallery-counter
+              >
+                1 / ${photos.length}
+              </span>
+
+            `
+            : ""
+        }
+
 
         <span
           class="
@@ -1859,6 +2016,28 @@ const PublicPenginapanDetail = (() => {
     bindUnitEvents();
   }
 
+  function mergeUnitPhotos(units = []) {
+    return units.map((unit) => {
+      const masterUnit = state.allUnits.find(
+        (item) => String(item.id) === String(unit.id),
+      );
+
+      if (!masterUnit) {
+        return unit;
+      }
+
+      return {
+        ...unit,
+
+        fotoId: unit.fotoId || masterUnit.fotoId || "",
+        fotoUrl: unit.fotoUrl || masterUnit.fotoUrl || "",
+        fotoName: unit.fotoName || masterUnit.fotoName || "",
+        fotoList: unit.fotoList || masterUnit.fotoList || "",
+        deskripsi: unit.deskripsi || masterUnit.deskripsi || "",
+      };
+    });
+  }
+
   /* ==========================================================
      UNIT CARD
   ========================================================== */
@@ -1870,7 +2049,9 @@ const PublicPenginapanDetail = (() => {
 
     const tipe = unit.tipe || "";
 
-    const image = resolveImage(unit);
+    const photos = getUnitPhotos(unit);
+
+    const image = photos[0]?.url || "";
 
     const dewasa = Number(unit.kapasitasDewasa) || 0;
 
@@ -1881,6 +2062,8 @@ const PublicPenginapanDetail = (() => {
     const bedType = unit.jenisBed || "";
 
     const luas = Number(unit.luas) || 0;
+
+    const deskripsi = String(unit.deskripsi || "").trim();
 
     const fasilitas = normalizeFasilitas(unit.fasilitas);
 
@@ -1901,20 +2084,70 @@ const PublicPenginapanDetail = (() => {
           image
             ? `
 
-              <div class="public-unit-image">
+              <div
+                class="public-unit-image public-unit-gallery"
+                data-gallery-index="0"
+              >
 
                 <img
+                  class="public-unit-gallery-image"
+                  data-gallery-image
                   src="${escapeAttribute(image)}"
                   alt="${escapeAttribute(nama)}"
                   loading="lazy"
                 />
+
+
+                ${
+                  photos.length > 1
+                    ? `
+
+                      <button
+                        type="button"
+                        class="
+                          public-unit-gallery-button
+                          public-unit-gallery-prev
+                        "
+                        data-gallery-prev
+                        aria-label="Foto sebelumnya"
+                      >
+                        ‹
+                      </button>
+
+
+                      <button
+                        type="button"
+                        class="
+                          public-unit-gallery-button
+                          public-unit-gallery-next
+                        "
+                        data-gallery-next
+                        aria-label="Foto berikutnya"
+                      >
+                        ›
+                      </button>
+
+
+                      <span
+                        class="public-unit-gallery-counter"
+                        data-gallery-counter
+                      >
+                        1 / ${photos.length}
+                      </span>
+
+                    `
+                    : ""
+                }
 
               </div>
 
             `
             : `
               <div
-                class="public-unit-image public-unit-image-placeholder"
+                class="
+                  public-unit-image
+                  public-unit-image-placeholder
+                "
                 aria-hidden="true"
               ></div>
             `
@@ -1953,6 +2186,16 @@ const PublicPenginapanDetail = (() => {
             </span>
 
           </div>
+
+          ${
+            deskripsi
+              ? `
+                <p class="public-unit-description">
+                  ${escapeHtml(deskripsi)}
+                </p>
+              `
+              : ""
+          }
 
 
           <div class="public-unit-meta">
@@ -2049,6 +2292,94 @@ const PublicPenginapanDetail = (() => {
           await selectUnit(button.dataset.unitId);
         });
       });
+
+    /* ==========================================================
+   UNIT PHOTO GALLERY
+========================================================== */
+
+    dom.wizardContent.querySelectorAll(".public-unit-card").forEach((card) => {
+      const unitId = String(card.dataset.unitId || "").trim();
+
+      const unit = state.units.find((item) => String(item.id) === unitId);
+
+      if (!unit) {
+        return;
+      }
+
+      const photos = getUnitPhotos(unit);
+
+      if (photos.length <= 1) {
+        return;
+      }
+
+      const image = card.querySelector("[data-gallery-image]");
+
+      const counter = card.querySelector("[data-gallery-counter]");
+
+      const prevButton = card.querySelector("[data-gallery-prev]");
+
+      const nextButton = card.querySelector("[data-gallery-next]");
+
+      if (!image || !counter || !prevButton || !nextButton) {
+        return;
+      }
+
+      let currentIndex = 0;
+
+      /* ======================================================
+       RENDER PHOTO
+    ====================================================== */
+
+      function renderGalleryPhoto() {
+        const photo = photos[currentIndex];
+
+        if (!photo) {
+          return;
+        }
+
+        image.src = photo.url;
+
+        image.alt = photo.name || unit.nama || "Foto Unit";
+
+        counter.textContent = `${currentIndex + 1} / ${photos.length}`;
+      }
+
+      /* ======================================================
+       PREVIOUS
+    ====================================================== */
+
+      prevButton.addEventListener("click", function (event) {
+        event.preventDefault();
+
+        event.stopPropagation();
+
+        currentIndex--;
+
+        if (currentIndex < 0) {
+          currentIndex = photos.length - 1;
+        }
+
+        renderGalleryPhoto();
+      });
+
+      /* ======================================================
+       NEXT
+    ====================================================== */
+
+      nextButton.addEventListener("click", function (event) {
+        event.preventDefault();
+
+        event.stopPropagation();
+
+        currentIndex++;
+
+        if (currentIndex >= photos.length) {
+          currentIndex = 0;
+        }
+
+        renderGalleryPhoto();
+      });
+    });
   }
 
   /* ==========================================================
@@ -3172,9 +3503,11 @@ const PublicPenginapanDetail = (() => {
       /*
        * Gunakan data unit hasil pengecekan server.
        */
-      state.selectedUnit = availableUnit;
+      const enrichedUnit = mergeUnitPhotos([availableUnit])[0];
 
-      state.units = [availableUnit];
+      state.selectedUnit = enrichedUnit;
+
+      state.units = [enrichedUnit];
 
       state.pricing = null;
 
@@ -3343,11 +3676,13 @@ const PublicPenginapanDetail = (() => {
        * - allUnits untuk menentukan availability
        */
 
-      state.units = Array.isArray(data)
+      const availableUnits = Array.isArray(data)
         ? data
         : Array.isArray(data?.rows)
           ? data.rows
           : [];
+
+      state.units = mergeUnitPhotos(availableUnits);
 
       state.selectedUnit = null;
 
@@ -3415,11 +3750,13 @@ const PublicPenginapanDetail = (() => {
 
       const data = result.data;
 
-      state.units = Array.isArray(data)
+      const availableUnits = Array.isArray(data)
         ? data
         : Array.isArray(data?.rows)
           ? data.rows
           : [];
+
+      state.units = mergeUnitPhotos(availableUnits);
 
       /* =========================================
    HASIL AVAILABILITY ADALAH SUMBER KEBENARAN
@@ -4867,6 +5204,82 @@ const PublicPenginapanDetail = (() => {
     return [item.nama, item.alamat, item.desa, item.kecamatan, item.kabupaten]
       .filter(Boolean)
       .join(", ");
+  }
+
+  /* ==========================================================
+   UNIT PHOTOS
+========================================================== */
+
+  function getUnitPhotos(unit = {}) {
+    let photos = [];
+
+    console.log("[PublicPenginapanDetail] getUnitPhotos INPUT:", {
+      id: unit.id,
+      nama: unit.nama,
+      fotoId: unit.fotoId,
+      fotoUrl: unit.fotoUrl,
+      fotoName: unit.fotoName,
+      fotoList: unit.fotoList,
+      fotoListType: typeof unit.fotoList,
+    });
+
+    /* =====================================
+     FOTO LIST
+  ===================================== */
+
+    if (unit.fotoList) {
+      try {
+        const parsed =
+          typeof unit.fotoList === "string"
+            ? JSON.parse(unit.fotoList)
+            : unit.fotoList;
+
+        if (Array.isArray(parsed)) {
+          photos = parsed
+            .map((photo) => {
+              const id = photo?.id || photo?.fileId || "";
+
+              const url =
+                photo?.url || photo?.fileUrl || photo?.downloadUrl || "";
+
+              const name = photo?.name || photo?.fileName || "Foto Unit";
+
+              if (!url) {
+                return null;
+              }
+
+              return {
+                id,
+
+                url: resolveDriveImage(url),
+
+                name,
+              };
+            })
+            .filter(Boolean);
+        }
+      } catch (error) {
+        console.warn("[PublicPenginapanDetail] Gagal membaca fotoList:", error);
+      }
+    }
+
+    /* =====================================
+     FALLBACK FOTO UTAMA
+  ===================================== */
+
+    if (!photos.length && unit.fotoUrl) {
+      photos = [
+        {
+          id: unit.fotoId || "",
+
+          url: resolveDriveImage(unit.fotoUrl),
+
+          name: unit.fotoName || "Foto Unit",
+        },
+      ];
+    }
+
+    return photos;
   }
 
   /* ==========================================================

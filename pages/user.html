@@ -1,0 +1,44 @@
+<!-- =========================================
+     MASTER PENGGUNA
+========================================= -->
+
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h1>Pengguna</h1>
+
+      <p>Kelola pengguna yang memiliki akses ke sistem.</p>
+    </div>
+
+    <button class="btn btn-primary" onclick="Pengguna.openForm()">
+      <i data-lucide="plus"></i>
+      Tambah Pengguna
+    </button>
+  </div>
+
+  <div class="search-box">
+    <i data-lucide="search"></i>
+
+    <input
+      id="searchUser"
+      type="text"
+      class="form-control"
+      placeholder="Cari nama, username, atau WhatsApp..."
+    />
+
+    <button
+      type="button"
+      id="clearSearchUser"
+      class="search-clear"
+      aria-label="Hapus pencarian"
+    >
+      <i data-lucide="x"></i>
+    </button>
+  </div>
+
+  <div class="card">
+    <div id="tableUser"></div>
+
+    <div id="paginationUser" class="pagination-wrapper"></div>
+  </div>
+</div>

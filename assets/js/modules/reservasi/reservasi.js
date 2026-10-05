@@ -9,6 +9,8 @@ const Reservasi = {
 
   currentPage: 1,
 
+  eventsBound: false,
+
   booking: {},
 
   searchTimer: null,
@@ -19,7 +21,8 @@ const Reservasi = {
 
   filters: {
     search: "",
-    status: "",
+    status: "DRAFT",
+    paymentTransactionStatus: "",
     channel: "",
     penginapanId: "",
     unitId: "",
@@ -40,8 +43,70 @@ const Reservasi = {
      BIND EVENTS
   ===================================== */
 
+  /* =====================================
+   BIND EVENTS
+===================================== */
+
+  /* =====================================
+   BIND EVENTS
+===================================== */
+
   bindEvents() {
-    // Event Global
+    if (this.eventsBound) {
+      return;
+    }
+
+    this.eventsBound = true;
+
+    /* =====================================
+     RESERVATION STATUS TABS
+  ===================================== */
+
+    document.addEventListener("click", (event) => {
+      const tab = event.target.closest(".reservasi-status-tab");
+
+      if (!tab) {
+        return;
+      }
+
+      const status = String(tab.dataset.status || "")
+        .trim()
+        .toUpperCase();
+
+      if (!status) {
+        return;
+      }
+
+      /* ===============================
+     UPDATE STATUS
+    =============================== */
+
+      this.filters.status = status;
+
+      /* ===============================
+     RESET PAGE
+    =============================== */
+
+      this.currentPage = 1;
+
+      /* ===============================
+     UPDATE ACTIVE TAB
+    =============================== */
+
+      document.querySelectorAll(".reservasi-status-tab").forEach((item) => {
+        item.classList.remove("active");
+      });
+
+      tab.classList.add("active");
+
+      /* ===============================
+     LOAD DATA
+    =============================== */
+
+      this.loadData(1, {
+        loading: true,
+      });
+    });
   },
 
   /* =====================================
@@ -85,42 +150,76 @@ const Reservasi = {
   async loadData(page = 1, options = {}) {
     const { loading = true } = options;
 
+    /* ===============================
+   SKELETON LOADING
+=============================== */
+
     if (loading) {
-      Loading.show();
+      const content = document.getElementById("content");
+
+      if (content) {
+        /*
+         * Jika container tabel sudah ada,
+         * cukup tampilkan skeleton di dalamnya.
+         */
+        const tableContainer = document.getElementById(
+          "reservasiTableContainer",
+        );
+
+        if (tableContainer) {
+          Skeleton.reservasiTable("#reservasiTableContainer");
+        } else {
+          /*
+           * Jika container belum ada,
+           * render shell halaman terlebih dahulu.
+           */
+          content.innerHTML = ReservasiList.render([], {});
+
+          Skeleton.reservasiTable("#reservasiTableContainer");
+
+          this.bindListEvents();
+
+          if (typeof lucide !== "undefined") {
+            lucide.createIcons();
+          }
+        }
+      }
     }
 
     try {
       /* ===============================
-       CURRENT PAGE
-    =============================== */
+     CURRENT PAGE
+  =============================== */
 
       this.currentPage = page;
 
       /* ===============================
-       BUILD FILTER
-    =============================== */
+     BUILD FILTER
+  =============================== */
 
       const filters = {
         search: this.filters.search || "",
         status: this.filters.status || "",
+        paymentTransactionStatus: this.filters.paymentTransactionStatus || "",
         channel: this.filters.channel || "",
         penginapanId: this.filters.penginapanId || "",
         unitId: this.filters.unitId || "",
         tanggal: this.filters.tanggal || "",
+        page: page,
         limit: ReservasiDefault.LIMIT,
       };
 
       console.log("RESERVATION LIST FILTER:", filters);
 
       /* ===============================
-       API
-    =============================== */
+     API
+  =============================== */
 
       const result = await ReservasiService.getAll(filters);
 
       /* ===============================
-       RESPONSE VALIDATION
-    =============================== */
+     RESPONSE VALIDATION
+  =============================== */
 
       if (!result || !result.success) {
         Toast.error(result?.message || "Gagal mengambil data reservasi.");
@@ -129,8 +228,8 @@ const Reservasi = {
       }
 
       /* ===============================
-       NORMALIZE RESPONSE
-    =============================== */
+     NORMALIZE RESPONSE
+  =============================== */
 
       let rows = [];
 
@@ -156,24 +255,36 @@ const Reservasi = {
 
         totalPages = 1;
       } else if (result.data && typeof result.data === "object") {
-        rows = Array.isArray(result.data.rows) ? result.data.rows : [];
+        /* =====================================
+       BACKEND PAGINATION RESPONSE
+    ===================================== */
 
-        total = Number(result.data.total ?? rows.length);
+        rows = Array.isArray(result.data.data)
+          ? result.data.data
+          : Array.isArray(result.data.rows)
+            ? result.data.rows
+            : [];
 
-        totalPages = Number(result.data.totalPages ?? 1);
+        const meta = result.data.meta || {};
 
-        limit = Number(result.data.limit ?? ReservasiDefault.LIMIT);
+        total = Number(meta.total ?? result.data.total ?? rows.length);
+
+        totalPages = Number(meta.totalPages ?? result.data.totalPages ?? 1);
+
+        limit = Number(
+          meta.limit ?? result.data.limit ?? ReservasiDefault.LIMIT,
+        );
       }
 
       /* ===============================
-       TODAY
-    =============================== */
+     TODAY
+  =============================== */
 
       const today = new Date().toISOString().slice(0, 10);
 
       /* ===============================
-       BUILD SUMMARY
-    =============================== */
+     BUILD SUMMARY
+  =============================== */
 
       const summary = {
         totalReservasi: total,
@@ -195,8 +306,8 @@ const Reservasi = {
       };
 
       /* ===============================
-       RENDER
-    =============================== */
+     RENDER
+  =============================== */
 
       const content = document.getElementById("content");
 
@@ -209,22 +320,22 @@ const Reservasi = {
       content.innerHTML = ReservasiList.render(rows, summary);
 
       /* ===============================
-       BIND LIST EVENTS
-    =============================== */
+     BIND LIST EVENTS
+  =============================== */
 
       this.bindListEvents();
 
       /* ===============================
-       LUCIDE
-    =============================== */
+     LUCIDE
+  =============================== */
 
       if (typeof lucide !== "undefined") {
         lucide.createIcons();
       }
 
       /* ===============================
-       PAGINATION
-    =============================== */
+     PAGINATION
+  =============================== */
 
       const pagination = document.getElementById("paginationReservasi");
 
@@ -249,8 +360,8 @@ const Reservasi = {
       }
 
       /* ===============================
-       PAGINATION INFO
-    =============================== */
+     PAGINATION INFO
+  =============================== */
 
       const info = document.getElementById("reservasiPaginationInfo");
 
@@ -270,9 +381,10 @@ const Reservasi = {
 
       Toast.error("Gagal memuat data reservasi.");
     } finally {
-      if (loading) {
-        Loading.hide();
-      }
+      /*
+       * Loading overlay sudah diganti
+       * dengan Skeleton.
+       */
     }
   },
 
@@ -342,6 +454,20 @@ const Reservasi = {
             loading: false,
           });
         }, 400);
+      });
+
+    /* ===============================
+      FILTER PAYMENT
+    ================================ */
+
+    document
+      .getElementById("filterPaymentTransactionStatus")
+      ?.addEventListener("change", (e) => {
+        this.filters.paymentTransactionStatus = e.target.value;
+
+        this.loadData(1, {
+          loading: false,
+        });
       });
 
     /* ===============================

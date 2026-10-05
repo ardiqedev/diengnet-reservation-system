@@ -36,7 +36,7 @@ const UnitForm = {
 
     foto: [],
 
-    existingFoto: null,
+    existingFotos: [],
 
     submitting: false,
   },
@@ -79,7 +79,7 @@ const UnitForm = {
 
       foto: [],
 
-      existingFoto: null,
+      existingFotos: [],
 
       submitting: false,
     };
@@ -255,9 +255,8 @@ const UnitForm = {
 
           <div class="form-group">
 
-            <label>
+            <label for="unitPenginapan">
               Penginapan
-              <span class="required">*</span>
             </label>
 
             <select
@@ -275,10 +274,45 @@ const UnitForm = {
 
             </select>
 
-            <small
-              id="jenisPenginapanInfo"
-              class="form-help"
-            ></small>
+          </div>
+
+
+          <!-- ==========================
+               FOTO UNIT
+          =========================== -->
+
+          <div class="form-group">
+
+            <label>
+              Foto Unit
+            </label>
+
+            <div
+              class="upload"
+              data-upload="fotoUnit"
+            >
+
+              <div class="upload-box">
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                />
+
+                <div class="upload-placeholder">
+                  Pilih Foto
+                </div>
+
+              </div>
+
+              <div class="upload-preview-list"></div>
+
+            </div>
+
+            <small>
+              Maksimal 5 foto. Foto akan dikompres otomatis menjadi WebP.
+            </small>
 
           </div>
 
@@ -948,6 +982,10 @@ const UnitForm = {
    PHOTO PREVIEW
 ===================================== */
 
+  /* =====================================
+   RENDER PHOTO PREVIEW
+===================================== */
+
   renderPhotoPreview() {
     const container = document.getElementById("unitPhotoPreview");
 
@@ -955,80 +993,152 @@ const UnitForm = {
       return;
     }
 
+    console.log("UNIT PHOTO PREVIEW:", {
+      containerFound: !!container,
+      existingFotos: this.state.existingFotos,
+      fotoBaru: this.state.foto,
+    });
+
+    /* =====================================
+     FOTO EXISTING
+  ===================================== */
+
+    const existingHtml = Array.isArray(this.state.existingFotos)
+      ? this.state.existingFotos
+          .map(
+            (photo, index) => `
+
+            <div
+              class="photo-preview-item"
+              data-existing-photo-index="${index}"
+            >
+
+              <img
+                src="${this.escape(photo.url)}"
+                alt="${this.escape(photo.name || "Foto Unit")}"
+              />
+
+              <span class="photo-existing-badge">
+                Foto saat ini
+              </span>
+
+              <button
+                type="button"
+                class="photo-remove"
+                data-existing-photo-remove="${index}"
+              >
+                <i data-lucide="x"></i>
+              </button>
+
+            </div>
+
+          `,
+          )
+          .join("")
+      : "";
+
     /* =====================================
      FOTO BARU
   ===================================== */
 
-    if (this.state.foto.length > 0) {
-      container.innerHTML = this.state.foto
-        .map(
-          (photo, index) => `
-          <div class="photo-preview-item">
+    const newHtml = Array.isArray(this.state.foto)
+      ? this.state.foto
+          .map(
+            (photo, index) => `
 
-            <img
-              src="${this.escape(photo.previewUrl)}"
-              alt="${this.escape(photo.name || "Foto Unit")}"
-            />
+              <div
+                class="photo-preview-item"
+              >
 
-            <button
-              type="button"
-              class="photo-remove"
-              data-photo-index="${index}"
-            >
-              <i data-lucide="x"></i>
-            </button>
+                <img
+                  src="${this.escape(photo.previewUrl)}"
+                  alt="${this.escape(photo.name || "Foto Unit")}"
+                />
 
-          </div>
-        `,
-        )
-        .join("");
+                <button
+                  type="button"
+                  class="photo-remove"
+                  data-photo-index="${index}"
+                >
 
-      container.querySelectorAll("[data-photo-index]").forEach((button) => {
+                  <i data-lucide="x"></i>
+
+                </button>
+
+              </div>
+
+            `,
+          )
+          .join("")
+      : "";
+
+    /* =====================================
+     RENDER
+  ===================================== */
+
+    container.innerHTML = existingHtml + newHtml;
+
+    /* =====================================
+     BIND REMOVE FOTO BARU
+  ===================================== */
+
+    container.querySelectorAll("[data-photo-index]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const index = Number(button.dataset.photoIndex);
+
+        this.removePhoto(index);
+      });
+    });
+
+    /* =====================================
+   BIND REMOVE FOTO EXISTING
+===================================== */
+
+    container
+      .querySelectorAll("[data-existing-photo-remove]")
+      .forEach((button) => {
         button.addEventListener("click", () => {
-          const index = Number(button.dataset.photoIndex);
+          const index = Number(button.dataset.existingPhotoRemove);
 
-          this.removePhoto(index);
+          this.removeExistingPhoto(index);
         });
       });
 
-      this.refreshIcons();
-
-      return;
-    }
-
     /* =====================================
-     FOTO LAMA
+     REFRESH ICON
   ===================================== */
 
-    if (this.state.existingFoto?.url) {
-      container.innerHTML = `
-      <div class="photo-preview-item">
-
-        <img
-          src="${this.escape(this.state.existingFoto.url)}"
-          alt="Foto Unit"
-        >
-
-        <span class="photo-existing-badge">
-          Foto saat ini
-        </span>
-
-      </div>
-    `;
-
-      return;
-    }
-
-    /* =====================================
-     KOSONG
-  ===================================== */
-
-    container.innerHTML = "";
+    this.refreshIcons();
   },
 
   /* =====================================
-     REMOVE PHOTO
+   REMOVE EXISTING PHOTO
+===================================== */
+
+  removeExistingPhoto(index) {
+    if (index < 0 || index >= this.state.existingFotos.length) {
+      return;
+    }
+
+    const photo = this.state.existingFotos[index];
+
+    if (!photo?.id) {
+      return;
+    }
+
+    /* =====================================
+     HAPUS DARI STATE SAJA
+     Drive BELUM dihapus
   ===================================== */
+
+    this.state.existingFotos.splice(index, 1);
+
+    /* =====================================
+     RENDER ULANG
+  ===================================== */
+
+    this.renderPhotoPreview();
+  },
 
   /* =========================================
    REMOVE PHOTO
@@ -1273,12 +1383,31 @@ const UnitForm = {
 
       this.fillFormData(this.state.data);
 
-      /* ===============================
-       LOAD EXISTING PHOTO
-    =============================== */
+      /* ===============================================
+        LOAD EXISTING PHOTOS
+      =============================================== */
 
-      if (unit.fotoUrl) {
+      /* ===============================================
+        LOAD EXISTING PHOTOS
+      =============================================== */
+
+      /* ===============================================
+  LOAD EXISTING PHOTOS
+=============================================== */
+
+      if (unit.fotoList || unit.fotoUrl) {
         this.loadExistingPhoto(unit);
+      }
+
+      /* ===============================================
+  RENDER EXISTING PHOTOS
+  Pastikan DOM dynamic field sudah siap
+=============================================== */
+
+      const photoPreview = document.getElementById("unitPhotoPreview");
+
+      if (photoPreview) {
+        this.renderPhotoPreview();
       }
 
       /* ===============================
@@ -1396,19 +1525,106 @@ const UnitForm = {
   },
 
   /* =====================================
-   LOAD EXISTING PHOTO
+   LOAD EXISTING PHOTOS
+===================================== */
+
+  /* =====================================
+   LOAD EXISTING PHOTOS
+===================================== */
+
+  /* =====================================
+   LOAD EXISTING PHOTOS
 ===================================== */
 
   loadExistingPhoto(unit) {
-    if (!unit?.fotoUrl) {
-      return;
+    let photos = [];
+
+    /* =====================================
+     FOTO LIST
+  ===================================== */
+
+    if (unit?.fotoList) {
+      try {
+        const parsed =
+          typeof unit.fotoList === "string"
+            ? JSON.parse(unit.fotoList)
+            : unit.fotoList;
+
+        if (Array.isArray(parsed)) {
+          photos = parsed
+            .map((photo) => {
+              /*
+               * Support beberapa bentuk
+               * metadata foto.
+               *
+               * Prioritas:
+               * id      -> fileId
+               * url     -> fileUrl
+               * name    -> fileName
+               */
+
+              const id = photo?.id || photo?.fileId || "";
+
+              const url =
+                photo?.url || photo?.fileUrl || photo?.downloadUrl || "";
+
+              const name = photo?.name || photo?.fileName || "Foto Unit";
+
+              if (!id || !url) {
+                return null;
+              }
+
+              return {
+                id,
+                url,
+                name,
+              };
+            })
+            .filter(Boolean);
+        }
+      } catch (error) {
+        console.warn("Gagal membaca fotoList:", error);
+      }
     }
 
-    this.state.existingFoto = {
-      id: unit.fotoId || "",
-      url: unit.fotoUrl,
-      name: unit.fotoName || "Foto Unit",
-    };
+    /* =====================================
+     FALLBACK FOTO LAMA
+     Untuk data lama yang belum punya fotoList
+  ===================================== */
+
+    if (!photos.length && unit?.fotoUrl) {
+      photos = [
+        {
+          id: unit.fotoId || "",
+
+          url: unit.fotoUrl,
+
+          name: unit.fotoName || "Foto Unit",
+        },
+      ];
+    }
+
+    /* =====================================
+     BATAS MAKSIMAL
+  ===================================== */
+
+    photos = photos.slice(0, this.PHOTO.maxFiles);
+
+    /* =====================================
+     SIMPAN EXISTING
+  ===================================== */
+
+    this.state.existingFotos = photos;
+
+    /* =====================================
+     DEBUG
+  ===================================== */
+
+    console.log("UNIT EXISTING PHOTOS:", this.state.existingFotos);
+
+    /* =====================================
+     RENDER
+  ===================================== */
 
     this.renderPhotoPreview();
   },
@@ -1431,34 +1647,78 @@ const UnitForm = {
 ===================================== */
 
   async getPhotoUpload() {
+    const uploads = [];
+
+    /* =====================================
+     FOTO EXISTING
+     Hanya digunakan saat EDIT
+  ===================================== */
+
+    if (this.state.mode === "edit" && Array.isArray(this.state.existingFotos)) {
+      this.state.existingFotos.forEach((photo) => {
+        if (!photo?.id || !photo?.url) {
+          return;
+        }
+
+        uploads.push({
+          uploaded: true,
+
+          fileId: photo.id,
+
+          fileUrl: photo.url,
+
+          fileName: photo.name || "Foto Unit",
+        });
+      });
+    }
+
+    /* =====================================
+     FOTO BARU
+  ===================================== */
+
     const photos = this.getPhotos();
 
-    if (!photos.length) {
+    for (const photo of photos) {
+      if (!photo?.blob) {
+        continue;
+      }
+
+      const base64 = await this.fileToBase64(photo.blob);
+
+      uploads.push({
+        name: photo.name,
+
+        type: photo.type,
+
+        size: photo.size,
+
+        base64,
+      });
+    }
+
+    /* =====================================
+     BATAS MAKSIMAL
+  ===================================== */
+
+    if (uploads.length > this.PHOTO.maxFiles) {
+      throw new Error(`Maksimal ${this.PHOTO.maxFiles} foto.`);
+    }
+
+    /* =====================================
+     TIDAK ADA FOTO
+  ===================================== */
+
+    if (!uploads.length) {
       return null;
     }
 
-    /*
-     * Untuk sementara kita proses foto pertama.
-     * Struktur backend saat ini masih foto tunggal.
-     */
+    /* =====================================
+     DEBUG
+  ===================================== */
 
-    const photo = photos[0];
+    console.log("UNIT PHOTO PAYLOAD:", uploads);
 
-    if (!photo?.blob) {
-      return null;
-    }
-
-    const base64 = await this.fileToBase64(photo.blob);
-
-    return {
-      name: photo.name,
-
-      type: photo.type,
-
-      size: photo.size,
-
-      base64,
-    };
+    return uploads;
   },
 
   /* =========================================

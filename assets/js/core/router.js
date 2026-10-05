@@ -31,7 +31,7 @@ const Router = {
 
     "harga-musim": "pages/harga-musim.html",
 
-    pengguna: "pages/pengguna.html",
+    pengguna: "pages/user.html",
 
     pengaturan: "pages/pengaturan.html",
   },

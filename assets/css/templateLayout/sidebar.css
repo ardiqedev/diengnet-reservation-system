@@ -1,4 +1,9 @@
 /* ==========================================
+   DIENG STAY PMS
+   SIDEBAR — DIENG NET THEME
+========================================== */
+
+/* ==========================================
    SIDEBAR
 ========================================== */
 
@@ -7,7 +12,11 @@
 
   flex-direction: column;
 
-  background: var(--card);
+  background: var(--sidebar);
+
+  color: var(--sidebar-text);
+
+  border-right: 1px solid #242424;
 }
 
 /* ==========================================
@@ -23,7 +32,7 @@
 
   align-items: center;
 
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #292929;
 }
 
 .sidebar-brand {
@@ -34,16 +43,20 @@
   gap: 14px;
 }
 
+/* ==========================================
+   BRAND ICON
+========================================== */
+
 .brand-icon {
-  width: 48px;
+  width: 44px;
 
-  height: 48px;
+  height: 44px;
 
-  border-radius: 14px;
+  border-radius: 12px;
 
   background: var(--primary);
 
-  color: #fff;
+  color: #111111;
 
   display: flex;
 
@@ -51,31 +64,39 @@
 
   justify-content: center;
 
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 14px rgba(245, 154, 0, 0.2);
+
+  flex-shrink: 0;
 }
 
 .brand-icon svg {
-  width: 24px;
+  width: 22px;
 
-  height: 24px;
-}
-
-.brand-text h2 {
-  font-size: 20px;
-
-  font-weight: 700;
-
-  color: var(--text);
-}
-
-.brand-text p {
-  font-size: 13px;
-
-  color: var(--text-light);
+  height: 22px;
 }
 
 /* ==========================================
-   BODY
+   BRAND TEXT
+========================================== */
+
+.brand-text h2 {
+  font-size: 19px;
+
+  font-weight: 700;
+
+  color: #ffffff;
+}
+
+.brand-text p {
+  font-size: 11px;
+
+  color: #9b9b9b;
+
+  letter-spacing: 0.4px;
+}
+
+/* ==========================================
+   SIDEBAR BODY
 ========================================== */
 
 .sidebar-body {
@@ -84,32 +105,62 @@
   padding: 20px 14px;
 
   overflow-y: auto;
+
+  scrollbar-width: thin;
+
+  scrollbar-color: #3a3a3a transparent;
 }
 
 /* ==========================================
-   MENU
+   SIDEBAR SCROLLBAR
+========================================== */
+
+.sidebar-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-body::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+
+  border-radius: 999px;
+}
+
+.sidebar-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ==========================================
+   MENU SECTION
 ========================================== */
 
 .menu-section {
   margin-bottom: 28px;
 }
 
+/* ==========================================
+   MENU LABEL
+========================================== */
+
 .menu-label {
-  font-size: 11px;
+  font-size: 10px;
 
   text-transform: uppercase;
 
-  color: var(--text-light);
+  color: #858585;
 
   font-weight: 700;
 
   margin: 0 12px 10px;
 
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
 }
 
+/* ==========================================
+   MENU ITEM
+========================================== */
+
 .menu-item {
-  height: 48px;
+  height: 46px;
 
   display: flex;
 
@@ -119,37 +170,55 @@
 
   padding: 0 16px;
 
-  border-radius: 12px;
+  border-radius: 11px;
 
   cursor: pointer;
 
-  transition: 0.25s;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
 
-  color: var(--text-light);
+  color: #c4c4c4;
 }
 
 .menu-item svg {
-  width: 20px;
+  width: 19px;
 
-  height: 20px;
+  height: 19px;
+
+  flex-shrink: 0;
 }
 
 .menu-item span {
   font-weight: 600;
+
+  font-size: 13px;
 }
+
+/* ==========================================
+   MENU HOVER
+========================================== */
 
 .menu-item:hover {
-  background: var(--primary-light);
+  background: #202020;
 
-  color: var(--primary);
+  color: #ffffff;
 }
+
+/* ==========================================
+   MENU ACTIVE
+========================================== */
 
 .menu-item.active {
   background: var(--primary);
 
-  color: #fff;
+  color: #111111;
 
-  box-shadow: var(--shadow);
+  box-shadow: 0 5px 16px rgba(245, 154, 0, 0.18);
+}
+
+.menu-item.active svg {
+  color: #111111;
 }
 
 /* ==========================================
@@ -158,12 +227,15 @@
 
 .menu-submenu {
   margin: 2px 0 10px 20px;
+
   padding-left: 18px;
 
-  border-left: 1px solid var(--border);
+  border-left: 1px solid #363636;
 
   display: flex;
+
   flex-direction: column;
+
   gap: 2px;
 }
 
@@ -171,6 +243,7 @@
   min-height: 34px;
 
   display: flex;
+
   align-items: center;
 
   padding: 0 12px;
@@ -179,9 +252,10 @@
 
   cursor: pointer;
 
-  color: var(--text-light);
+  color: #9e9e9e;
 
   font-size: 13px;
+
   font-weight: 500;
 
   transition:
@@ -189,14 +263,25 @@
     color 0.2s ease;
 }
 
+/* ==========================================
+   SUBMENU HOVER
+========================================== */
+
 .menu-subitem:hover {
-  background: var(--primary-light);
-  color: var(--primary);
+  background: #202020;
+
+  color: #ffffff;
 }
+
+/* ==========================================
+   SUBMENU ACTIVE
+========================================== */
 
 .menu-subitem.active {
   color: var(--primary);
-  background: var(--primary-light);
+
+  background: #211b10;
+
   font-weight: 600;
 }
 
@@ -206,21 +291,24 @@
 
 .menu-item-disabled {
   cursor: default;
-  opacity: 0.65;
+
+  opacity: 0.55;
 }
 
 .menu-item-disabled:hover {
   background: transparent;
-  color: var(--text-light);
+
+  color: #c4c4c4;
 }
 
 .menu-item-disabled small {
   margin-left: auto;
 
   font-size: 9px;
+
   font-weight: 600;
 
-  color: var(--text-light);
+  color: #777777;
 
   white-space: nowrap;
 }
@@ -238,14 +326,18 @@
 }
 
 /* ==========================================
-   FOOTER
+   SIDEBAR FOOTER
 ========================================== */
 
 .sidebar-footer {
   padding: 18px;
 
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #292929;
 }
+
+/* ==========================================
+   PROFILE
+========================================== */
 
 .profile {
   display: flex;
@@ -256,15 +348,15 @@
 }
 
 .profile-avatar {
-  width: 46px;
+  width: 42px;
 
-  height: 46px;
+  height: 42px;
 
   border-radius: 50%;
 
   background: var(--primary);
 
-  color: #fff;
+  color: #111111;
 
   font-weight: 700;
 
@@ -273,6 +365,8 @@
   align-items: center;
 
   justify-content: center;
+
+  flex-shrink: 0;
 }
 
 .profile-info {
@@ -285,12 +379,14 @@
   font-size: 14px;
 
   font-weight: 700;
+
+  color: #ffffff;
 }
 
 .profile-role {
   font-size: 12px;
 
-  color: var(--text-light);
+  color: #8f8f8f;
 }
 
 /* ==========================================

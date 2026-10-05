@@ -27,17 +27,21 @@ const ReservasiList = (() => {
   function render(data = [], summary = {}) {
     return `
 
-        ${renderHeader()}
+    ${renderHeader()}
 
-        ${renderSummary(summary)}
+    ${renderSummary(summary)}
 
-        ${renderToolbar()}
+    ${renderStatusTabs()}
 
-        ${renderTable(data)}
+    ${renderToolbar()}
 
-        ${renderPagination()}
+    <div id="reservasiTableContainer">
+      ${renderTable(data)}
+    </div>
 
-    `;
+    ${renderPagination()}
+
+  `;
   }
 
   // ============================================================
@@ -206,9 +210,75 @@ const ReservasiList = (() => {
     `;
   }
 
-  // ============================================================
-  // TOOLBAR
-  // ============================================================
+  /* ============================================================
+   STATUS TABS
+============================================================ */
+
+  function renderStatusTabs() {
+    const activeStatus = String(Reservasi.filters.status || "DRAFT")
+      .trim()
+      .toUpperCase();
+
+    return `
+
+    <div class="reservasi-status-tabs">
+
+      <button
+        type="button"
+        class="reservasi-status-tab ${activeStatus === "DRAFT" ? "active" : ""}"
+        data-status="DRAFT">
+        Draft
+      </button>
+
+      <button
+        type="button"
+        class="reservasi-status-tab ${
+          activeStatus === "BOOKED" ? "active" : ""
+        }"
+        data-status="BOOKED">
+        Booked
+      </button>
+
+      <button
+        type="button"
+        class="reservasi-status-tab ${
+          activeStatus === "CHECK_IN" ? "active" : ""
+        }"
+        data-status="CHECK_IN">
+        Check-in
+      </button>
+
+      <button
+        type="button"
+        class="reservasi-status-tab ${
+          activeStatus === "CHECK_OUT" ? "active" : ""
+        }"
+        data-status="CHECK_OUT">
+        Check-out
+      </button>
+
+      <button
+        type="button"
+        class="reservasi-status-tab ${
+          activeStatus === "EXPIRED" ? "active" : ""
+        }"
+        data-status="EXPIRED">
+        Expired
+      </button>
+
+      <button
+        type="button"
+        class="reservasi-status-tab ${
+          activeStatus === "CANCELLED" ? "active" : ""
+        }"
+        data-status="CANCELLED">
+        Cancelled
+      </button>
+
+    </div>
+
+  `;
+  }
 
   // ============================================================
   // TOOLBAR
@@ -221,7 +291,9 @@ const ReservasiList = (() => {
 
     <div class="reservasi-toolbar">
 
-        <!-- SEARCH -->
+        <!-- =====================================
+             SEARCH
+        ====================================== -->
 
         <div class="reservasi-toolbar-search">
 
@@ -237,57 +309,54 @@ const ReservasiList = (() => {
         </div>
 
 
+        <!-- =====================================
+             PAYMENT STATUS
+        ====================================== -->
+
+        ${
+          filters.status === "DRAFT"
+            ? `
+              <select
+                  id="filterPaymentTransactionStatus"
+                  class="form-select">
+
+                  <option
+                      value=""
+                      ${!filters.paymentTransactionStatus ? "selected" : ""}>
+                      Semua Pembayaran
+                  </option>
+
+                  <option
+                      value="PENDING"
+                      ${
+                        filters.paymentTransactionStatus === "PENDING"
+                          ? "selected"
+                          : ""
+                      }>
+                      Menunggu Verifikasi
+                  </option>
+
+                  <option
+                      value="REJECTED"
+                      ${
+                        filters.paymentTransactionStatus === "REJECTED"
+                          ? "selected"
+                          : ""
+                      }>
+                      Ditolak
+                  </option>
+
+              </select>
+            `
+            : ""
+        }
+
+
+        <!-- =====================================
+             CHANNEL + TANGGAL
+        ====================================== -->
+
         <div class="reservasi-toolbar-filter">
-
-            <!-- STATUS -->
-
-            <select
-                id="filterStatus"
-                class="form-select">
-
-                <option value=""
-                  ${!filters.status ? "selected" : ""}>
-                    Semua Status
-                </option>
-
-                <option
-                    value="${ReservasiStatus.DRAFT}"
-                    ${filters.status === ReservasiStatus.DRAFT ? "selected" : ""}>
-                    Draft
-                </option>
-
-                <option
-                    value="${ReservasiStatus.BOOKED}"
-                    ${filters.status === ReservasiStatus.BOOKED ? "selected" : ""}>
-                    Booked
-                </option>
-
-                <option
-                    value="${ReservasiStatus.CHECK_IN}"
-                    ${filters.status === ReservasiStatus.CHECK_IN ? "selected" : ""}>
-                    Check In
-                </option>
-
-                <option
-                    value="${ReservasiStatus.CHECK_OUT}"
-                    ${filters.status === ReservasiStatus.CHECK_OUT ? "selected" : ""}>
-                    Check Out
-                </option>
-
-                <option
-                    value="${ReservasiStatus.CANCELLED}"
-                    ${filters.status === ReservasiStatus.CANCELLED ? "selected" : ""}>
-                    Cancelled
-                </option>
-
-                <option
-                    value="${ReservasiStatus.EXPIRED}"
-                    ${filters.status === ReservasiStatus.EXPIRED ? "selected" : ""}>
-                    Expired
-                </option>
-
-            </select>
-
 
             <!-- CHANNEL -->
 
@@ -295,26 +364,35 @@ const ReservasiList = (() => {
                 id="filterChannel"
                 class="form-select">
 
-                <option value=""
-                  ${!filters.channel ? "selected" : ""}>
+                <option
+                    value=""
+                    ${!filters.channel ? "selected" : ""}>
                     Semua Channel
                 </option>
 
                 <option
                     value="${BookingChannel.WEBSITE}"
-                    ${filters.channel === BookingChannel.WEBSITE ? "selected" : ""}>
+                    ${
+                      filters.channel === BookingChannel.WEBSITE
+                        ? "selected"
+                        : ""
+                    }>
                     Website
                 </option>
 
                 <option
                     value="${BookingChannel.OWNER}"
-                    ${filters.channel === BookingChannel.OWNER ? "selected" : ""}>
+                    ${
+                      filters.channel === BookingChannel.OWNER ? "selected" : ""
+                    }>
                     Owner
                 </option>
 
                 <option
                     value="${BookingChannel.AGEN}"
-                    ${filters.channel === BookingChannel.AGEN ? "selected" : ""}>
+                    ${
+                      filters.channel === BookingChannel.AGEN ? "selected" : ""
+                    }>
                     Agen
                 </option>
 
@@ -332,11 +410,14 @@ const ReservasiList = (() => {
         </div>
 
 
-        <!-- REFRESH -->
+        <!-- =====================================
+             REFRESH
+        ====================================== -->
 
         <div class="reservasi-toolbar-action">
 
             <button
+                type="button"
                 class="btn btn-outline"
                 id="btnRefreshReservasi">
 
@@ -458,6 +539,8 @@ const ReservasiList = (() => {
 
                 <th>Status</th>
 
+                <th>Pembayaran</th>
+
                 <th>Channel</th>
 
                 <th>Total</th>
@@ -539,6 +622,12 @@ const ReservasiList = (() => {
             <td>
 
                 ${renderStatusBadge(item.status)}
+
+            </td>
+
+            <td>
+
+                ${renderPaymentStatusBadge(item.paymentStatus)}
 
             </td>
 
@@ -687,6 +776,45 @@ const ReservasiList = (() => {
     </span>
 
   `;
+  }
+
+  // ============================================================
+  // PAYMENT STATUS BADGE
+  // ============================================================
+
+  function renderPaymentStatusBadge(paymentStatus = "") {
+    const badges = {
+      UNPAID: {
+        className: "badge badge-light",
+        label: "Belum Bayar",
+      },
+
+      PENDING: {
+        className: "badge badge-warning",
+        label: "Menunggu Verifikasi",
+      },
+
+      VERIFIED: {
+        className: "badge badge-success",
+        label: "Terverifikasi",
+      },
+
+      REJECTED: {
+        className: "badge badge-danger",
+        label: "Ditolak",
+      },
+    };
+
+    const badge = badges[paymentStatus] || {
+      className: "badge badge-light",
+      label: "-",
+    };
+
+    return `
+        <span class="${badge.className}">
+            ${badge.label}
+        </span>
+    `;
   }
 
   // ============================================================

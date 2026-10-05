@@ -21,6 +21,8 @@ const ReservasiService = {
 
       tanggal: filters.tanggal || "",
 
+      page: filters.page || 1,
+
       limit: filters.limit || ReservasiDefault.LIMIT,
     });
   },

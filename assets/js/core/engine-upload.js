@@ -24,6 +24,14 @@ const Upload = {
 
       multiple: false,
 
+      maxFiles: 1,
+
+      maxWidth: 1600,
+
+      quality: 0.82,
+
+      format: "webp",
+
       ...options,
     };
 
@@ -62,29 +70,83 @@ const Upload = {
     ========================== */
 
     input.addEventListener("change", async (e) => {
-      const file = e.target.files[0];
+      const files = Array.from(e.target.files || []);
 
-      if (!file) {
+      if (!files.length) {
         return;
       }
 
-      if (!this.validate(config.id, file)) {
+      /* ==========================
+     SINGLE FILE
+  ========================== */
+
+      if (!config.multiple) {
+        const file = files[0];
+
+        if (!this.validate(config.id, file)) {
+          input.value = "";
+
+          return;
+        }
+
+        const blob = await this.compress(config.id, file);
+
+        this.preview(config.id, {
+          blob,
+
+          name: file.name,
+
+          type: blob.type,
+
+          size: blob.size,
+        });
+
+        return;
+      }
+
+      /* ==========================
+     MULTIPLE FILE
+  ========================== */
+
+      const currentFiles = Array.isArray(this.files[config.id])
+        ? this.files[config.id]
+        : [];
+
+      const remaining = config.maxFiles - currentFiles.length;
+
+      if (remaining <= 0) {
+        Toast.error(`Maksimal ${config.maxFiles} foto.`);
+
         input.value = "";
 
         return;
       }
 
-      const blob = await this.compress(config.id, file);
+      const selectedFiles = files.slice(0, remaining);
 
-      this.preview(config.id, {
-        blob,
+      if (files.length > remaining) {
+        Toast.error(`Maksimal ${config.maxFiles} foto.`);
+      }
 
-        name: file.name,
+      for (const file of selectedFiles) {
+        if (!this.validate(config.id, file)) {
+          continue;
+        }
 
-        type: blob.type,
+        const blob = await this.compress(config.id, file);
 
-        size: blob.size,
-      });
+        this.preview(config.id, {
+          blob,
+
+          name: file.name,
+
+          type: blob.type,
+
+          size: blob.size,
+        });
+      }
+
+      input.value = "";
     });
   },
 
@@ -205,41 +267,190 @@ const Upload = {
 ===================================== */
 
   preview(id, data) {
-    this.files[id] = data;
+    const config = this.configs[id];
 
+    /* ==========================
+     SINGLE FILE
+  ========================== */
+
+    if (!config?.multiple) {
+      this.files[id] = data;
+
+      const upload = document.querySelector(`[data-upload="${id}"]`);
+
+      if (!upload) {
+        return;
+      }
+
+      const box = upload.querySelector(".upload-box");
+
+      const preview = upload.querySelector(".upload-preview");
+
+      const image = preview.querySelector(".upload-image");
+
+      const name = preview.querySelector(".upload-name");
+
+      const size = preview.querySelector(".upload-size");
+
+      if (image.src && image.src.startsWith("blob:")) {
+        URL.revokeObjectURL(image.src);
+      }
+
+      image.src = URL.createObjectURL(data.blob);
+
+      name.textContent = data.name;
+
+      size.textContent = this.formatSize(data.size);
+
+      preview.classList.add("show");
+
+      box.style.display = "none";
+
+      return;
+    }
+
+    /* ==========================
+     MULTIPLE FILE
+  ========================== */
+
+    if (!Array.isArray(this.files[id])) {
+      this.files[id] = [];
+    }
+
+    if (this.files[id].length >= config.maxFiles) {
+      Toast.error(`Maksimal ${config.maxFiles} foto.`);
+
+      return;
+    }
+
+    this.files[id].push(data);
+
+    this.renderMultiplePreview(id);
+  },
+
+  /* =====================================
+   RENDER MULTIPLE PREVIEW
+===================================== */
+
+  renderMultiplePreview(id) {
     const upload = document.querySelector(`[data-upload="${id}"]`);
 
     if (!upload) {
       return;
     }
 
+    const files = Array.isArray(this.files[id]) ? this.files[id] : [];
+
     const box = upload.querySelector(".upload-box");
 
-    const preview = upload.querySelector(".upload-preview");
+    const previewList = upload.querySelector(".upload-preview-list");
 
-    const image = preview.querySelector(".upload-image");
-
-    const name = preview.querySelector(".upload-name");
-
-    const size = preview.querySelector(".upload-size");
-
-    /* ==========================
-       CLEAR OLD BLOB
-    ========================== */
-
-    if (image.src && image.src.startsWith("blob:")) {
-      URL.revokeObjectURL(image.src);
+    if (!previewList) {
+      return;
     }
 
-    image.src = URL.createObjectURL(data.blob);
+    previewList.innerHTML = "";
 
-    name.textContent = data.name;
+    files.forEach((data, index) => {
+      const item = document.createElement("div");
 
-    size.textContent = this.formatSize(data.size);
+      item.className = "upload-preview-item";
 
-    preview.classList.add("show");
+      const image = document.createElement("img");
 
-    box.style.display = "none";
+      image.className = "upload-preview-image";
+
+      image.src = URL.createObjectURL(data.blob);
+
+      const info = document.createElement("div");
+
+      info.className = "upload-preview-info";
+
+      info.innerHTML = `
+      <div class="upload-preview-name">
+        ${this.escapeHtml(data.name)}
+      </div>
+
+      <div class="upload-preview-size">
+        ${this.formatSize(data.size)}
+      </div>
+    `;
+
+      const remove = document.createElement("button");
+
+      remove.type = "button";
+
+      remove.className = "upload-preview-remove";
+
+      remove.innerHTML = `
+      <i data-lucide="x"></i>
+    `;
+
+      remove.addEventListener("click", () => {
+        this.removeMultiple(id, index);
+      });
+
+      item.appendChild(image);
+
+      item.appendChild(info);
+
+      item.appendChild(remove);
+
+      previewList.appendChild(item);
+    });
+
+    if (files.length > 0) {
+      previewList.classList.add("show");
+    } else {
+      previewList.classList.remove("show");
+    }
+
+    if (files.length >= this.configs[id].maxFiles) {
+      box.style.display = "none";
+    } else {
+      box.style.display = "flex";
+    }
+
+    if (typeof lucide !== "undefined") {
+      lucide.createIcons();
+    }
+  },
+
+  /* =====================================
+   ESCAPE HTML
+===================================== */
+
+  escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  },
+
+  /* =====================================
+   REMOVE MULTIPLE
+===================================== */
+
+  removeMultiple(id, index) {
+    const files = this.files[id];
+
+    if (!Array.isArray(files)) {
+      return;
+    }
+
+    const file = files[index];
+
+    if (file?.blob) {
+      // Blob URL dibuat saat render,
+      // sehingga browser akan membersihkannya
+      // saat elemen diganti.
+    }
+
+    files.splice(index, 1);
+
+    this.renderMultiplePreview(id);
   },
 
   /* =====================================
@@ -352,8 +563,46 @@ const Upload = {
     }
 
     /* ==========================
-       FILE EXISTING
-    ========================== */
+     MULTIPLE FILE
+  ========================== */
+
+    if (Array.isArray(upload)) {
+      const result = [];
+
+      for (const file of upload) {
+        if (file.uploaded) {
+          result.push({
+            uploaded: true,
+
+            url: file.url,
+
+            name: file.name,
+
+            size: file.size,
+
+            type: file.type || "image/webp",
+          });
+
+          continue;
+        }
+
+        result.push({
+          name: file.name,
+
+          type: file.type || "image/webp",
+
+          size: file.size,
+
+          base64: await this.toBase64(file.blob),
+        });
+      }
+
+      return result;
+    }
+
+    /* ==========================
+     SINGLE FILE EXISTING
+  ========================== */
 
     if (upload.uploaded) {
       return {
@@ -364,12 +613,14 @@ const Upload = {
         name: upload.name,
 
         size: upload.size,
+
+        type: upload.type || "",
       };
     }
 
     /* ==========================
-       NEW FILE
-    ========================== */
+     SINGLE NEW FILE
+  ========================== */
 
     return {
       name: upload.name,

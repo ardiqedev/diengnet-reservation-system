@@ -85,6 +85,40 @@
     </div>
   </div>
 
+  <!-- =========================================
+       RESERVATION STATUS TABS
+  ========================================== -->
+
+  <div class="reservasi-status-tabs">
+    <button
+      type="button"
+      class="reservasi-status-tab active"
+      data-status="DRAFT"
+    >
+      Draft
+    </button>
+
+    <button type="button" class="reservasi-status-tab" data-status="BOOKED">
+      Booked
+    </button>
+
+    <button type="button" class="reservasi-status-tab" data-status="CHECK_IN">
+      Check-in
+    </button>
+
+    <button type="button" class="reservasi-status-tab" data-status="CHECK_OUT">
+      Check-out
+    </button>
+
+    <button type="button" class="reservasi-status-tab" data-status="EXPIRED">
+      Expired
+    </button>
+
+    <button type="button" class="reservasi-status-tab" data-status="CANCELLED">
+      Cancelled
+    </button>
+  </div>
+
   <!-- =====================================
          FILTER
     ====================================== -->
@@ -102,10 +136,6 @@
       </div>
 
       <input id="tanggal" type="date" class="form-control" />
-
-      <select id="status" class="form-control">
-        <option value="">Semua Status</option>
-      </select>
 
       <select id="channel" class="form-control">
         <option value="">Semua Channel</option>
