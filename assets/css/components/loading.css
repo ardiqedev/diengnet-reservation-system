@@ -26,6 +26,10 @@
   display: flex;
 }
 
+.loading-overlay.show .loading-icon {
+  animation: loadingSpin 0.8s linear infinite;
+}
+
 /* =========================================
    BOX
 ========================================= */
@@ -59,13 +63,14 @@
 ========================================= */
 
 .loading-icon {
+  display: block;
   width: 56px;
-
   height: 56px;
-
+  flex-shrink: 0;
   color: var(--primary);
-
   animation: loadingSpin 0.8s linear infinite;
+  transform-origin: center;
+  will-change: transform;
 }
 
 /* =========================================

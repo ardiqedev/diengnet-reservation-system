@@ -1,0 +1,64 @@
+<div class="page settlement-page">
+  <!-- =====================================
+       PAGE HEADER
+  ====================================== -->
+
+  <div class="page-header">
+    <div>
+      <h1>Settlement Owner</h1>
+
+      <p>Kelola pembayaran settlement kepada owner.</p>
+    </div>
+  </div>
+
+  <!-- =====================================
+       FILTER
+  ====================================== -->
+
+  <div class="card settlement-filter">
+    <div class="card-title">Filter Settlement</div>
+
+    <div class="form-grid">
+      <!-- OWNER -->
+
+      <div class="form-group">
+        <label for="settlementOwner"> Owner </label>
+
+        <select id="settlementOwner" class="form-control">
+          <option value="">Memuat owner...</option>
+        </select>
+      </div>
+
+      <!-- PERIOD START -->
+
+      <div class="form-group">
+        <label for="settlementPeriodStart"> Periode Mulai </label>
+
+        <input type="date" id="settlementPeriodStart" class="form-control" />
+      </div>
+
+      <!-- PERIOD END -->
+
+      <div class="form-group">
+        <label for="settlementPeriodEnd"> Periode Akhir </label>
+
+        <input type="date" id="settlementPeriodEnd" class="form-control" />
+      </div>
+
+      <!-- BUTTON -->
+
+      <div class="form-group settlement-filter-action">
+        <button type="button" class="btn btn-primary" id="btnLoadSettlement">
+          Tampilkan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================
+       WORKSPACE
+       
+       SettlementView akan mengganti
+       isi #content ketika module init.
+  ====================================== -->
+</div>

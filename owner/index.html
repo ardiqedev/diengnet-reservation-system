@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta name="theme-color" content="#ff9800" />
+
+    <title>Dieng Stay — Owner</title>
+
+    <!-- =========================================
+       FONT
+  ========================================== -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- =========================================
+       OWNER CSS
+  ========================================== -->
+
+    <link rel="stylesheet" href="../assets/css/owner/owner.css" />
+
+    <!-- =========================================
+       ICON
+  ========================================== -->
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+
+  <body>
+    <!-- =========================================
+       OWNER APP
+  ========================================== -->
+
+    <div class="owner-app">
+      <!-- =======================================
+         HEADER
+    ======================================== -->
+
+      <header class="owner-header">
+        <div class="owner-header-inner">
+          <div class="owner-brand">
+            <div class="owner-brand-mark">
+              <i data-lucide="hotel"></i>
+            </div>
+
+            <div class="owner-brand-text">
+              <strong> Dieng Stay </strong>
+
+              <span> Owner Workspace </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            class="owner-icon-button"
+            aria-label="Notifikasi"
+          >
+            <i data-lucide="bell"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- =======================================
+         MAIN
+    ======================================== -->
+
+      <main class="owner-main">
+        <!-- =====================================
+           GREETING
+      ====================================== -->
+
+        <section class="owner-greeting">
+          <span class="owner-eyebrow"> OWNER DASHBOARD </span>
+
+          <h1>Halo, Chasby 👋</h1>
+
+          <p>Kelola penginapan Anda dengan cepat.</p>
+        </section>
+
+        <!-- =====================================
+           QUICK ACTION
+      ====================================== -->
+
+        <section class="owner-quick-grid">
+          <a href="./pages/reservasi.html" class="owner-action-card">
+            <div class="owner-action-icon">
+              <i data-lucide="search"></i>
+            </div>
+
+            <div>
+              <strong> Cari Reservasi </strong>
+
+              <span> Check-in / Check-out tamu </span>
+            </div>
+
+            <i data-lucide="chevron-right" class="owner-action-arrow"></i>
+          </a>
+
+          <a href="./pages/kamar.html" class="owner-action-card">
+            <div class="owner-action-icon">
+              <i data-lucide="bed-double"></i>
+            </div>
+
+            <div>
+              <strong> Kamar </strong>
+
+              <span> Aktif / Nonaktifkan kamar </span>
+            </div>
+
+            <i data-lucide="chevron-right" class="owner-action-arrow"></i>
+          </a>
+        </section>
+
+        <!-- =====================================
+           PAYOUT SUMMARY
+      ====================================== -->
+
+        <section class="owner-section">
+          <div class="owner-section-heading">
+            <div>
+              <span class="owner-section-eyebrow"> PENCAIRAN </span>
+
+              <h2>Status Pencairan</h2>
+            </div>
+
+            <a href="./pages/pencairan.html" class="owner-link-button">
+              Lihat semua
+            </a>
+          </div>
+
+          <div class="owner-payout-grid">
+            <div class="owner-payout-card owner-payout-pending">
+              <div class="owner-payout-icon">
+                <i data-lucide="clock-3"></i>
+              </div>
+
+              <div>
+                <strong id="ownerPayoutPendingAmount"> Rp 0 </strong>
+
+                <span>Belum cair</span>
+              </div>
+            </div>
+
+            <div class="owner-payout-card owner-payout-paid">
+              <div class="owner-payout-icon">
+                <i data-lucide="check-circle-2"></i>
+              </div>
+
+              <div>
+                <strong id="ownerPayoutPaidAmount"> Rp 0 </strong>
+
+                <span>Sudah cair</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =====================================
+           TODAY SUMMARY
+      ====================================== -->
+
+        <section class="owner-section">
+          <div class="owner-section-heading">
+            <div>
+              <span class="owner-section-eyebrow"> OPERASIONAL </span>
+
+              <h2>Hari Ini</h2>
+            </div>
+          </div>
+
+          <div class="owner-today-card">
+            <div class="owner-today-item">
+              <div class="owner-today-icon owner-today-checkin">
+                <i data-lucide="log-in"></i>
+              </div>
+
+              <div>
+                <strong id="ownerCheckInCount">0</strong>
+                <span>Check-in</span>
+              </div>
+            </div>
+
+            <div class="owner-today-divider"></div>
+
+            <div class="owner-today-item">
+              <div class="owner-today-icon owner-today-checkout">
+                <i data-lucide="log-out"></i>
+              </div>
+
+              <div>
+                <strong id="ownerCheckOutCount">0</strong>
+                <span>Check-out</span>
+              </div>
+            </div>
+
+            <div class="owner-today-divider"></div>
+
+            <div class="owner-today-item">
+              <div class="owner-today-icon owner-today-room">
+                <i data-lucide="bed-double"></i>
+              </div>
+
+              <div>
+                <strong id="ownerActiveRoomCount">0</strong>
+                <span>Kamar aktif</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =====================================
+           INFO
+      ====================================== -->
+
+        <section class="owner-info-card">
+          <div class="owner-info-icon">
+            <i data-lucide="building-2"></i>
+          </div>
+
+          <div>
+            <strong id="ownerPenginapanCount">0</strong>
+
+            <span>Penginapan aktif</span>
+          </div>
+
+          <i data-lucide="chevron-right" class="owner-info-arrow"></i>
+        </section>
+      </main>
+
+      <!-- =======================================
+         BOTTOM NAVIGATION
+    ======================================== -->
+
+      <nav class="owner-bottom-nav">
+        <a href="./index.html" class="owner-nav-item active">
+          <i data-lucide="house"></i>
+
+          <span> Beranda </span>
+        </a>
+
+        <a href="./pages/reservasi.html" class="owner-nav-item">
+          <i data-lucide="calendar-days"></i>
+
+          <span> Reservasi </span>
+        </a>
+
+        <a href="./pages/kamar.html" class="owner-nav-item">
+          <i data-lucide="bed-double"></i>
+
+          <span> Kamar </span>
+        </a>
+
+        <a href="./pages/pencairan.html" class="owner-nav-item">
+          <i data-lucide="wallet"></i>
+
+          <span> Pencairan </span>
+        </a>
+
+        <div class="owner-account-wrap">
+          <button type="button" class="owner-nav-item" id="ownerAccountButton">
+            <i data-lucide="user-round"></i>
+
+            <span>Akun</span>
+          </button>
+
+          <div class="owner-account-menu" id="ownerAccountMenu" hidden>
+            <div class="owner-account-menu-header">
+              <strong id="ownerAccountName"> Owner </strong>
+
+              <span>Owner Workspace</span>
+            </div>
+
+            <button
+              type="button"
+              class="owner-account-logout"
+              id="ownerLogoutButton"
+            >
+              <i data-lucide="log-out"></i>
+
+              <span>Keluar</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </body>
+
+  <!-- =========================================
+   QEDEV CORE
+========================================= -->
+
+  <script src="../assets/js/core/config.js"></script>
+  <script src="../assets/js/core/storage.js"></script>
+  <script src="../assets/js/core/state.js"></script>
+  <script src="../assets/js/core/api.js"></script>
+
+  <!-- =========================================
+   AUTH
+========================================= -->
+
+  <script src="../assets/js/core/auth.js"></script>
+
+  <script src="../assets/js/core/engine-toast.js"></script>
+
+  <script src="../assets/js/modules/owner/owner.js"></script>
+</html>

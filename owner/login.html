@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta name="theme-color" content="#ff9800" />
+
+    <title>Dieng Stay — Owner Login</title>
+
+    <!-- =========================================
+       FONT
+  ========================================== -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- =========================================
+       OWNER CSS
+  ========================================== -->
+
+    <link rel="stylesheet" href="../assets/css/owner/login.css" />
+
+    <!-- =========================================
+       ICON
+  ========================================== -->
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+
+  <body>
+    <main class="owner-login-page">
+      <!-- =======================================
+         LOGIN CARD
+    ======================================== -->
+
+      <section class="owner-login-card">
+        <!-- BRAND -->
+
+        <div class="owner-login-brand">
+          <div class="owner-login-logo">
+            <i data-lucide="hotel"></i>
+          </div>
+
+          <div class="owner-login-brand-text">
+            <strong> Dieng Stay </strong>
+
+            <span> Owner Workspace </span>
+          </div>
+        </div>
+
+        <!-- INTRO -->
+
+        <div class="owner-login-intro">
+          <span class="owner-login-eyebrow"> OWNER LOGIN </span>
+
+          <h1>Selamat datang kembali</h1>
+
+          <p>Masuk untuk mengelola penginapan Anda.</p>
+        </div>
+
+        <!-- FORM -->
+
+        <form id="ownerLoginForm" class="owner-login-form">
+          <!-- USERNAME -->
+
+          <div class="owner-login-field">
+            <label for="ownerUsername"> Username </label>
+
+            <div class="owner-login-input-wrap">
+              <i data-lucide="user-round"></i>
+
+              <input
+                type="text"
+                id="ownerUsername"
+                name="username"
+                placeholder="Masukkan username"
+                autocomplete="username"
+                required
+              />
+            </div>
+          </div>
+
+          <!-- PASSWORD -->
+
+          <div class="owner-login-field">
+            <label for="ownerPassword"> Password </label>
+
+            <div class="owner-login-input-wrap">
+              <i data-lucide="lock-keyhole"></i>
+
+              <input
+                type="password"
+                id="ownerPassword"
+                name="password"
+                placeholder="Masukkan password"
+                autocomplete="current-password"
+                required
+              />
+
+              <button
+                type="button"
+                id="toggleOwnerPassword"
+                class="owner-login-password-toggle"
+                aria-label="Tampilkan password"
+              >
+                <i data-lucide="eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- LOGIN -->
+
+          <button type="submit" id="btnOwnerLogin" class="owner-login-button">
+            <span> Masuk </span>
+
+            <i data-lucide="arrow-right"></i>
+          </button>
+        </form>
+
+        <!-- FOOTER -->
+
+        <div class="owner-login-footer">
+          <span> Dieng Stay </span>
+
+          <span> Owner Workspace </span>
+        </div>
+      </section>
+    </main>
+
+    <!-- =========================================
+     QEDEV CORE
+    ========================================= -->
+    <script src="../assets/js/core/config.js"></script>
+    <script src="../assets/js/core/storage.js"></script>
+    <script src="../assets/js/core/state.js"></script>
+    <script src="../assets/js/core/api.js"></script>
+    <script src="../assets/js/core/engine-toast.js"></script>
+
+    <!-- =========================================
+     AUTH
+    ========================================= -->
+
+    <script src="../assets/js/core/auth.js"></script>
+
+    <!-- =========================================
+       JS
+    ========================================== -->
+
+    <script src="../assets/js/modules/owner/login.js"></script>
+  </body>
+</html>

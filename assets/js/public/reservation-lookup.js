@@ -21,6 +21,8 @@ const lookupResult = document.getElementById("reservationLookupResult");
 
 const lookupCard = document.getElementById("lookupCard");
 
+const statusGuide = document.getElementById("reservationStatusGuide");
+
 /* =========================================
    MOBILE MENU
 ========================================= */
@@ -51,6 +53,15 @@ if (lookupForm) {
 
 async function handleLookup(event) {
   event.preventDefault();
+
+  // Sembunyikan informasi lanjutan selama validasi login.
+  if (statusGuide) {
+    statusGuide.hidden = true;
+  }
+
+  if (lookupResult) {
+    lookupResult.hidden = true;
+  }
 
   /* =====================================
      CLEAR ERROR
@@ -123,6 +134,11 @@ async function handleLookup(event) {
     =================================== */
 
     renderReservation(reservation);
+
+    // Tampilkan tahapan reservasi setelah lookup berhasil.
+    if (statusGuide) {
+      statusGuide.hidden = false;
+    }
   } catch (error) {
     console.error("RESERVATION LOOKUP ERROR:", error);
 
@@ -415,6 +431,11 @@ function renderReservation(reservation = {}) {
   ===================================== */
 
   lookupResult.hidden = false;
+
+  // Sembunyikan form login setelah reservasi berhasil ditemukan.
+  if (lookupCard) {
+    lookupCard.hidden = true;
+  }
 
   /*
    * Scroll ke hasil hanya kalau

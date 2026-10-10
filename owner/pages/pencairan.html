@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta name="theme-color" content="#ff9800" />
+
+    <title>Dieng Stay — Pencairan</title>
+
+    <!-- =========================================
+       FONT
+  ========================================== -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- =========================================
+       CSS
+  ========================================== -->
+
+    <link rel="stylesheet" href="../../assets/css/owner/owner.css" />
+
+    <link rel="stylesheet" href="../../assets/css/owner/pencairan.css" />
+
+    <!-- =========================================
+       ICON
+  ========================================== -->
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+  </head>
+
+  <body>
+    <div class="owner-app">
+      <!-- =======================================
+         HEADER
+    ======================================== -->
+
+      <header class="owner-header">
+        <div class="owner-header-inner">
+          <a href="../index.html" class="owner-page-back" aria-label="Kembali">
+            <i data-lucide="arrow-left"></i>
+          </a>
+
+          <div class="owner-page-title">
+            <strong> Pencairan </strong>
+
+            <span> Riwayat pembayaran owner </span>
+          </div>
+
+          <div class="owner-header-spacer"></div>
+        </div>
+      </header>
+
+      <!-- =======================================
+         MAIN
+    ======================================== -->
+
+      <main class="owner-main owner-payout-main">
+        <!-- =====================================
+           INTRO
+      ====================================== -->
+
+        <section class="owner-payout-intro">
+          <span class="owner-eyebrow"> KEUANGAN </span>
+
+          <h1>Pencairan Saya</h1>
+
+          <p>Lihat pembayaran yang sudah dan belum dicairkan.</p>
+        </section>
+
+        <!-- =====================================
+           SUMMARY
+      ====================================== -->
+
+        <section class="payout-summary-grid">
+          <div class="payout-summary-card payout-summary-pending">
+            <div class="payout-summary-icon">
+              <i data-lucide="clock-3"></i>
+            </div>
+
+            <div>
+              <strong id="pendingPayoutTotal"> Rp 900.000 </strong>
+
+              <span> Belum cair </span>
+            </div>
+          </div>
+
+          <div class="payout-summary-card payout-summary-paid">
+            <div class="payout-summary-icon">
+              <i data-lucide="check-circle-2"></i>
+            </div>
+
+            <div>
+              <strong id="paidPayoutTotal"> Rp 2.150.000 </strong>
+
+              <span> Sudah cair </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- =====================================
+           HISTORY
+      ====================================== -->
+
+        <section class="owner-payout-section">
+          <div class="owner-section-heading">
+            <div>
+              <span class="owner-section-eyebrow"> RIWAYAT </span>
+
+              <h2>Pencairan</h2>
+            </div>
+          </div>
+
+          <div id="payoutList" class="owner-payout-list">
+            <!-- Render by JS -->
+          </div>
+        </section>
+      </main>
+
+      <!-- =======================================
+         BOTTOM NAV
+    ======================================== -->
+
+      <nav class="owner-bottom-nav">
+        <a href="../index.html" class="owner-nav-item">
+          <i data-lucide="house"></i>
+
+          <span> Beranda </span>
+        </a>
+
+        <a href="./reservasi.html" class="owner-nav-item">
+          <i data-lucide="calendar-days"></i>
+
+          <span> Reservasi </span>
+        </a>
+
+        <a href="./kamar.html" class="owner-nav-item">
+          <i data-lucide="bed-double"></i>
+
+          <span> Kamar </span>
+        </a>
+
+        <a href="./pencairan.html" class="owner-nav-item active">
+          <i data-lucide="wallet"></i>
+
+          <span> Pencairan </span>
+        </a>
+
+        <button type="button" class="owner-nav-item">
+          <i data-lucide="user-round"></i>
+
+          <span> Akun </span>
+        </button>
+      </nav>
+    </div>
+
+    <!-- =========================================
+       JS
+  ========================================== -->
+
+    <script src="../../assets/js/modules/owner/pencairan.js"></script>
+  </body>
+</html>

@@ -160,7 +160,7 @@ const UserForm = {
                     type="text"
                     name="whatsapp"
                     class="form-control"
-                    placeholder="628xxxxxxxxxx"
+                    placeholder="085189378311"
                     required
                   />
 

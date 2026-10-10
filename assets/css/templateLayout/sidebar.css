@@ -415,3 +415,184 @@
 
   justify-content: center;
 }
+
+/* =========================================
+   ADMIN NAVBAR — BLACK ORANGE
+========================================= */
+
+.navbar {
+  background: #17130e;
+  color: #ffffff;
+  border-bottom: 1px solid #30271e;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.navbar h1,
+.navbar h2,
+.navbar strong,
+.navbar .navbar-title {
+  color: #ffffff;
+}
+
+.navbar p,
+.navbar span,
+.navbar .navbar-subtitle {
+  color: #b8b2aa;
+}
+
+/* Icon buttons */
+
+.navbar button {
+  color: #f5f1eb;
+  border-color: #393128;
+  background: #211c16;
+}
+
+.navbar button:hover {
+  color: #ff9800;
+  border-color: #ff9800;
+  background: #302419;
+}
+
+/* Search */
+
+.navbar input,
+.navbar .search-input {
+  color: #ffffff;
+  background: #211c16;
+  border: 1px solid #393128;
+}
+
+.navbar input::placeholder {
+  color: #a49b90;
+}
+
+.navbar input:focus {
+  border-color: #ff9800;
+  outline: 2px solid rgba(255, 152, 0, 0.15);
+}
+
+/* Profile */
+
+.navbar .avatar,
+.navbar .user-avatar {
+  color: #17130e;
+  background: #ff9800;
+}
+
+/* Dropdown */
+
+.navbar .dropdown-menu {
+  color: #ffffff;
+  background: #211c16;
+  border: 1px solid #393128;
+}
+
+.navbar .dropdown-menu a:hover,
+.navbar .dropdown-menu button:hover {
+  color: #ff9800;
+  background: #302419;
+}
+
+/* =========================================
+   ADMIN SIDEBAR — BLACK ORANGE
+========================================= */
+
+.sidebar {
+  color: #f5f1eb;
+  background: #111111;
+  border-right: 1px solid #29231c;
+}
+
+/* Section labels */
+
+.sidebar .sidebar-section-title,
+.sidebar .menu-label,
+.sidebar .section-label {
+  color: #918a81;
+}
+
+/* Menu links and buttons */
+
+.sidebar a,
+.sidebar button,
+.sidebar .sidebar-item {
+  color: #dedad4;
+  background: transparent;
+  border-color: transparent;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* Icons */
+
+.sidebar a svg,
+.sidebar button svg,
+.sidebar .sidebar-item svg {
+  color: #a8a198;
+}
+
+/* Hover */
+
+.sidebar a:hover,
+.sidebar button:hover,
+.sidebar .sidebar-item:hover {
+  color: #ffad33;
+  background: #211c16;
+}
+
+/* Active menu */
+
+.sidebar a.active,
+.sidebar button.active,
+.sidebar .sidebar-item.active,
+.sidebar .active > a {
+  color: #17130e;
+  background: #ff9800;
+  border-color: #ff9800;
+  font-weight: 700;
+}
+
+/* Active icon */
+
+.sidebar a.active svg,
+.sidebar button.active svg,
+.sidebar .sidebar-item.active svg {
+  color: #17130e;
+}
+
+/* Nested menu */
+
+.sidebar .submenu {
+  border-left: 1px solid #393128;
+}
+
+.sidebar .submenu a {
+  color: #bdb6ac;
+}
+
+.sidebar .submenu a:hover {
+  color: #ffad33;
+  background: #211c16;
+}
+
+/* Scrollbar */
+
+.sidebar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: #111111;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #494037;
+  border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: #ff9800;
+}

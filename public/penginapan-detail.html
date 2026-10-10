@@ -33,6 +33,9 @@
 
     <link rel="stylesheet" href="../assets/css/public/penginapan-detail.css" />
     <link rel="stylesheet" href="../assets/css/components/skeleton.css" />
+    <link rel="stylesheet" href="../assets/css/public/public.css" />
+    <link rel="stylesheet" href="../assets/css/public/penginapan-detail.css" />
+    <link rel="stylesheet" href="../assets/css/components/confirm.css" />
   </head>
 
   <body>
@@ -213,6 +216,26 @@
                   ================================== -->
 
                   <div id="wizardFooter" class="public-wizard-footer"></div>
+
+                  <!-- RESERVATION LOADING OVERLAY -->
+                  <div
+                    id="reservationLoadingOverlay"
+                    class="reservation-loading-overlay"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    hidden
+                  >
+                    <div class="reservation-loading-card">
+                      <div class="reservation-loading-spinner"></div>
+
+                      <h3>Memeriksa ketersediaan kamar</h3>
+
+                      <p>
+                        Mohon tunggu sebentar, kami sedang menyiapkan reservasi
+                        Anda.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </section>
             </div>
@@ -320,6 +343,8 @@
 ========================================= -->
 
     <script src="../assets/js/core/engine-skeleton.js"></script>
+
+    <script src="../assets/js/core/engine-confirm.js"></script>
 
     <script src="../assets/js/public/penginapan-detail.js"></script>
   </body>

@@ -18,6 +18,8 @@ const Router = {
 
     pembayaran: "pages/pembayaran.html",
 
+    settlement: "pages/settlement.html",
+
     laporan: "pages/laporan.html",
 
     penginapan: "pages/penginapan.html",
@@ -129,6 +131,8 @@ const Router = {
       tamu: typeof Tamu !== "undefined" ? Tamu : null,
 
       pembayaran: typeof Pembayaran !== "undefined" ? Pembayaran : null,
+
+      settlement: typeof Settlement !== "undefined" ? Settlement : null,
 
       "harga-musim": typeof HargaMusim !== "undefined" ? HargaMusim : null,
 

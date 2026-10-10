@@ -329,3 +329,83 @@
 
   flex-shrink: 0;
 }
+
+/* =========================================
+   ADMIN NAVBAR — CREAM ORANGE
+========================================= */
+
+.navbar {
+  background: #fff0dc;
+  color: #21170c;
+  border-bottom: 1px solid #f0dfc8;
+  box-shadow: 0 3px 12px rgba(80, 49, 15, 0.04);
+}
+
+/* Title and text */
+
+.navbar h1,
+.navbar h2,
+.navbar strong,
+.navbar .navbar-title {
+  color: #21170c;
+}
+
+.navbar p,
+.navbar span,
+.navbar .navbar-subtitle {
+  color: #755b40;
+}
+
+/* Icons and buttons */
+
+.navbar button {
+  color: #453321;
+  background: #fff8ef;
+  border-color: #ead8bf;
+}
+
+.navbar button:hover {
+  color: #b86100;
+  background: #ffe2bb;
+  border-color: #ff9800;
+}
+
+/* Search input */
+
+.navbar input,
+.navbar .search-input {
+  color: #21170c;
+  background: #fffaf4;
+  border: 1px solid #ead8bf;
+}
+
+.navbar input::placeholder {
+  color: #9b8974;
+}
+
+.navbar input:focus {
+  border-color: #ff9800;
+  outline: 2px solid rgba(255, 152, 0, 0.15);
+}
+
+/* User avatar */
+
+.navbar .avatar,
+.navbar .user-avatar {
+  color: #21170c;
+  background: #ff9800;
+}
+
+/* Dropdown */
+
+.navbar .dropdown-menu {
+  color: #21170c;
+  background: #fffaf4;
+  border: 1px solid #ead8bf;
+}
+
+.navbar .dropdown-menu a:hover,
+.navbar .dropdown-menu button:hover {
+  color: #b86100;
+  background: #fff0dc;
+}

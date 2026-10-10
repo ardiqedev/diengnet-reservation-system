@@ -1037,3 +1037,76 @@
     font-size: 21px;
   }
 }
+
+.reservation-status-guide[hidden] {
+  display: none !important;
+}
+
+.reservation-top-accent {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #b98536 0%, #e3bd72 50%, #b98536 100%);
+}
+
+/* =========================================
+   MOBILE RESERVATION CENTER — SPACING FIX
+========================================= */
+
+@media (max-width: 768px) {
+  .reservation-center {
+    padding-top: 34px;
+    padding-bottom: 56px;
+  }
+
+  .reservation-center-hero {
+    margin-bottom: 26px;
+  }
+
+  .reservation-center-hero-content .eyebrow {
+    margin-bottom: 14px;
+  }
+
+  .reservation-center-hero h1 {
+    font-size: clamp(2.2rem, 8vw, 2.8rem);
+    line-height: 1.02;
+    letter-spacing: -0.045em;
+  }
+
+  .reservation-center-hero p {
+    font-size: 14px;
+    line-height: 1.7;
+    max-width: 340px;
+  }
+
+  .reservation-center-search {
+    margin-top: 0;
+  }
+
+  .reservation-lookup-card {
+    padding: 22px 18px;
+    border-radius: 18px;
+  }
+
+  .reservation-search-heading h2 {
+    font-size: 20px;
+  }
+
+  .reservation-search-heading p {
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .reservation-lookup-field input {
+    min-height: 46px;
+    font-size: 14px;
+  }
+
+  .reservation-lookup-button {
+    min-height: 48px;
+    font-size: 13px;
+  }
+}
+
+.reservation-lookup-card[hidden] {
+  display: none !important;
+}

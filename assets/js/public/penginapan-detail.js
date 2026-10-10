@@ -2016,6 +2016,26 @@ const PublicPenginapanDetail = (() => {
     bindUnitEvents();
   }
 
+  /* ==========================================================
+   RESERVATION LOADING OVERLAY
+========================================================== */
+
+  function showReservationLoading() {
+    const overlay = document.getElementById("reservationLoadingOverlay");
+
+    if (overlay) {
+      overlay.hidden = false;
+    }
+  }
+
+  function hideReservationLoading() {
+    const overlay = document.getElementById("reservationLoadingOverlay");
+
+    if (overlay) {
+      overlay.hidden = true;
+    }
+  }
+
   function mergeUnitPhotos(units = []) {
     return units.map((unit) => {
       const masterUnit = state.allUnits.find(
@@ -2285,17 +2305,46 @@ const PublicPenginapanDetail = (() => {
   ========================================================== */
 
   function bindUnitEvents() {
+    /* ==========================================================
+   SELECT UNIT → CEK AVAILABILITY → HITUNG HARGA → STEP 2
+========================================================== */
+
     dom.wizardContent
       .querySelectorAll(".public-unit-select")
       .forEach((button) => {
         button.addEventListener("click", async () => {
-          await selectUnit(button.dataset.unitId);
+          // Cegah klik berulang
+          if (state.searching || button.disabled) {
+            return;
+          }
+
+          const unitId = button.dataset.unitId;
+
+          // Cari unit dari daftar OUR ROOMS
+          const unit = state.units.find(
+            (item) => String(item.id) === String(unitId),
+          );
+
+          if (!unit) {
+            showWizardError("Unit tidak ditemukan.");
+            return;
+          }
+
+          // Simpan unit pilihan tanpa menghitung harga dahulu
+          state.selectedUnit = unit;
+          state.selectedFromShowcase = false;
+          state.pricing = null;
+
+          clearWizardError();
+
+          // Cek ulang availability di server,
+          // hitung harga, lalu lanjut otomatis ke Step 2
+          await continueWithSelectedUnit();
         });
       });
-
     /* ==========================================================
-   UNIT PHOTO GALLERY
-========================================================== */
+     UNIT PHOTO GALLERY
+  ========================================================== */
 
     dom.wizardContent.querySelectorAll(".public-unit-card").forEach((card) => {
       const unitId = String(card.dataset.unitId || "").trim();
@@ -2327,8 +2376,8 @@ const PublicPenginapanDetail = (() => {
       let currentIndex = 0;
 
       /* ======================================================
-       RENDER PHOTO
-    ====================================================== */
+         RENDER PHOTO
+      ====================================================== */
 
       function renderGalleryPhoto() {
         const photo = photos[currentIndex];
@@ -2338,19 +2387,17 @@ const PublicPenginapanDetail = (() => {
         }
 
         image.src = photo.url;
-
         image.alt = photo.name || unit.nama || "Foto Unit";
 
         counter.textContent = `${currentIndex + 1} / ${photos.length}`;
       }
 
       /* ======================================================
-       PREVIOUS
-    ====================================================== */
+         PREVIOUS
+      ====================================================== */
 
       prevButton.addEventListener("click", function (event) {
         event.preventDefault();
-
         event.stopPropagation();
 
         currentIndex--;
@@ -2363,12 +2410,11 @@ const PublicPenginapanDetail = (() => {
       });
 
       /* ======================================================
-       NEXT
-    ====================================================== */
+         NEXT
+      ====================================================== */
 
       nextButton.addEventListener("click", function (event) {
         event.preventDefault();
-
         event.stopPropagation();
 
         currentIndex++;
@@ -2526,7 +2572,7 @@ const PublicPenginapanDetail = (() => {
               maxlength="30"
               autocomplete="tel"
               value="${escapeAttribute(state.booking.noHp)}"
-              placeholder="08xxxxxxxxxx"
+              placeholder="085189378311"
             />
 
           </div>
@@ -3445,6 +3491,7 @@ const PublicPenginapanDetail = (() => {
     clearWizardError();
 
     setSearchButtonLoading(true);
+    showReservationLoading();
 
     try {
       const payload = {
@@ -3545,6 +3592,7 @@ const PublicPenginapanDetail = (() => {
       state.searching = false;
 
       setSearchButtonLoading(false);
+      hideReservationLoading();
     }
   }
 
@@ -3975,9 +4023,31 @@ const PublicPenginapanDetail = (() => {
       }
 
       state.result = result.data || null;
-      openWhatsappBooking();
 
-      showSuccess();
+      state.submitting = false;
+
+      Confirm.open({
+        title: "Booking Berhasil",
+
+        message: `
+    Booking berhasil dibuat.<br><br>
+
+    Nomor Reservasi:<br>
+    <strong>
+      ${escapeHtml(state.result?.kode || state.result?.id || "-")}
+    </strong>
+  `,
+
+        type: "success",
+
+        confirmText: "OK",
+
+        cancelText: "Tutup",
+
+        onConfirm: () => {
+          openWhatsappBooking();
+        },
+      });
     } catch (error) {
       console.error("[PublicPenginapanDetail] Booking error:", error);
 
@@ -3989,38 +4059,95 @@ const PublicPenginapanDetail = (() => {
     }
   }
 
+  /* ==========================================================
+   BOOKING SUCCESS CONFIRM
+========================================================== */
+
+  function showBookingSuccessConfirm() {
+    const reservation = state.result || {};
+
+    const kode = String(reservation.kode || reservation.id || "").trim();
+
+    const safeKode = escapeHtml(kode);
+
+    Confirm.open({
+      title: "Booking Berhasil",
+
+      message: `
+      Nomor Reservasi Anda:<br>
+
+      <strong>${safeKode}</strong>
+
+      <br><br>
+
+      Informasi booking dan pembayaran
+      akan dikirim melalui WhatsApp.
+    `,
+
+      type: "success",
+
+      confirmText: "OK",
+
+      cancelText: "Tutup",
+
+      onConfirm: () => {
+        openWhatsappBooking();
+      },
+    });
+  }
+
   function openWhatsappBooking() {
     const reservation = state.result || {};
 
     const kode = reservation.kode || reservation.id || "";
 
-    const phone = normalizeWhatsapp(state.booking.noHp);
+    const noHp = state.booking.noHp || "";
 
-    if (!kode || !phone) {
+    /*
+     * TEMPORARY
+     *
+     * Nanti ambil dari Website Settings.
+     */
+    const customerService = "085189378311";
+
+    const paymentLoginUrl = `${window.location.origin}/public/payment-login.html`;
+
+    if (!kode || !noHp) {
       console.warn("[PublicPenginapanDetail] WhatsApp data tidak lengkap.");
+
       return;
     }
 
-    const lookupUrl = `${window.location.origin}/public/reservation-lookup?kode=${encodeURIComponent(kode)}`;
-
     const message = [
-      "Booking Anda berhasil dibuat 🎉",
+      "Booking Berhasil",
       "",
-      `Nomor Reservasi: ${kode}`,
+      `Nomor Reservasi:`,
+      `${kode}`,
       "",
-      "Silakan lanjutkan proses booking dengan melakukan pembayaran.",
+      `Nomor Ponsel:`,
+      `${noHp}`,
       "",
-      "Untuk melihat detail reservasi dan melanjutkan pembayaran, silakan buka link berikut:",
+      "Silakan lakukan pembayaran terlebih dahulu melalui rekening berikut:",
       "",
-      lookupUrl,
+      "BCA",
+      "1234567890",
+      "a.n. Dieng Net",
       "",
-      "Gunakan nomor reservasi dan nomor telepon yang digunakan saat melakukan booking.",
+      "Setelah melakukan pembayaran, silakan konfirmasi dan upload bukti pembayaran melalui halaman berikut.",
       "",
-      "Terima kasih 🙏",
-      "Dieng Net",
+      "Login & Konfirmasi Pembayaran:",
+      paymentLoginUrl,
+      "",
+      "Gunakan nomor reservasi dan nomor ponsel Anda untuk login.",
+      "",
+      "Butuh bantuan?",
+      "Hubungi Customer Service:",
+      customerService,
     ].join("\n");
 
-    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    const whatsappPhone = normalizeWhatsapp(customerService);
+
+    const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
 
     window.open(whatsappUrl, "_blank", "noopener,noreferrer");
   }

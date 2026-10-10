@@ -5067,3 +5067,117 @@ textarea:focus-visible {
 
   overflow: hidden;
 }
+
+/* ==========================================================
+   RESERVATION LOADING OVERLAY
+========================================================== */
+
+.public-reservation-wizard {
+  position: relative;
+}
+
+.reservation-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(17, 24, 39, 0.48);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border-radius: inherit;
+}
+
+.reservation-loading-overlay[hidden] {
+  display: none;
+}
+
+.reservation-loading-card {
+  width: 100%;
+  max-width: 340px;
+  padding: 32px 24px;
+  text-align: center;
+  background: #fff;
+  border: 1px solid rgba(201, 164, 92, 0.35);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.16);
+  animation: reservationLoadingIn 0.25s ease-out;
+}
+
+/* ==========================================================
+   RESERVATION LOADING SPINNER — FIX
+========================================================== */
+
+.reservation-loading-spinner {
+  display: block;
+  width: 44px;
+  height: 44px;
+  box-sizing: border-box;
+
+  margin: 0 auto 22px;
+
+  border: 4px solid #e9e5dc;
+  border-top: 4px solid #b99552;
+
+  border-radius: 50%;
+
+  animation: reservationSpinnerRotate 0.75s linear infinite !important;
+
+  transform-origin: center;
+  will-change: transform;
+}
+
+@keyframes reservationSpinnerRotate {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reservation-loading-card h3 {
+  margin: 0 0 10px;
+  color: #172a24;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.reservation-loading-card p {
+  margin: 0;
+  color: #737b76;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+@keyframes reservationSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes reservationLoadingIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reservation-loading-spinner {
+    animation-duration: 1.8s;
+  }
+
+  .reservation-loading-card {
+    animation: none;
+  }
+}

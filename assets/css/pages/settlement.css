@@ -1,0 +1,848 @@
+/* ==========================================================
+   PENCAIRAN OWNER
+========================================================== */
+
+.settlement-page {
+  width: 100%;
+}
+
+/* ==========================================================
+   FILTER
+========================================================== */
+
+.settlement-filter {
+  margin-bottom: 20px;
+}
+
+.settlement-filter .card-title {
+  margin-bottom: 16px;
+}
+
+/* ==========================================================
+   SUMMARY
+========================================================== */
+
+.settlement-summary {
+  margin-bottom: 20px;
+}
+
+.settlement-summary-grid {
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 16px;
+}
+
+/* ==========================================================
+   SUMMARY CARD
+========================================================== */
+
+.settlement-summary-card {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 16px;
+
+  min-height: 150px;
+
+  padding: 20px;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 16px;
+
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.settlement-summary-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* ==========================================================
+   SUMMARY ICON
+========================================================== */
+
+.settlement-summary-icon {
+  width: 48px;
+
+  height: 48px;
+
+  min-width: 48px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background: #fff7ed;
+
+  color: #f59e0b;
+}
+
+.settlement-summary-icon svg {
+  width: 22px;
+
+  height: 22px;
+}
+
+/* ==========================================================
+   SUMMARY CONTENT
+========================================================== */
+
+.settlement-summary-content {
+  min-width: 0;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+/* ==========================================================
+   SUMMARY LABEL
+========================================================== */
+
+.settlement-summary-label {
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: #64748b;
+
+  line-height: 1.4;
+}
+
+/* ==========================================================
+   SUMMARY VALUE
+========================================================== */
+
+.settlement-summary-value {
+  font-size: 26px;
+
+  font-weight: 700;
+
+  line-height: 1.2;
+
+  color: #111827;
+}
+
+/* ==========================================================
+   SUMMARY DESCRIPTION
+========================================================== */
+
+.settlement-summary-description {
+  margin-top: 2px;
+
+  font-size: 12px;
+
+  line-height: 1.5;
+
+  color: #94a3b8;
+}
+
+/* ==========================================================
+   RESPONSIVE
+========================================================== */
+
+@media (max-width: 900px) {
+  .settlement-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .settlement-summary-card {
+    min-height: auto;
+
+    padding: 18px;
+  }
+
+  .settlement-summary-value {
+    font-size: 23px;
+  }
+}
+
+/* =========================================
+   SETTLEMENT DETAIL
+========================================= */
+
+.settlement-detail-card {
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.settlement-detail-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.settlement-detail-item {
+  padding: 18px 20px;
+  border-top: 1px solid var(--border-color, #eee);
+}
+
+.settlement-detail-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.settlement-detail-number {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9px;
+
+  background: #fff4df;
+  color: #f59e0b;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.settlement-detail-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.settlement-detail-code {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.settlement-detail-guest {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.settlement-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settlement-detail-meta span {
+  display: inline-flex;
+  align-items: center;
+
+  padding: 4px 8px;
+
+  border-radius: 6px;
+
+  background: #f8fafc;
+
+  color: #64748b;
+
+  font-size: 12px;
+}
+
+.settlement-detail-amount {
+  white-space: nowrap;
+
+  font-size: 15px;
+  font-weight: 700;
+
+  color: #111827;
+}
+
+.settlement-detail-info {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 12px;
+
+  margin-top: 16px;
+
+  padding-left: 46px;
+}
+
+.settlement-detail-info > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settlement-detail-info span {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.settlement-detail-info strong {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+
+  word-break: break-word;
+}
+
+.settlement-detail-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 16px 20px;
+
+  border-top: 1px solid var(--border-color, #eee);
+
+  background: #fafafa;
+}
+
+.settlement-detail-total span {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.settlement-detail-total strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 768px) {
+  .settlement-detail-item {
+    padding: 16px;
+  }
+
+  .settlement-detail-main {
+    gap: 10px;
+  }
+
+  .settlement-detail-amount {
+    font-size: 14px;
+  }
+
+  .settlement-detail-info {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+    padding-left: 42px;
+  }
+
+  .settlement-detail-total {
+    padding: 14px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .settlement-detail-main {
+    flex-wrap: wrap;
+  }
+
+  .settlement-detail-content {
+    width: calc(100% - 48px);
+  }
+
+  .settlement-detail-amount {
+    width: 100%;
+    padding-left: 42px;
+  }
+
+  .settlement-detail-info {
+    grid-template-columns: 1fr;
+
+    padding-left: 42px;
+  }
+}
+
+/* =========================================
+   SETTLEMENT PAID
+========================================= */
+
+.settlement-paid {
+  margin-top: 18px;
+
+  padding: 18px;
+
+  border: 1px solid #bbf7d0;
+
+  border-radius: 14px;
+
+  background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%);
+}
+
+.settlement-paid-header {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin-bottom: 18px;
+}
+
+.settlement-paid-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #dcfce7;
+
+  color: #16a34a;
+
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.settlement-paid-title {
+  font-size: 14px;
+
+  font-weight: 700;
+
+  color: #166534;
+}
+
+.settlement-paid-subtitle {
+  margin-top: 3px;
+
+  font-size: 12px;
+
+  line-height: 1.5;
+
+  color: #4d7c5b;
+}
+
+/* =========================================
+   PAID INFO
+========================================= */
+
+.settlement-paid-info {
+  display: grid;
+
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 12px;
+}
+
+.settlement-paid-info-item {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+
+  padding: 14px;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  border: 1px solid #dcfce7;
+}
+
+.settlement-paid-info-item span {
+  font-size: 11px;
+
+  font-weight: 500;
+
+  color: #64748b;
+}
+
+.settlement-paid-info-item strong {
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: #166534;
+
+  word-break: break-word;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 768px) {
+  .settlement-paid-info {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   EXISTING SETTLEMENT
+========================================= */
+
+.settlement-existing {
+  margin-top: 20px;
+
+  overflow: hidden;
+
+  background: #ffffff;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 16px;
+
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.settlement-existing .card-title {
+  padding: 20px 20px 8px;
+
+  font-size: 17px;
+
+  font-weight: 700;
+
+  color: #111827;
+}
+
+.settlement-existing-body {
+  display: grid;
+
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+
+  gap: 16px;
+
+  padding: 8px 20px 20px;
+}
+
+.settlement-existing-row {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.settlement-existing-row span {
+  font-size: 11px;
+
+  color: #94a3b8;
+}
+
+.settlement-existing-row strong {
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: #111827;
+
+  word-break: break-word;
+}
+
+/* =========================================
+   EXISTING SETTLEMENT ACTION
+========================================= */
+
+.settlement-existing-actions {
+  padding: 0 20px 20px;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 900px) {
+  .settlement-existing-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .settlement-existing-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   EXISTING SETTLEMENT
+========================================= */
+
+.settlement-existing {
+  margin-top: 18px;
+
+  padding: 0;
+
+  overflow: hidden;
+
+  border: 1px solid #e5e7eb;
+
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+/* =========================================
+   EXISTING HEADER
+========================================= */
+
+.settlement-existing > .card-title {
+  padding: 20px 20px 16px;
+
+  margin: 0;
+
+  font-size: 16px;
+
+  font-weight: 700;
+
+  color: #111827;
+
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* =========================================
+   EXISTING BODY
+========================================= */
+
+.settlement-existing-body {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.4fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 20px;
+
+  padding: 18px 20px;
+}
+
+/* =========================================
+   EXISTING ROW
+========================================= */
+
+.settlement-existing-row {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+
+  min-width: 0;
+}
+
+.settlement-existing-row span {
+  font-size: 11px;
+
+  line-height: 1.4;
+
+  color: #94a3b8;
+}
+
+.settlement-existing-row strong {
+  display: block;
+
+  min-width: 0;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+
+  font-weight: 600;
+
+  color: #1f2937;
+
+  word-break: break-word;
+}
+
+/* =========================================
+   EXISTING ACTION
+========================================= */
+
+.settlement-existing-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 16px 20px;
+
+  border-top: 1px solid #f1f5f9;
+
+  background: #fafafa;
+}
+
+/* =========================================
+   PAID SECTION
+========================================= */
+
+.settlement-existing .settlement-paid {
+  margin: 0 20px 20px;
+
+  border-radius: 14px;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 900px) {
+  .settlement-existing-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .settlement-existing-body {
+    grid-template-columns: 1fr;
+
+    gap: 14px;
+
+    padding: 16px;
+  }
+
+  .settlement-existing > .card-title {
+    padding: 18px 16px 14px;
+  }
+
+  .settlement-existing-actions {
+    padding: 14px 16px;
+  }
+
+  .settlement-existing .settlement-paid {
+    margin-left: 16px;
+    margin-right: 16px;
+    margin-bottom: 16px;
+  }
+}
+
+/* =========================================
+   SETTLEMENT FILTER FORM
+========================================= */
+
+.settlement-filter {
+  margin-bottom: 20px;
+
+  padding: 20px 24px;
+}
+
+/* TITLE */
+
+.settlement-filter .card-title {
+  margin-bottom: 18px;
+}
+
+/* FORM GROUP */
+
+.settlement-filter .form-group {
+  margin-bottom: 0;
+}
+
+/* LABEL */
+
+.settlement-filter .form-group label {
+  display: block;
+
+  margin-bottom: 8px;
+
+  line-height: 1.4;
+
+  font-size: 13px;
+
+  font-weight: 600;
+
+  color: #475569;
+}
+
+/* INPUT & SELECT */
+
+.settlement-filter .form-control,
+.settlement-filter select,
+.settlement-filter input {
+  box-sizing: border-box;
+
+  width: 100%;
+
+  min-height: 42px;
+}
+
+/* GRID */
+
+.settlement-filter .form-grid {
+  row-gap: 18px;
+}
+
+/* BUTTON */
+
+.settlement-filter button {
+  min-height: 42px;
+}
+
+/* =========================================
+   DATE INPUT
+========================================= */
+
+.settlement-filter input[type="date"] {
+  line-height: normal;
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 768px) {
+  .settlement-filter .form-grid {
+    row-gap: 16px;
+  }
+
+  .settlement-filter .form-group label {
+    margin-bottom: 7px;
+  }
+}
+
+/* =========================================
+   SETTLEMENT STATUS
+========================================= */
+
+.settlement-status-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 6px;
+
+  padding: 5px 10px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+
+  font-weight: 600;
+
+  line-height: 1;
+}
+
+.settlement-status-paid {
+  background: #dcfce7;
+
+  color: #166534;
+
+  border: 1px solid #bbf7d0;
+}

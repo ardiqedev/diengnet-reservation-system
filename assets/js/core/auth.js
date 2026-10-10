@@ -4,19 +4,18 @@
 
 const Auth = {};
 
-/* =====================================
+/* =========================================
    CONFIG
-===================================== */
+========================================= */
 
 Auth.config = {
   tokenKey: "token",
-
   userKey: "user",
 };
 
-/* =====================================
+/* =========================================
    INIT
-===================================== */
+========================================= */
 
 Auth.init = function () {
   const token = Storage.get(this.config.tokenKey);
@@ -32,14 +31,15 @@ Auth.init = function () {
   }
 };
 
-/* =====================================
+/* =========================================
    LOGIN
-===================================== */
+========================================= */
 
-Auth.login = async function (username, password) {
+Auth.login = async function (username, password, expectedRole = "") {
   const response = await API.post("auth.login", {
     username,
     password,
+    expectedRole,
   });
 
   if (!response.success) {
@@ -53,41 +53,82 @@ Auth.login = async function (username, password) {
   return response;
 };
 
-/* =====================================
+/* =========================================
    LOGOUT
-===================================== */
+========================================= */
 
-Auth.logout = function () {
-  this.destroy();
+Auth.logout = async function () {
+  const token = this.getToken();
+
+  try {
+    if (token) {
+      await API.post("auth.logout", { token });
+    }
+  } finally {
+    this.destroy();
+  }
 };
 
-/* =====================================
-   CHECK
-===================================== */
+/* =========================================
+   CHECK LOCAL
+========================================= */
 
 Auth.check = function () {
   return this.isLoggedIn();
 };
 
-/* =====================================
+/* =========================================
+   VALIDATE SESSION
+========================================= */
+
+Auth.validate = async function () {
+  const token = this.getToken();
+
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const response = await API.post("auth.check", { token });
+
+    if (!response.success) {
+      this.destroy();
+      return false;
+    }
+
+    if (response.data?.user) {
+      this.setUser(response.data.user);
+    }
+
+    return true;
+  } catch (error) {
+    console.error("[AUTH] SESSION VALIDATION ERROR:", error);
+
+    this.destroy();
+
+    return false;
+  }
+};
+
+/* =========================================
    IS LOGGED IN
-===================================== */
+========================================= */
 
 Auth.isLoggedIn = function () {
   return this.getToken() !== null;
 };
 
-/* =====================================
+/* =========================================
    USER
-===================================== */
+========================================= */
 
 Auth.user = function () {
   return State.get("user");
 };
 
-/* =====================================
+/* =========================================
    SET USER
-===================================== */
+========================================= */
 
 Auth.setUser = function (user) {
   Storage.set(this.config.userKey, user);
@@ -95,9 +136,9 @@ Auth.setUser = function (user) {
   State.set("user", user);
 };
 
-/* =====================================
+/* =========================================
    CLEAR USER
-===================================== */
+========================================= */
 
 Auth.clearUser = function () {
   Storage.remove(this.config.userKey);
@@ -105,17 +146,17 @@ Auth.clearUser = function () {
   State.remove("user");
 };
 
-/* =====================================
+/* =========================================
    GET TOKEN
-===================================== */
+========================================= */
 
 Auth.getToken = function () {
   return State.get("token");
 };
 
-/* =====================================
+/* =========================================
    SET TOKEN
-===================================== */
+========================================= */
 
 Auth.setToken = function (token) {
   Storage.set(this.config.tokenKey, token);
@@ -123,9 +164,9 @@ Auth.setToken = function (token) {
   State.set("token", token);
 };
 
-/* =====================================
+/* =========================================
    CLEAR TOKEN
-===================================== */
+========================================= */
 
 Auth.clearToken = function () {
   Storage.remove(this.config.tokenKey);
@@ -133,9 +174,9 @@ Auth.clearToken = function () {
   State.remove("token");
 };
 
-/* =====================================
+/* =========================================
    DESTROY
-===================================== */
+========================================= */
 
 Auth.destroy = function () {
   this.clearToken();
