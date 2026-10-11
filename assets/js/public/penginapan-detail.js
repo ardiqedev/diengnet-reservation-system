@@ -3067,6 +3067,27 @@ const PublicPenginapanDetail = (() => {
     return await state.pricingRequest;
   }
 
+  function setReviewBookingLoading(loading) {
+    const button = document.getElementById("wizardNextButton");
+
+    if (!button) return;
+
+    const label = button.querySelector(".wizard-button-label");
+    const spinner = button.querySelector(".wizard-button-spinner");
+
+    button.disabled = loading;
+    button.classList.toggle("is-loading", loading);
+    button.setAttribute("aria-busy", String(loading));
+
+    if (label) {
+      label.textContent = loading ? "Memproses..." : "Review booking";
+    }
+
+    if (spinner) {
+      spinner.hidden = !loading;
+    }
+  }
+
   /* ==========================================================
      FULL PRICING
   ========================================================== */
@@ -3320,13 +3341,16 @@ const PublicPenginapanDetail = (() => {
           Back
         </button>
 
+        
         <button
           type="button"
           class="btn btn-dark"
           id="wizardNextButton"
         >
-          Review booking
+          <span class="wizard-button-label">Review booking</span>
+          <span class="wizard-button-spinner" hidden></span>
         </button>
+
 
       `;
     } else if (state.step === 4) {
@@ -3366,11 +3390,19 @@ const PublicPenginapanDetail = (() => {
   ========================================================== */
 
   function bindWizardFooterEvents() {
+    /* ==========================================================
+     CANCEL BOOKING
+  ========================================================== */
+
     document
       .getElementById("wizardCancelButton")
       ?.addEventListener("click", () => {
         window.location.href = "./penginapan.html";
       });
+
+    /* ==========================================================
+     PREVIOUS STEP
+  ========================================================== */
 
     document
       .getElementById("wizardPreviousButton")
@@ -3378,15 +3410,62 @@ const PublicPenginapanDetail = (() => {
         previousStep();
       });
 
+    /* ==========================================================
+     NEXT STEP / REVIEW BOOKING
+  ========================================================== */
+
     document
       .getElementById("wizardNextButton")
-      ?.addEventListener("click", () => {
-        nextStep();
+      ?.addEventListener("click", async () => {
+        const button = document.getElementById("wizardNextButton");
+
+        if (!button || button.disabled || state.submitting) {
+          return;
+        }
+
+        /* Step 3: Review booking */
+
+        if (state.step === 3) {
+          // Cegah klik berulang
+          button.disabled = true;
+          button.setAttribute("aria-busy", "true");
+
+          try {
+            await nextStep();
+          } catch (error) {
+            console.error(
+              "[PublicPenginapanDetail] Review booking error:",
+              error,
+            );
+
+            showWizardError(error?.message || "Gagal memproses reservasi.");
+          } finally {
+            // Pulihkan tombol jika masih ada di DOM
+            // dan proses reservasi sudah selesai
+            if (button.isConnected && !state.submitting) {
+              button.disabled = false;
+              button.removeAttribute("aria-busy");
+            }
+          }
+
+          return;
+        }
+
+        // Step lainnya tetap menggunakan alur normal
+        await nextStep();
       });
+
+    /* ==========================================================
+     SUBMIT BOOKING
+  ========================================================== */
 
     document
       .getElementById("wizardSubmitButton")
       ?.addEventListener("click", () => {
+        if (state.submitting) {
+          return;
+        }
+
         submitBooking();
       });
   }
@@ -3932,19 +4011,16 @@ const PublicPenginapanDetail = (() => {
     clearWizardError();
 
     /*
-     * Pastikan semua data
-     * masih lengkap.
+     * VALIDASI DATA
      */
 
     if (!state.penginapan?.id) {
       showWizardError("Data penginapan tidak valid.");
-
       return;
     }
 
     if (!state.selectedUnit?.id) {
       showWizardError("Unit belum dipilih.");
-
       return;
     }
 
@@ -3958,57 +4034,45 @@ const PublicPenginapanDetail = (() => {
 
     if (!state.booking.namaTamu || !state.booking.noHp) {
       state.step = 3;
-
       renderWizard();
-
       showWizardError("Data tamu belum lengkap.");
-
       return;
     }
 
+    /*
+     * KUNCI PROSES BOOKING
+     */
+
     state.submitting = true;
 
-    renderWizard();
+    const button = document.getElementById("wizardNextButton");
+
+    if (button) {
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      button.textContent = "Memproses...";
+    }
 
     try {
       /*
-       * IMPORTANT:
-       *
-       * Jangan mengirim harga final
-       * dari frontend sebagai sumber
-       * kebenaran.
-       *
-       * Backend ReservationService.create()
-       * akan menghitung ulang pricing.
+       * Backend tetap menjadi sumber
+       * kebenaran harga final.
        */
 
       const payload = {
         penginapanId: state.penginapan.id,
-
         penginapanNama: state.penginapan.nama || "",
-
         unitId: state.selectedUnit.id,
-
         nomorKamar: state.selectedUnit.nama || "",
-
         tipeKamar: state.selectedUnit.tipe || "",
-
         namaTamu: state.booking.namaTamu,
-
         noHp: state.booking.noHp,
-
         email: state.booking.email,
-
         catatan: state.booking.catatan,
-
         checkIn: state.booking.checkIn,
-
         checkOut: state.booking.checkOut,
-
         dewasa: state.booking.dewasa,
-
         anak: state.booking.anak,
-
         channel: CHANNEL,
       };
 
@@ -4024,24 +4088,25 @@ const PublicPenginapanDetail = (() => {
 
       state.result = result.data || null;
 
+      /*
+       * RESERVASI BERHASIL
+       */
+
       state.submitting = false;
 
       Confirm.open({
         title: "Booking Berhasil",
 
         message: `
-    Booking berhasil dibuat.<br><br>
-
-    Nomor Reservasi:<br>
-    <strong>
-      ${escapeHtml(state.result?.kode || state.result?.id || "-")}
-    </strong>
-  `,
+        Booking berhasil dibuat.<br><br>
+        Nomor Reservasi:<br>
+        <strong>
+          ${escapeHtml(state.result?.kode || state.result?.id || "-")}
+        </strong>
+      `,
 
         type: "success",
-
         confirmText: "OK",
-
         cancelText: "Tutup",
 
         onConfirm: () => {

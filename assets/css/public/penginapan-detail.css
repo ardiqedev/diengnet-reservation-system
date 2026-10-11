@@ -5181,3 +5181,263 @@ textarea:focus-visible {
     animation: none;
   }
 }
+
+/* ==========================================================
+   REVIEW BOOKING BUTTON LOADING
+========================================================== */
+
+#wizardNextButton.is-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  pointer-events: none;
+  cursor: wait;
+  opacity: 0.85;
+}
+
+#wizardNextButton .wizard-button-spinner {
+  display: none;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: wizardButtonSpin 0.7s linear infinite;
+}
+
+#wizardNextButton.is-loading .wizard-button-spinner {
+  display: inline-block !important;
+}
+
+#wizardNextButton .wizard-button-spinner[hidden] {
+  display: none !important;
+}
+
+#wizardNextButton.is-loading .wizard-button-label {
+  display: inline;
+}
+
+@keyframes wizardButtonSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   TYPOGRAPHY UPGRADE — PENGINAPAN DETAIL
+   Lebih nyaman dibaca, tetap clean & premium
+========================================================= */
+
+/* Judul dan deskripsi wizard */
+.public-wizard-panel-heading h3 {
+  font-size: clamp(30px, 3vw, 38px);
+  line-height: 1.15;
+}
+
+.public-wizard-panel-heading p {
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* Stepper */
+.public-wizard-step {
+  font-size: 12px;
+}
+
+.public-wizard-step-number {
+  font-size: 11px;
+}
+
+/* Nama unit */
+.public-unit-showcase-heading h3 {
+  font-size: 23px;
+  line-height: 1.2;
+}
+
+/* Deskripsi unit */
+.public-unit-description {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+/* Kapasitas dan informasi unit */
+.public-unit-meta {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+/* Fasilitas */
+.public-unit-facilities span {
+  font-size: 11px;
+  padding: 6px 9px;
+}
+
+/* Label kecil, kode unit, dan status */
+.public-unit-number {
+  font-size: 10px;
+}
+
+.public-unit-showcase-status {
+  font-size: 11px;
+}
+
+/* Harga */
+.public-unit-starting-price span {
+  font-size: 12px;
+}
+
+.public-unit-starting-price strong {
+  font-size: 18px;
+}
+
+.public-unit-starting-price small {
+  font-size: 11px;
+}
+
+/* Tombol pilih unit */
+.public-unit-showcase-select {
+  font-size: 13px;
+}
+
+/* Ringkasan booking */
+.public-booking-summary span {
+  font-size: 11px;
+}
+
+.public-booking-summary strong {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Label dan input form tamu */
+.public-guest-form .booking-field label {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.public-guest-form .booking-field input,
+.public-guest-form .booking-field select,
+.public-guest-form .booking-field textarea {
+  font-size: 15px;
+}
+
+/* Detail konfirmasi */
+.public-confirm-label {
+  font-size: 11px;
+}
+
+.public-confirm-property strong,
+.public-confirm-room strong {
+  font-size: 17px;
+}
+
+.public-confirm-secondary {
+  font-size: 12px;
+}
+
+.public-confirm-detail strong {
+  font-size: 14px;
+}
+
+.public-confirm-guest-info strong {
+  font-size: 14px;
+}
+
+.public-confirm-guest-info span {
+  font-size: 12px;
+}
+
+/* Rincian harga */
+.public-confirm-panel .public-night-row span,
+.public-confirm-panel .public-night-row strong,
+.public-confirm-panel .public-price-line span,
+.public-confirm-panel .public-price-line strong {
+  font-size: 13px;
+}
+
+.public-confirm-panel .public-full-pricing-header span {
+  font-size: 11px;
+}
+
+.public-confirm-panel .public-full-pricing-header strong {
+  font-size: 13px;
+}
+
+.public-confirm-panel .public-price-total span {
+  font-size: 12px;
+}
+
+.public-confirm-panel .public-price-total strong {
+  font-size: 19px;
+}
+
+/* Catatan temporary hold */
+.public-confirm-notice strong {
+  font-size: 13px;
+}
+
+.public-confirm-notice span {
+  font-size: 12px;
+}
+
+/* Tombol wizard */
+.public-wizard-footer .btn {
+  font-size: 13px;
+}
+
+/* Penyesuaian mobile */
+@media (max-width: 640px) {
+  .public-wizard-panel-heading h3 {
+    font-size: 29px;
+  }
+
+  .public-wizard-panel-heading p {
+    font-size: 14px;
+  }
+
+  .public-wizard-step {
+    font-size: 11px;
+  }
+
+  .public-unit-showcase-heading h3 {
+    font-size: 22px;
+  }
+
+  .public-unit-description {
+    font-size: 14px;
+  }
+
+  .public-unit-meta {
+    font-size: 12px;
+  }
+
+  .public-unit-facilities span {
+    font-size: 11px;
+  }
+
+  .public-unit-starting-price strong {
+    font-size: 17px;
+  }
+
+  .public-booking-summary strong {
+    font-size: 14px;
+  }
+
+  .public-confirm-panel .public-night-row span,
+  .public-confirm-panel .public-night-row strong,
+  .public-confirm-panel .public-price-line span,
+  .public-confirm-panel .public-price-line strong {
+    font-size: 13px;
+  }
+
+  .public-wizard-footer .btn {
+    font-size: 13px;
+  }
+}
