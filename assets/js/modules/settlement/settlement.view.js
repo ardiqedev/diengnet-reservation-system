@@ -15,6 +15,32 @@ const SettlementView = (() => {
     }).format(Number(value || 0));
   }
 
+  function renderCommissionSummary(settlement = {}) {
+    const gross = Number(settlement.totalAmount || 0);
+    const rate = Number(settlement.commissionRate || 0);
+    const commission = Number(settlement.commissionAmount || 0);
+    const net = Number(settlement.netAmount ?? gross - commission);
+
+    return `
+    <div class="settlement-payout-summary">
+      <div class="settlement-payout-row">
+        <span>Total Bruto</span>
+        <strong>${formatCurrency(gross)}</strong>
+      </div>
+
+      <div class="settlement-payout-row">
+        <span>Komisi Platform (${rate}%)</span>
+        <strong>− ${formatCurrency(commission)}</strong>
+      </div>
+
+      <div class="settlement-payout-row settlement-payout-net">
+        <span>Total Bersih Owner</span>
+        <strong>${formatCurrency(net)}</strong>
+      </div>
+    </div>
+  `;
+  }
+
   /* =====================================
      FORMAT DATE
   ===================================== */
@@ -670,15 +696,7 @@ const SettlementView = (() => {
         </div>
 
 
-        <div class="settlement-existing-row">
-
-          <span>Total Pencairan</span>
-
-          <strong>
-            ${formatCurrency(settlement.totalAmount || 0)}
-          </strong>
-
-        </div>
+        ${renderCommissionSummary(settlement)}
 
       </div>
 
@@ -973,15 +991,7 @@ const SettlementView = (() => {
           </div>
 
 
-          <div>
-            <span class="card-label">
-              Total Pencairan
-            </span>
-
-            <strong>
-              ${formatCurrency(settlement.totalAmount || 0)}
-            </strong>
-          </div>
+          ${renderCommissionSummary(settlement)}
 
 
           <div>

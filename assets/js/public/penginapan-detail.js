@@ -48,6 +48,13 @@ const PublicPenginapanDetail = (() => {
   ========================================================== */
   const CHANNEL = "WEBSITE";
   const TOTAL_STEPS = 4;
+
+  const DEBUG = false;
+
+  const debugLog = (...args) => {
+    if (DEBUG) console.log(...args);
+  };
+
   /* ==========================================================
      STATE
   ========================================================== */
@@ -143,7 +150,7 @@ const PublicPenginapanDetail = (() => {
   ========================================================== */
 
   async function init() {
-    console.log("[PublicPenginapanDetail] Init");
+    debugLog("[PublicPenginapanDetail] Init");
 
     cacheDom();
 
@@ -155,9 +162,9 @@ const PublicPenginapanDetail = (() => {
 
     state.slug = String(params.get("slug") || "").trim();
 
-    console.log("[PublicPenginapanDetail] Property ID:", propertyId);
+    debugLog("[PublicPenginapanDetail] Property ID:", propertyId);
 
-    console.log("[PublicPenginapanDetail] Slug:", state.slug);
+    debugLog("[PublicPenginapanDetail] Slug:", state.slug);
 
     if (!propertyId && !state.slug) {
       showError("Penginapan tidak ditemukan.");
@@ -266,7 +273,7 @@ const PublicPenginapanDetail = (() => {
 
         const photos = getUnitPhotos(unit);
 
-        console.log("[PublicPenginapanDetail] FOTO LIST UNIT:", {
+        debugLog("[PublicPenginapanDetail] FOTO LIST UNIT:", {
           unitId,
           nama: unit.nama,
           fotoList: unit.fotoList,
@@ -412,11 +419,11 @@ const PublicPenginapanDetail = (() => {
 
       const detailPayload = id ? { id } : { slug };
 
-      console.log("[PublicPenginapanDetail] Detail payload:", detailPayload);
+      debugLog("[PublicPenginapanDetail] Detail payload:", detailPayload);
 
       const result = await API.post("penginapan.detail", detailPayload);
 
-      console.log("[PublicPenginapanDetail] Property:", result);
+      debugLog("[PublicPenginapanDetail] Property:", result);
 
       const penginapan = result?.data || null;
 
@@ -432,12 +439,17 @@ const PublicPenginapanDetail = (() => {
        * Ketiga proses ini tidak perlu menunggu
        * satu sama lain.
        */
+
+      /*
+       * Load data tambahan secara paralel.
+       *
+       * Availability tidak dimuat otomatis.
+       * Detail penginapan ditampilkan terlebih dahulu
+       * tanpa menunggu reservation.availability.
+       */
       const [startingPrice] = await Promise.all([
         loadStartingPrice(),
-
         loadUnitShowcase(),
-
-        loadInitialAvailability(),
       ]);
 
       state.startingPrice = startingPrice;
@@ -580,7 +592,7 @@ const PublicPenginapanDetail = (() => {
     }
 
     try {
-      console.log(
+      debugLog(
         "[PublicPenginapanDetail] Load unit showcase:",
         state.penginapan.id,
       );
@@ -593,7 +605,7 @@ const PublicPenginapanDetail = (() => {
         penginapanId: state.penginapan.id,
       });
 
-      console.log("[PublicPenginapanDetail] Unit showcase result:", unitResult);
+      debugLog("[PublicPenginapanDetail] Unit showcase result:", unitResult);
 
       const unitData = unitResult?.data || [];
 
@@ -615,7 +627,7 @@ const PublicPenginapanDetail = (() => {
         limit: 100,
       });
 
-      console.log(
+      debugLog(
         "[PublicPenginapanDetail] Unit reservations:",
         reservationResult,
       );
@@ -630,9 +642,9 @@ const PublicPenginapanDetail = (() => {
         state.reservations = [];
       }
 
-      console.log("[PublicPenginapanDetail] All units:", state.allUnits);
+      debugLog("[PublicPenginapanDetail] All units:", state.allUnits);
 
-      console.log("[PublicPenginapanDetail] Reservations:", state.reservations);
+      debugLog("[PublicPenginapanDetail] Reservations:", state.reservations);
     } catch (error) {
       console.error("[PublicPenginapanDetail] Unit showcase error:", error);
 
@@ -962,7 +974,7 @@ const PublicPenginapanDetail = (() => {
 
     const image = photos[0]?.url || "";
 
-    console.log("[PublicPenginapanDetail] Unit photos:", {
+    debugLog("[PublicPenginapanDetail] Unit photos:", {
       unitId: id,
       nama,
       total: photos.length,
@@ -2572,7 +2584,7 @@ const PublicPenginapanDetail = (() => {
               maxlength="30"
               autocomplete="tel"
               value="${escapeAttribute(state.booking.noHp)}"
-              placeholder="085189378311"
+              placeholder="085111711199"
             />
 
           </div>
@@ -2907,7 +2919,7 @@ const PublicPenginapanDetail = (() => {
         base64,
       };
 
-      console.log("[PublicPenginapanDetail] Payment proof upload:", {
+      debugLog("[PublicPenginapanDetail] Payment proof upload:", {
         reservationId: payload.reservationId,
 
         fileName: payload.fileName,
@@ -2919,7 +2931,7 @@ const PublicPenginapanDetail = (() => {
 
       const result = await API.post("payment.proof.upload", payload);
 
-      console.log("[PublicPenginapanDetail] Payment proof result:", result);
+      debugLog("[PublicPenginapanDetail] Payment proof result:", result);
 
       if (!result || result.success === false) {
         throw new Error(
@@ -3020,7 +3032,7 @@ const PublicPenginapanDetail = (() => {
       anak: state.booking.anak,
     };
 
-    console.log("[PublicPenginapanDetail] Pricing:", payload);
+    debugLog("[PublicPenginapanDetail] Pricing:", payload);
 
     /* ======================================================
      REQUEST
@@ -3034,7 +3046,7 @@ const PublicPenginapanDetail = (() => {
       try {
         const result = await API.post("booking.price", payload);
 
-        console.log("[PublicPenginapanDetail] Pricing result:", result);
+        debugLog("[PublicPenginapanDetail] Pricing result:", result);
 
         if (!result || result.success === false) {
           throw new Error(result?.message || "Gagal menghitung harga.");
@@ -3585,14 +3597,11 @@ const PublicPenginapanDetail = (() => {
         anak: state.booking.anak,
       };
 
-      console.log("[PublicPenginapanDetail] Checking selected unit:", payload);
+      debugLog("[PublicPenginapanDetail] Checking selected unit:", payload);
 
       const result = await API.post("reservation.availability", payload);
 
-      console.log(
-        "[PublicPenginapanDetail] Selected unit availability:",
-        result,
-      );
+      debugLog("[PublicPenginapanDetail] Selected unit availability:", result);
 
       if (!result || result.success === false) {
         throw new Error(result?.message || "Gagal mengecek ketersediaan unit.");
@@ -3778,14 +3787,11 @@ const PublicPenginapanDetail = (() => {
         anak: state.booking.anak,
       };
 
-      console.log("[PublicPenginapanDetail] Initial availability:", payload);
+      debugLog("[PublicPenginapanDetail] Initial availability:", payload);
 
       const result = await API.post("reservation.availability", payload);
 
-      console.log(
-        "[PublicPenginapanDetail] Initial availability result:",
-        result,
-      );
+      debugLog("[PublicPenginapanDetail] Initial availability result:", result);
 
       if (!result || result.success === false) {
         throw new Error(result?.message || "Gagal memuat ketersediaan unit.");
@@ -3865,11 +3871,11 @@ const PublicPenginapanDetail = (() => {
         anak: state.booking.anak,
       };
 
-      console.log("[PublicPenginapanDetail] Availability:", payload);
+      debugLog("[PublicPenginapanDetail] Availability:", payload);
 
       const result = await API.post("reservation.availability", payload);
 
-      console.log("[PublicPenginapanDetail] Availability result:", result);
+      debugLog("[PublicPenginapanDetail] Availability result:", result);
 
       if (!result || result.success === false) {
         throw new Error(result?.message || "Gagal mencari unit tersedia.");
@@ -4076,11 +4082,11 @@ const PublicPenginapanDetail = (() => {
         channel: CHANNEL,
       };
 
-      console.log("[PublicPenginapanDetail] reservation.store:", payload);
+      debugLog("[PublicPenginapanDetail] reservation.store:", payload);
 
       const result = await API.post("reservation.store", payload);
 
-      console.log("[PublicPenginapanDetail] reservation.store result:", result);
+      debugLog("[PublicPenginapanDetail] reservation.store result:", result);
 
       if (!result || result.success === false) {
         throw new Error(result?.message || "Reservasi gagal dibuat.");
@@ -4194,9 +4200,9 @@ const PublicPenginapanDetail = (() => {
       "",
       "Silakan lakukan pembayaran terlebih dahulu melalui rekening berikut:",
       "",
-      "BCA",
-      "1234567890",
-      "a.n. Dieng Net",
+      "BNI",
+      "2222344377",
+      "a.n. RESERVASI DIENGNET",
       "",
       "Setelah melakukan pembayaran, silakan konfirmasi dan upload bukti pembayaran melalui halaman berikut.",
       "",
@@ -4785,7 +4791,7 @@ const PublicPenginapanDetail = (() => {
         base64,
       };
 
-      console.log("[PublicPayment] Upload proof:", {
+      debugLog("[PublicPayment] Upload proof:", {
         reservationId,
         fileName: proofFile.name,
         mimeType: proofFile.type,
@@ -4797,7 +4803,7 @@ const PublicPenginapanDetail = (() => {
         uploadPayload,
       );
 
-      console.log("[PublicPayment] Upload result:", uploadResult);
+      debugLog("[PublicPayment] Upload result:", uploadResult);
 
       if (!uploadResult || uploadResult.success === false) {
         throw new Error(
@@ -4849,11 +4855,11 @@ const PublicPenginapanDetail = (() => {
         proofSize: proof.size || proofFile.size,
       };
 
-      console.log("[PublicPayment] payment.store:", paymentPayload);
+      debugLog("[PublicPayment] payment.store:", paymentPayload);
 
       const paymentResult = await API.post("payment.store", paymentPayload);
 
-      console.log("[PublicPayment] payment.store result:", paymentResult);
+      debugLog("[PublicPayment] payment.store result:", paymentResult);
 
       if (!paymentResult || paymentResult.success === false) {
         throw new Error(
@@ -5405,7 +5411,7 @@ const PublicPenginapanDetail = (() => {
   function getUnitPhotos(unit = {}) {
     let photos = [];
 
-    console.log("[PublicPenginapanDetail] getUnitPhotos INPUT:", {
+    debugLog("[PublicPenginapanDetail] getUnitPhotos INPUT:", {
       id: unit.id,
       nama: unit.nama,
       fotoId: unit.fotoId,

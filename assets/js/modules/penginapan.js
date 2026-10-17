@@ -180,8 +180,8 @@ const Penginapan = {
     });
 
     /* =====================================
-       COVER
-    ===================================== */
+   COVER
+===================================== */
 
     Upload.init({
       id: "coverPenginapan",
@@ -194,9 +194,9 @@ const Penginapan = {
 
       maxWidth: 1600,
 
-      quality: 0.9,
+      quality: 0.8,
 
-      format: "jpeg",
+      format: "webp",
     });
 
     /* =====================================

@@ -45,17 +45,38 @@
     <i data-lucide="moon"></i>
   </button>
 
-  <!-- User -->
+  <!-- User Profile Dropdown -->
 
-  <button class="profile-button">
-    <div class="profile-avatar">AD</div>
+  <div class="profile-dropdown" id="profileDropdown">
+    <button
+      type="button"
+      class="profile-button"
+      id="btnProfileDropdown"
+      aria-expanded="false"
+      aria-haspopup="true"
+    >
+      <div class="profile-avatar" id="profileAvatar">AD</div>
 
-    <div class="profile-detail">
-      <strong> Administrator </strong>
+      <div class="profile-detail">
+        <strong id="profileName">Administrator</strong>
+        <small id="profileRole">Super Admin</small>
+      </div>
 
-      <small> Super Admin </small>
+      <i data-lucide="chevron-down"></i>
+    </button>
+
+    <div class="profile-menu" id="profileMenu" hidden>
+      <div class="profile-menu-header">
+        <strong id="profileMenuName">Administrator</strong>
+        <small id="profileMenuRole">Super Admin</small>
+      </div>
+
+      <div class="profile-menu-divider"></div>
+
+      <button type="button" class="profile-menu-item" id="btnLogout">
+        <i data-lucide="log-out"></i>
+        <span>Logout</span>
+      </button>
     </div>
-
-    <i data-lucide="chevron-down"></i>
-  </button>
+  </div>
 </div>

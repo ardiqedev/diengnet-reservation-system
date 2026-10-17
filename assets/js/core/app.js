@@ -48,6 +48,10 @@ async function initApp() {
 
     await Router.loadComponent("components/navbar.html", "navbar");
 
+    // Inisialisasi dropdown profil dan logout
+    initProfileDropdown();
+    renderProfileInfo();
+
     await Modal.init();
 
     Sidebar.init();

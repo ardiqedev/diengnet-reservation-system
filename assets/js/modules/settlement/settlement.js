@@ -283,13 +283,15 @@ const Settlement = (() => {
 
       Toast.error(error.message || "Gagal memuat settlement.");
     } finally {
-      /*
-       * Hanya request terbaru yang
-       * boleh menutup loading.
-       */
+      console.log("[SETTLEMENT] FINALLY:", {
+        requestId,
+        loadRequestId,
+        isLatestRequest: requestId === loadRequestId,
+      });
 
       if (requestId === loadRequestId) {
         Loading.hide();
+        console.log("[SETTLEMENT] LOADING HIDE CALLED");
       }
     }
   }
@@ -651,7 +653,7 @@ const Settlement = (() => {
 
     Modal.open({
       title: "Konfirmasi Pembayaran Owner",
-      content,
+      body: content,
       footer,
       size: "sm",
     });
