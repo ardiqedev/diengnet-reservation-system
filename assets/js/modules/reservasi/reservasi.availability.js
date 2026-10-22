@@ -395,19 +395,131 @@ const ReservasiAvailability = {
      APPLY PRICING
   ===================================== */
 
-  async applyPricing(units, filter) {
-    /*
-     * Harga Musim BELUM disentuh.
-     *
-     * Untuk sekarang hanya
-     * mempertahankan struktur unit.
-     */
+  /* =========================================
+     APPLY PRICING BERDASARKAN UNIT
+  ========================================= */
 
-    return units.map((unit) => ({
-      ...unit,
+  /* =========================================
+   APPLY PRICING BERDASARKAN UNIT
+========================================= */
 
-      roomPrice: Number(unit.roomPrice) || 0,
-    }));
+  async applyPricing(units, filter = {}) {
+    if (!Array.isArray(units) || units.length === 0) {
+      return [];
+    }
+
+    const penginapanId = String(filter.penginapanId || "").trim();
+
+    if (!penginapanId) {
+      return units.map((unit) => ({
+        ...unit,
+        roomPrice: 0,
+        hasPricing: false,
+      }));
+    }
+
+    try {
+      const result = await API.post("harga.list", {
+        page: 1,
+        limit: 100,
+        keyword: "",
+        status: "ACTIVE",
+        penginapanId,
+      });
+
+      if (!result?.success) {
+        throw new Error(result?.message || "Gagal mengambil data harga unit.");
+      }
+
+      const hargaRows = Array.isArray(result.data)
+        ? result.data
+        : Array.isArray(result.data?.rows)
+          ? result.data.rows
+          : [];
+
+      console.log("[AVAIL] PRICING FILTER:", {
+        penginapanId,
+        checkIn: filter.checkIn,
+        checkOut: filter.checkOut,
+      });
+
+      /* =====================================
+       INDEX HARGA AKTIF BERDASARKAN UNIT
+    ===================================== */
+
+      const pricesByUnit = new Map();
+
+      hargaRows.forEach((harga) => {
+        const rowPenginapanId = String(harga.penginapanId || "").trim();
+
+        const unitId = String(harga.unitId || "").trim();
+
+        const status = String(harga.status || "")
+          .trim()
+          .toUpperCase();
+
+        // Harga wajib cocok dengan penginapan dan unit.
+        if (
+          rowPenginapanId !== penginapanId ||
+          !unitId ||
+          !["ACTIVE", "AKTIF"].includes(status)
+        ) {
+          return;
+        }
+
+        if (!pricesByUnit.has(unitId)) {
+          pricesByUnit.set(unitId, []);
+        }
+
+        pricesByUnit.get(unitId).push(harga);
+      });
+
+      /* =====================================
+       PASANG HARGA KE UNIT MASING-MASING
+    ===================================== */
+
+      const pricedUnits = units.map((unit) => {
+        const unitId = String(unit.id || "").trim();
+
+        const unitPrices = pricesByUnit.get(unitId) || [];
+
+        const prices = unitPrices
+          .flatMap((harga) => [
+            Number(harga.hargaWeekday),
+            Number(harga.hargaWeekend),
+            Number(harga.hargaLongWeekend),
+          ])
+          .filter((price) => Number.isFinite(price) && price > 0);
+
+        const roomPrice = prices.length ? Math.min(...prices) : 0;
+
+        return {
+          ...unit,
+          roomPrice,
+          hasPricing: prices.length > 0,
+        };
+      });
+
+      console.log(
+        "[AVAIL] UNIT PRICING RESULT:",
+        pricedUnits.map((unit) => ({
+          unitId: unit.id,
+          nama: unit.nama,
+          roomPrice: unit.roomPrice,
+          hasPricing: unit.hasPricing,
+        })),
+      );
+
+      return pricedUnits;
+    } catch (error) {
+      console.error("[AVAIL] PRICING ERROR:", error);
+
+      return units.map((unit) => ({
+        ...unit,
+        roomPrice: 0,
+        hasPricing: false,
+      }));
+    }
   },
 
   /* =====================================

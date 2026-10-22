@@ -2,6 +2,10 @@
    HARGA MUSIM SERVICE
 ========================================= */
 
+/* =========================================
+   HARGA MUSIM SERVICE
+========================================= */
+
 const HargaMusimService = {
   /* =====================================
      GET ALL
@@ -19,11 +23,10 @@ const HargaMusimService = {
 
       penginapanId: payload.penginapanId || "",
 
-      tipeKamarId: payload.tipeKamarId || "",
+      // Harga sekarang ditentukan per unit.
+      unitId: payload.unitId || "",
 
       musimId: payload.musimId || "",
-
-      channelId: payload.channelId || "",
     });
   },
 

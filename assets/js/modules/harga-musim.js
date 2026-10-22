@@ -338,23 +338,61 @@ const HargaMusim = {
   async openForm(data = null) {
     Modal.open({
       title: data ? "Edit Harga Musim" : "Tambah Harga Musim",
-
       size: "xl",
-
       body: this.renderForm(),
-
       footer: this.renderFooter(data),
     });
 
-    /* ===============================
-       LOAD MASTER
-    =============================== */
+    // ===============================
+    // LOAD MASTER
+    // ===============================
 
     await Promise.all([this.loadPenginapan(), this.loadMusim()]);
 
-    /* ===============================
-       EDIT MODE
-    =============================== */
+    const penginapanSelect = document.querySelector("#penginapanId");
+    const unitSelect = document.querySelector("#unitId");
+
+    if (!penginapanSelect || !unitSelect) {
+      console.error("Dropdown Penginapan atau Unit tidak ditemukan.");
+      return;
+    }
+
+    // ===============================
+    // RESET UNIT DROPDOWN
+    // ===============================
+
+    unitSelect.innerHTML = `
+    <option value="">
+      Pilih penginapan terlebih dahulu
+    </option>
+  `;
+
+    unitSelect.disabled = true;
+
+    // ===============================
+    // EVENT PENGINAPAN
+    // ===============================
+
+    penginapanSelect.onchange = async () => {
+      const penginapanId = penginapanSelect.value;
+
+      // Hapus pilihan unit sebelumnya.
+      unitSelect.innerHTML = `
+      <option value="">
+        ${penginapanId ? "Memuat unit..." : "Pilih penginapan terlebih dahulu"}
+      </option>
+    `;
+
+      unitSelect.disabled = true;
+
+      if (!penginapanId) return;
+
+      await this.loadUnit(penginapanId);
+    };
+
+    // ===============================
+    // EDIT MODE
+    // ===============================
 
     if (data) {
       this.editingId = data.id;
@@ -362,24 +400,20 @@ const HargaMusim = {
       Form.setData(
         {
           penginapanId: data.penginapanId,
-
           musimId: data.musimId,
-
           hargaWeekday: data.hargaWeekday,
-
           hargaWeekend: data.hargaWeekend,
-
           hargaLongWeekend: data.hargaLongWeekend,
-
           minimalMalam: data.minimalMalam,
-
           status: data.status,
-
           catatan: data.catatan,
         },
-
         "#formHargaMusim",
       );
+
+      // Muat unit milik penginapan lama,
+      // lalu pulihkan unit yang tersimpan.
+      await this.loadUnit(data.penginapanId, data.unitId);
     } else {
       this.editingId = null;
     }
@@ -408,58 +442,80 @@ const HargaMusim = {
           </div>
 
 
-          <div class="form-grid">
+          
+        <div class="form-grid">
 
+          <!-- PENGINAPAN -->
+          <div class="form-row">
 
-            <div class="form-row">
+            <label class="form-label">
+              Penginapan
+              <span>*</span>
+            </label>
 
-              <label class="form-label">
+            <select
+              id="penginapanId"
+              name="penginapanId"
+              class="form-control"
+              required>
 
-                Penginapan
+              <option value="">
+                Pilih Penginapan
+              </option>
 
-                <span>*</span>
-
-              </label>
-
-
-              <select
-                id="penginapanId"
-                class="form-control">
-
-                <option value="">
-                  Pilih Penginapan
-                </option>
-
-              </select>
-
-            </div>
-
-
-            <div class="form-row">
-
-              <label class="form-label">
-
-                Musim
-
-                <span>*</span>
-
-              </label>
-
-
-              <select
-                id="musimId"
-                class="form-control">
-
-                <option value="">
-                  Pilih Musim
-                </option>
-
-              </select>
-
-            </div>
-
+            </select>
 
           </div>
+
+
+          <!-- UNIT -->
+          <div class="form-row">
+
+            <label class="form-label">
+              Unit
+              <span>*</span>
+            </label>
+
+            <select
+              id="unitId"
+              name="unitId"
+              class="form-control"
+              required
+              disabled>
+
+              <option value="">
+                Pilih penginapan terlebih dahulu
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- MUSIM -->
+          <div class="form-row">
+
+            <label class="form-label">
+              Musim
+              <span>*</span>
+            </label>
+
+            <select
+              id="musimId"
+              name="musimId"
+              class="form-control"
+              required>
+
+              <option value="">
+                Pilih Musim
+              </option>
+
+            </select>
+
+          </div>
+
+        </div>
+
 
         </div>
 
@@ -684,6 +740,89 @@ const HargaMusim = {
   },
 
   /* =====================================
+   LOAD UNIT BERDASARKAN PENGINAPAN
+===================================== */
+
+  async loadUnit(penginapanId, selectedUnitId = "") {
+    const unitSelect = document.querySelector("#unitId");
+
+    if (!unitSelect) {
+      console.error("Dropdown #unitId tidak ditemukan.");
+      return;
+    }
+
+    // Reset dropdown
+    unitSelect.disabled = true;
+    unitSelect.innerHTML = `
+    <option value="">Memuat unit...</option>
+  `;
+
+    if (!penginapanId) {
+      unitSelect.innerHTML = `
+      <option value="">Pilih penginapan terlebih dahulu</option>
+    `;
+      return;
+    }
+
+    try {
+      const result = await UnitService.getActiveByPenginapanId(penginapanId);
+
+      if (!result || result.success !== true) {
+        throw new Error(result?.message || "Gagal mengambil data unit.");
+      }
+
+      // Respons API: result.data berupa array.
+      const rows = Array.isArray(result.data)
+        ? result.data
+        : Array.isArray(result.data?.rows)
+          ? result.data.rows
+          : [];
+
+      // Abaikan respons jika penginapan sudah berubah.
+      const currentPenginapan = document.querySelector("#penginapanId")?.value;
+
+      if (currentPenginapan !== penginapanId) {
+        return;
+      }
+
+      if (rows.length === 0) {
+        unitSelect.innerHTML = `
+        <option value="">Belum ada unit aktif</option>
+      `;
+        return;
+      }
+
+      unitSelect.innerHTML = `
+      <option value="">Pilih Unit</option>
+      ${rows
+        .map(
+          (unit) => `
+            <option value="${unit.id}">
+              ${unit.nama}
+            </option>
+          `,
+        )
+        .join("")}
+    `;
+
+      // Pulihkan pilihan unit saat mode edit.
+      if (selectedUnitId) {
+        unitSelect.value = selectedUnitId;
+      }
+
+      unitSelect.disabled = false;
+    } catch (error) {
+      console.error("Gagal memuat unit:", error);
+
+      unitSelect.innerHTML = `
+      <option value="">Gagal memuat unit</option>
+    `;
+
+      Toast.error(error.message || "Gagal memuat unit penginapan.");
+    }
+  },
+
+  /* =====================================
      LOAD MUSIM
   ===================================== */
 
@@ -728,6 +867,11 @@ const HargaMusim = {
       return;
     }
 
+    if (!data.unitId) {
+      Toast.error("Unit wajib dipilih.");
+      return;
+    }
+
     if (!data.musimId) {
       Toast.warning("Pilih Musim.");
 
@@ -760,21 +904,16 @@ const HargaMusim = {
       id: this.editingId || this.generateId(),
 
       penginapanId: data.penginapanId,
-
+      unitId: data.unitId,
       musimId: data.musimId,
 
       hargaWeekday: Number(data.hargaWeekday),
-
       hargaWeekend: Number(data.hargaWeekend),
-
       hargaLongWeekend: Number(data.hargaLongWeekend),
 
       minimalMalam: Number(data.minimalMalam) || 1,
-
       mataUang: "IDR",
-
       status: data.status || "ACTIVE",
-
       catatan: data.catatan || "",
     };
 

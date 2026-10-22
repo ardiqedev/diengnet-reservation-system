@@ -401,75 +401,6 @@ const PublicPenginapanDetail = (() => {
      LOAD PROPERTY
   ========================================================== */
 
-  async function load() {
-    if (state.loading) {
-      return;
-    }
-
-    state.loading = true;
-
-    showLoading();
-
-    try {
-      const params = new URLSearchParams(window.location.search);
-
-      const id = String(params.get("id") || "").trim();
-
-      const slug = String(params.get("slug") || "").trim();
-
-      const detailPayload = id ? { id } : { slug };
-
-      debugLog("[PublicPenginapanDetail] Detail payload:", detailPayload);
-
-      const result = await API.post("penginapan.detail", detailPayload);
-
-      debugLog("[PublicPenginapanDetail] Property:", result);
-
-      const penginapan = result?.data || null;
-
-      if (!penginapan) {
-        throw new Error("Penginapan tidak ditemukan.");
-      }
-
-      state.penginapan = penginapan;
-
-      /*
-       * Load data tambahan secara paralel.
-       *
-       * Ketiga proses ini tidak perlu menunggu
-       * satu sama lain.
-       */
-
-      /*
-       * Load data tambahan secara paralel.
-       *
-       * Availability tidak dimuat otomatis.
-       * Detail penginapan ditampilkan terlebih dahulu
-       * tanpa menunggu reservation.availability.
-       */
-      const [startingPrice] = await Promise.all([
-        loadStartingPrice(),
-        loadUnitShowcase(),
-      ]);
-
-      state.startingPrice = startingPrice;
-
-      renderProperty();
-
-      await restoreReservationPayment();
-    } catch (error) {
-      console.error("[PublicPenginapanDetail] Load error:", error);
-
-      state.error = error?.message || "Gagal memuat penginapan.";
-
-      showError(state.error);
-    } finally {
-      state.loading = false;
-
-      hideLoading();
-    }
-  }
-
   async function restoreReservationPayment() {
     const params = new URLSearchParams(window.location.search);
 
@@ -542,46 +473,178 @@ const PublicPenginapanDetail = (() => {
    LOAD STARTING PRICE
 ========================================================== */
 
+  /* ==========================================================
+   LOAD STARTING PRICE
+   Sumber harga unit berdasarkan unitId
+========================================================== */
+
+  /* ==========================================================
+   LOAD STARTING PRICE PER UNIT
+========================================================== */
+
   async function loadStartingPrice() {
     try {
+      const penginapanId = String(state.penginapan?.id || "").trim();
+
+      if (!penginapanId) {
+        console.warn("[PublicPenginapanDetail] Penginapan ID belum tersedia.");
+
+        state.pricesByUnit = {};
+        return 0;
+      }
+
       const result = await API.post("harga.list", {
         page: 1,
         limit: 100,
         keyword: "",
         status: "ACTIVE",
-        penginapanId: state.penginapan.id,
+        penginapanId,
       });
 
-      const rows = Array.isArray(result?.data?.rows) ? result.data.rows : [];
+      if (!result?.success) {
+        throw new Error(result?.message || "Gagal mengambil data harga unit.");
+      }
 
-      const penginapanId = String(state.penginapan?.id || "").trim();
+      const rows = Array.isArray(result.data?.rows)
+        ? result.data.rows
+        : Array.isArray(result.data)
+          ? result.data
+          : [];
 
-      const prices = rows
-        .filter((row) => {
-          const status = String(row.status || "")
-            .trim()
-            .toUpperCase();
+      const validRows = rows.filter((row) => {
+        const rowPenginapanId = String(row.penginapanId || "").trim();
 
-          if (status && status !== "ACTIVE") {
-            return false;
-          }
+        const unitId = String(row.unitId || "").trim();
 
-          return String(row.penginapanId || "").trim() === penginapanId;
-        })
+        const status = String(row.status || "")
+          .trim()
+          .toUpperCase();
+
+        return (
+          rowPenginapanId === penginapanId &&
+          ["ACTIVE", "AKTIF"].includes(status) &&
+          unitId !== ""
+        );
+      });
+
+      /* =====================================
+       GROUP BY UNIT ID
+    ===================================== */
+
+      const pricesByUnit = {};
+
+      validRows.forEach((row) => {
+        const unitId = String(row.unitId || "").trim();
+
+        if (!pricesByUnit[unitId]) {
+          pricesByUnit[unitId] = [];
+        }
+
+        pricesByUnit[unitId].push(row);
+      });
+
+      state.pricesByUnit = pricesByUnit;
+
+      console.log("[PublicPenginapanDetail] PROPERTY ID:", penginapanId);
+
+      console.log(
+        "[PublicPenginapanDetail] PRICES BY UNIT:",
+        state.pricesByUnit,
+      );
+
+      /* =====================================
+       LEGACY PROPERTY STARTING PRICE
+       Tidak digunakan oleh card unit.
+    ===================================== */
+
+      const allPrices = validRows
         .flatMap((row) => [
-          Number(row.hargaWeekday) || 0,
-          Number(row.hargaWeekend) || 0,
-          Number(row.hargaLongWeekend) || 0,
+          Number(row.hargaWeekday),
+          Number(row.hargaWeekend),
+          Number(row.hargaLongWeekend),
         ])
-        .filter((price) => price > 0);
+        .filter((price) => Number.isFinite(price) && price > 0);
 
-      return prices.length ? Math.min(...prices) : 0;
+      return allPrices.length ? Math.min(...allPrices) : 0;
     } catch (error) {
       console.error("[PublicPenginapanDetail] Starting price error:", error);
+
+      state.pricesByUnit = {};
 
       return 0;
     }
   }
+
+  /* ==========================================================
+   LOAD STARTING PRICE PER UNIT
+========================================================== */
+
+  async function load() {
+    if (state.loading) {
+      return;
+    }
+
+    state.loading = true;
+
+    showLoading();
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+
+      const id = String(params.get("id") || "").trim();
+      const slug = String(params.get("slug") || "").trim();
+
+      const detailPayload = id ? { id } : { slug };
+
+      debugLog("[PublicPenginapanDetail] Detail payload:", detailPayload);
+
+      const result = await API.post("penginapan.detail", detailPayload);
+
+      debugLog("[PublicPenginapanDetail] Property:", result);
+
+      const penginapan = result?.data || null;
+
+      if (!penginapan) {
+        throw new Error("Penginapan tidak ditemukan.");
+      }
+
+      state.penginapan = penginapan;
+
+      console.log("[PublicPenginapanDetail] PROPERTY LOADED:", {
+        id: state.penginapan.id,
+        nama: state.penginapan.nama,
+        slug: state.penginapan.slug,
+        urlId: id,
+        urlSlug: slug,
+      });
+
+      const [startingPrice] = await Promise.all([
+        loadStartingPrice(),
+        loadUnitShowcase(),
+      ]);
+
+      state.startingPrice = startingPrice;
+
+      renderProperty();
+
+      await restoreReservationPayment();
+    } catch (error) {
+      console.error("[PublicPenginapanDetail] Load error:", error);
+
+      state.error = error?.message || "Gagal memuat penginapan.";
+
+      showError(state.error);
+    } finally {
+      state.loading = false;
+
+      hideLoading();
+    }
+  }
+
+  /* ==========================================================
+   LOAD UNIT SHOWCASE
+========================================================== */
+
   /* ==========================================================
    LOAD UNIT SHOWCASE
 ========================================================== */
@@ -592,17 +655,16 @@ const PublicPenginapanDetail = (() => {
     }
 
     try {
-      debugLog(
-        "[PublicPenginapanDetail] Load unit showcase:",
-        state.penginapan.id,
-      );
+      const penginapanId = String(state.penginapan.id).trim();
+
+      debugLog("[PublicPenginapanDetail] Load unit showcase:", penginapanId);
 
       /* =========================================
        LOAD ACTIVE UNIT
     ========================================= */
 
       const unitResult = await API.post("unit.active", {
-        penginapanId: state.penginapan.id,
+        penginapanId,
       });
 
       debugLog("[PublicPenginapanDetail] Unit showcase result:", unitResult);
@@ -617,13 +679,21 @@ const PublicPenginapanDetail = (() => {
         state.allUnits = [];
       }
 
+      console.log(
+        "[PublicPenginapanDetail] UNIT IDs:",
+        state.allUnits.map((unit) => ({
+          id: unit.id,
+          nama: unit.nama,
+          penginapanId: unit.penginapanId,
+        })),
+      );
+
       /* =========================================
        LOAD RESERVATIONS
     ========================================= */
 
       const reservationResult = await API.post("reservation.list", {
-        penginapanId: state.penginapan.id,
-
+        penginapanId,
         limit: 100,
       });
 
@@ -648,13 +718,7 @@ const PublicPenginapanDetail = (() => {
     } catch (error) {
       console.error("[PublicPenginapanDetail] Unit showcase error:", error);
 
-      /*
-       * Jangan membuat detail penginapan
-       * gagal hanya karena showcase unit gagal.
-       */
-
       state.allUnits = [];
-
       state.reservations = [];
     }
   }
@@ -841,6 +905,9 @@ const PublicPenginapanDetail = (() => {
 ========================================================== */
 
   function renderUnitShowcase() {
+    console.log("[CHECK] renderUnitShowcase DIPANGGIL");
+    console.log("[CHECK] dom.unitShowcase:", dom.unitShowcase);
+    console.log("[CHECK] state.allUnits:", state.allUnits);
     if (!dom.unitShowcase) {
       return;
     }
@@ -848,6 +915,34 @@ const PublicPenginapanDetail = (() => {
     const units = Array.isArray(state.allUnits) ? state.allUnits : [];
 
     if (!units.length) {
+      console.log("[SHOWCASE] DATA BEFORE RENDER:", {
+        units: units.map((unit) => ({
+          id: unit.id,
+          nama: unit.nama,
+        })),
+        pricesByUnit: state.pricesByUnit,
+      });
+
+      console.log("[SHOWCASE] STATE HARGA:", state.pricesByUnit);
+
+      console.log(
+        "[SHOWCASE] UNIT DAN HARGA:",
+        units.map((unit) => {
+          const unitId = String(unit.id || "").trim();
+          const rows = state.pricesByUnit?.[unitId] || [];
+
+          return {
+            unitId,
+            nama: unit.nama,
+            hargaDitemukan: rows.length,
+            hargaWeekday: rows.map((row) => row.hargaWeekday),
+          };
+        }),
+      );
+
+      dom.unitShowcase.innerHTML = units
+        .map((unit, index) => renderShowcaseCard(unit, index))
+        .join("");
       dom.unitShowcase.innerHTML = `
       <div class="public-unit-showcase-empty">
 
@@ -885,73 +980,49 @@ const PublicPenginapanDetail = (() => {
    GET UNIT STARTING PRICE
 ========================================================== */
 
+  /* ==========================================================
+   GET UNIT STARTING PRICE
+   Sumber harga: UNIT, bukan PENGINAPAN
+========================================================== */
+
+  /* ==========================================================
+   GET UNIT STARTING PRICE
+   Sumber utama: state.pricesByUnit[unitId]
+========================================================== */
+
   function getUnitStartingPrice(unit = {}) {
-    /*
-     * PRIORITAS 1
-     * Jika unit langsung membawa harga.
-     */
-    const directPrice =
-      Number(unit.startingPrice) ||
-      Number(unit.harga) ||
-      Number(unit.price) ||
-      0;
+    const unitId = String(unit.id || "").trim();
 
-    if (directPrice > 0) {
-      return directPrice;
+    if (!unitId) {
+      return 0;
     }
 
-    /*
-     * PRIORITAS 2
-     * Jika unit membawa daftar harga.
-     */
-    const hargaMusim = Array.isArray(unit.hargaMusim) ? unit.hargaMusim : [];
+    const pricesByUnit = state.pricesByUnit || {};
 
-    const values = hargaMusim
+    const unitPrices = Array.isArray(pricesByUnit[unitId])
+      ? pricesByUnit[unitId]
+      : [];
+
+    const registeredPrices = unitPrices
       .flatMap((row) => [
-        Number(row.hargaWeekday) || 0,
-        Number(row.hargaWeekend) || 0,
-        Number(row.hargaLongWeekend) || 0,
-        Number(row.weekday) || 0,
-        Number(row.weekend) || 0,
-        Number(row.harga) || 0,
+        Number(row.hargaWeekday),
+        Number(row.hargaWeekend),
+        Number(row.hargaLongWeekend),
       ])
-      .filter((price) => price > 0);
+      .filter((price) => Number.isFinite(price) && price > 0);
 
-    if (values.length) {
-      return Math.min(...values);
-    }
+    const startingPrice = registeredPrices.length
+      ? Math.min(...registeredPrices)
+      : 0;
 
-    /*
-     * PRIORITAS 3
-     * Fallback ke harga public penginapan
-     * yang sudah tersedia di state.
-     *
-     * Ini hanya untuk tampilan card.
-     * Harga final booking tetap dari
-     * booking.price / backend.
-     */
-    const penginapanId = String(state.penginapan?.id || "").trim();
+    console.log("[PublicPenginapanDetail] Unit price lookup:", {
+      unitId,
+      nama: unit.nama,
+      startingPrice,
+      priceRows: unitPrices.length,
+    });
 
-    const groupedPrices = state.pricesByPenginapan?.[penginapanId] || [];
-
-    if (groupedPrices.length) {
-      const prices = groupedPrices
-        .flatMap((row) => [
-          Number(row.hargaWeekday) || 0,
-          Number(row.hargaWeekend) || 0,
-          Number(row.hargaLongWeekend) || 0,
-        ])
-        .filter((price) => price > 0);
-
-      if (prices.length) {
-        return Math.min(...prices);
-      }
-    }
-
-    /*
-     * Tidak ada harga.
-     */
-    return 0;
+    return startingPrice;
   }
 
   /* ==========================================================
@@ -982,44 +1053,56 @@ const PublicPenginapanDetail = (() => {
     });
 
     const dewasa = Number(unit.kapasitasDewasa) || 0;
-
     const anak = Number(unit.kapasitasAnak) || 0;
-
     const bedCount = Number(unit.jumlahBed) || 0;
-
     const bedType = unit.jenisBed || "";
-
     const luas = Number(unit.luas) || 0;
 
     const fasilitas = normalizeFasilitas(unit.fasilitas);
 
     const status = getShowcaseUnitStatus(unit);
-
     const statusClass = status.className;
-
     const isAvailable = status.code === "AVAILABLE";
 
-    const startingPrice =
-      getUnitStartingPrice(unit) || Number(state.startingPrice) || 0;
+    /* =====================================
+     HARGA PER UNIT
+     Ambil langsung dari state.pricesByUnit.
+     Tidak menggunakan harga penginapan.
+  ===================================== */
+
+    const unitPrices = Array.isArray(state.pricesByUnit?.[id])
+      ? state.pricesByUnit[id]
+      : [];
+
+    const validPrices = unitPrices
+      .flatMap((row) => [
+        Number(row.hargaWeekday),
+        Number(row.hargaWeekend),
+        Number(row.hargaLongWeekend),
+      ])
+      .filter((price) => Number.isFinite(price) && price > 0);
+
+    const startingPrice = validPrices.length ? Math.min(...validPrices) : 0;
+
+    console.log("[CARD PRICE CHECK]", {
+      id,
+      nama,
+      startingPrice,
+      unitPrices,
+    });
 
     return `
     <article
-      class="
-        public-unit-showcase-card
-        ${statusClass}
-      "
+      class="public-unit-showcase-card ${statusClass}"
       data-unit-id="${escapeAttribute(id)}"
     >
 
-      <!-- =====================================
-           IMAGE
-      ====================================== -->
+      <!-- IMAGE -->
 
       <div
         class="public-unit-showcase-image"
         data-gallery-index="0"
       >
-
         ${
           image
             ? `
@@ -1033,141 +1116,87 @@ const PublicPenginapanDetail = (() => {
             `
             : `
               <div
-                class="
-                  public-unit-showcase-image-placeholder
-                "
+                class="public-unit-showcase-image-placeholder"
                 aria-hidden="true"
               >
-                <i
-                  data-lucide="image"
-                  aria-hidden="true"
-                ></i>
+                <i data-lucide="image" aria-hidden="true"></i>
               </div>
             `
         }
 
-
         ${
           photos.length > 1
             ? `
-
               <button
                 type="button"
-                class="
-                  public-unit-gallery-button
-                  public-unit-gallery-prev
-                "
+                class="public-unit-gallery-button public-unit-gallery-prev"
                 data-gallery-prev
                 aria-label="Foto sebelumnya"
-              >
-                ‹
-              </button>
+              >‹</button>
 
               <button
                 type="button"
-                class="
-                  public-unit-gallery-button
-                  public-unit-gallery-next
-                "
+                class="public-unit-gallery-button public-unit-gallery-next"
                 data-gallery-next
                 aria-label="Foto berikutnya"
-              >
-                ›
-              </button>
+              >›</button>
 
               <span
-                class="
-                  public-unit-gallery-counter
-                "
+                class="public-unit-gallery-counter"
                 data-gallery-counter
               >
                 1 / ${photos.length}
               </span>
-
             `
             : ""
         }
 
-
         <span
-          class="
-            public-unit-showcase-status
-            ${statusClass}
-          "
+          class="public-unit-showcase-status ${statusClass}"
         >
-          <span
-            class="public-unit-status-dot"
-          ></span>
-
+          <span class="public-unit-status-dot"></span>
           ${escapeHtml(status.label)}
         </span>
-
       </div>
 
-
-      <!-- =====================================
-           CONTENT
-      ====================================== -->
+      <!-- CONTENT -->
 
       <div class="public-unit-showcase-content">
 
         <div class="public-unit-showcase-heading">
-
           <div>
-
             <span class="public-unit-number">
               ${String(index + 1).padStart(2, "0")}
             </span>
 
-            <h3>
-              ${escapeHtml(nama)}
-            </h3>
+            <h3>${escapeHtml(nama)}</h3>
 
             ${
               tipe
                 ? `
-                  <span
-                    class="public-unit-type"
-                  >
+                  <span class="public-unit-type">
                     ${escapeHtml(tipe)}
                   </span>
                 `
                 : ""
             }
-
           </div>
-
         </div>
 
+        <!-- DESCRIPTION -->
 
-        <!-- ===================================
-             DESCRIPTION
-        ==================================== -->
-
-        <p
-          class="public-unit-description"
-        >
+        <p class="public-unit-description">
           ${escapeHtml(description)}
         </p>
 
+        <!-- META -->
 
-        <!-- ===================================
-             META
-        ==================================== -->
-
-        <div
-          class="public-unit-meta"
-        >
-
+        <div class="public-unit-meta">
           ${
             dewasa
               ? `
                 <span>
-                  <i
-                    data-lucide="users"
-                    aria-hidden="true"
-                  ></i>
-
+                  <i data-lucide="users" aria-hidden="true"></i>
                   ${dewasa} Dewasa
                 </span>
               `
@@ -1178,11 +1207,7 @@ const PublicPenginapanDetail = (() => {
             anak
               ? `
                 <span>
-                  <i
-                    data-lucide="baby"
-                    aria-hidden="true"
-                  ></i>
-
+                  <i data-lucide="baby" aria-hidden="true"></i>
                   ${anak} Anak
                 </span>
               `
@@ -1193,13 +1218,8 @@ const PublicPenginapanDetail = (() => {
             bedCount
               ? `
                 <span>
-                  <i
-                    data-lucide="bed-double"
-                    aria-hidden="true"
-                  ></i>
-
-                  ${bedCount}
-                  ${escapeHtml(bedType)}
+                  <i data-lucide="bed-double" aria-hidden="true"></i>
+                  ${bedCount} ${escapeHtml(bedType)}
                 </span>
               `
               : ""
@@ -1209,91 +1229,66 @@ const PublicPenginapanDetail = (() => {
             luas
               ? `
                 <span>
-                  <i
-                    data-lucide="maximize"
-                    aria-hidden="true"
-                  ></i>
-
+                  <i data-lucide="maximize" aria-hidden="true"></i>
                   ${luas} m²
                 </span>
               `
               : ""
           }
-
         </div>
 
-
-        <!-- ===================================
-             FACILITIES
-        ==================================== -->
+        <!-- FACILITIES -->
 
         ${
           fasilitas
             ? `
-              <div
-                class="
-                  public-unit-facilities
-                "
-              >
-
+              <div class="public-unit-facilities">
                 ${fasilitas
                   .split(",")
                   .map(
                     (item) => `
-                      <span>
-                        ${escapeHtml(item.trim())}
-                      </span>
+                      <span>${escapeHtml(item.trim())}</span>
                     `,
                   )
                   .join("")}
-
               </div>
             `
             : ""
         }
 
+        <!-- PRICE PER UNIT -->
 
-        <!-- ===================================
-             PRICE
-        ==================================== -->
+        <!-- PRICE PER UNIT -->
 
-        ${
-          startingPrice > 0
-            ? `
-              <div
-                class="
-                  public-unit-starting-price
-                "
-              >
+        <div class="public-unit-starting-price">
+          ${(() => {
+            const rows = Array.isArray(state.pricesByUnit?.[id])
+              ? state.pricesByUnit[id]
+              : [];
 
-                <span>
-                  Mulai dari
-                </span>
+            const prices = rows
+              .flatMap((row) => [
+                Number(row.hargaWeekday),
+                Number(row.hargaWeekend),
+                Number(row.hargaLongWeekend),
+              ])
+              .filter((price) => Number.isFinite(price) && price > 0);
 
-                <strong>
-                  ${formatCurrency(startingPrice)}
-                </strong>
+            const price = prices.length ? Math.min(...prices) : 0;
 
-                <small>
-                  /kamar/malam
-                </small>
+            return price > 0
+              ? `
+                  <span>Mulai dari</span>
+                  <strong>${formatCurrency(price)}</strong>
+                  <small>/kamar/malam</small>
+                `
+              : `<span>Harga belum tersedia</span>`;
+          })()}
+        </div>
 
-              </div>
-            `
-            : ""
-        }
+        <!-- ACTION -->
 
-
-        <!-- ===================================
-             ACTION
-        ==================================== -->
-
-        <div
-          class="
-            public-unit-showcase-action
-          "
-        >
-
+        <div class="public-unit-showcase-action">
           <button
             type="button"
             class="btn btn-dark public-unit-showcase-select"
@@ -1302,22 +1297,11 @@ const PublicPenginapanDetail = (() => {
           >
             ${isAvailable ? "Select this room" : "Not available"}
 
-            ${
-              isAvailable
-                ? `
-                  <span aria-hidden="true">
-                    →
-                  </span>
-                `
-                : ""
-            }
-
+            ${isAvailable ? `<span aria-hidden="true">→</span>` : ""}
           </button>
-
         </div>
 
       </div>
-
     </article>
   `;
   }
@@ -2075,7 +2059,7 @@ const PublicPenginapanDetail = (() => {
   ========================================================== */
 
   function renderUnitCard(unit = {}, index = 0) {
-    const id = unit.id || "";
+    const id = String(unit.id || "").trim();
 
     const nama = unit.nama || "Unit";
 
@@ -2099,217 +2083,186 @@ const PublicPenginapanDetail = (() => {
 
     const fasilitas = normalizeFasilitas(unit.fasilitas);
 
-    const selected =
-      state.selectedUnit && String(state.selectedUnit.id) === String(id);
+    const selected = state.selectedUnit && String(state.selectedUnit.id) === id;
+
+    /* =====================================
+     HARGA UNIT
+     Ambil dari state.pricesByUnit berdasarkan unit.id.
+     Tidak menggunakan harga penginapan.
+  ===================================== */
+
+    const unitPrices = Array.isArray(state.pricesByUnit?.[id])
+      ? state.pricesByUnit[id]
+      : [];
+
+    const validPrices = unitPrices
+      .flatMap((row) => [
+        Number(row.hargaWeekday),
+        Number(row.hargaWeekend),
+        Number(row.hargaLongWeekend),
+      ])
+      .filter((price) => Number.isFinite(price) && price > 0);
+
+    const startingPrice = validPrices.length ? Math.min(...validPrices) : 0;
+
+    console.log("[AVAILABLE ROOM] HARGA UNIT:", {
+      unitId: id,
+      nama,
+      startingPrice,
+      jumlahHarga: unitPrices.length,
+    });
 
     return `
+    <article
+      class="public-unit-card ${selected ? "is-selected" : ""}"
+      data-unit-id="${escapeAttribute(id)}"
+    >
 
-      <article
-        class="
-          public-unit-card
-          ${selected ? "is-selected" : ""}
-        "
-        data-unit-id="${escapeAttribute(id)}"
-      >
-
-        ${
-          image
-            ? `
-
-              <div
-                class="public-unit-image public-unit-gallery"
-                data-gallery-index="0"
-              >
-
-                <img
-                  class="public-unit-gallery-image"
-                  data-gallery-image
-                  src="${escapeAttribute(image)}"
-                  alt="${escapeAttribute(nama)}"
-                  loading="lazy"
-                />
-
-
-                ${
-                  photos.length > 1
-                    ? `
-
-                      <button
-                        type="button"
-                        class="
-                          public-unit-gallery-button
-                          public-unit-gallery-prev
-                        "
-                        data-gallery-prev
-                        aria-label="Foto sebelumnya"
-                      >
-                        ‹
-                      </button>
-
-
-                      <button
-                        type="button"
-                        class="
-                          public-unit-gallery-button
-                          public-unit-gallery-next
-                        "
-                        data-gallery-next
-                        aria-label="Foto berikutnya"
-                      >
-                        ›
-                      </button>
-
-
-                      <span
-                        class="public-unit-gallery-counter"
-                        data-gallery-counter
-                      >
-                        1 / ${photos.length}
-                      </span>
-
-                    `
-                    : ""
-                }
-
-              </div>
-
-            `
-            : `
-              <div
-                class="
-                  public-unit-image
-                  public-unit-image-placeholder
-                "
-                aria-hidden="true"
-              ></div>
-            `
-        }
-
-
-        <div class="public-unit-content">
-
-          <div class="public-unit-header">
-
-            <div>
-
-              <span class="public-unit-number">
-                ${String(index + 1).padStart(2, "0")}
-              </span>
-
-              <h4>
-                ${escapeHtml(nama)}
-              </h4>
+      ${
+        image
+          ? `
+            <div
+              class="public-unit-image public-unit-gallery"
+              data-gallery-index="0"
+            >
+              <img
+                class="public-unit-gallery-image"
+                data-gallery-image
+                src="${escapeAttribute(image)}"
+                alt="${escapeAttribute(nama)}"
+                loading="lazy"
+              />
 
               ${
-                tipe
+                photos.length > 1
                   ? `
-                    <span class="public-unit-type">
-                      ${escapeHtml(tipe)}
+                    <button
+                      type="button"
+                      class="public-unit-gallery-button public-unit-gallery-prev"
+                      data-gallery-prev
+                      aria-label="Foto sebelumnya"
+                    >‹</button>
+
+                    <button
+                      type="button"
+                      class="public-unit-gallery-button public-unit-gallery-next"
+                      data-gallery-next
+                      aria-label="Foto berikutnya"
+                    >›</button>
+
+                    <span
+                      class="public-unit-gallery-counter"
+                      data-gallery-counter
+                    >
+                      1 / ${photos.length}
                     </span>
                   `
                   : ""
               }
-
             </div>
+          `
+          : `
+            <div
+              class="public-unit-image public-unit-image-placeholder"
+              aria-hidden="true"
+            ></div>
+          `
+      }
 
+      <div class="public-unit-content">
 
-            <span class="public-unit-status">
-              Available
+        <div class="public-unit-header">
+          <div>
+            <span class="public-unit-number">
+              ${String(index + 1).padStart(2, "0")}
             </span>
 
+            <h4>${escapeHtml(nama)}</h4>
+
+            ${
+              tipe
+                ? `
+                  <span class="public-unit-type">
+                    ${escapeHtml(tipe)}
+                  </span>
+                `
+                : ""
+            }
           </div>
 
-          ${
-            deskripsi
-              ? `
-                <p class="public-unit-description">
-                  ${escapeHtml(deskripsi)}
-                </p>
-              `
-              : ""
-          }
-
-
-          <div class="public-unit-meta">
-
-            ${
-              dewasa
-                ? `
-                  <span>
-                    ${dewasa} Dewasa
-                  </span>
-                `
-                : ""
-            }
-
-            ${
-              anak
-                ? `
-                  <span>
-                    ${anak} Anak
-                  </span>
-                `
-                : ""
-            }
-
-            ${
-              bedCount
-                ? `
-                  <span>
-                    ${bedCount}
-                    ${escapeHtml(bedType)}
-                  </span>
-                `
-                : ""
-            }
-
-            ${
-              luas
-                ? `
-                  <span>
-                    ${luas} m²
-                  </span>
-                `
-                : ""
-            }
-
-          </div>
-
-
-          ${
-            fasilitas
-              ? `
-                <div class="public-unit-facilities">
-
-                  ${fasilitas
-                    .split(",")
-                    .map(
-                      (item) =>
-                        `<span>
-                          ${escapeHtml(item.trim())}
-                        </span>`,
-                    )
-                    .join("")}
-
-                </div>
-              `
-              : ""
-          }
-
-
-          <button
-            type="button"
-            class="btn btn-dark public-unit-select"
-            data-unit-id="${escapeAttribute(id)}"
-          >
-            ${selected ? "Selected" : "Select this unit"}
-          </button>
-
+          <span class="public-unit-status">
+            Available
+          </span>
         </div>
 
-      </article>
+        ${
+          deskripsi
+            ? `
+              <p class="public-unit-description">
+                ${escapeHtml(deskripsi)}
+              </p>
+            `
+            : ""
+        }
 
-    `;
+        <div class="public-unit-meta">
+          ${dewasa ? `<span>${dewasa} Dewasa</span>` : ""}
+
+          ${anak ? `<span>${anak} Anak</span>` : ""}
+
+          ${bedCount ? `<span>${bedCount} ${escapeHtml(bedType)}</span>` : ""}
+
+          ${luas ? `<span>${luas} m²</span>` : ""}
+        </div>
+
+        ${
+          fasilitas
+            ? `
+              <div class="public-unit-facilities">
+                ${fasilitas
+                  .split(",")
+                  .map(
+                    (item) => `
+                      <span>${escapeHtml(item.trim())}</span>
+                    `,
+                  )
+                  .join("")}
+              </div>
+            `
+            : ""
+        }
+
+        <!-- HARGA PER UNIT -->
+
+        <div class="public-unit-starting-price">
+          ${
+            startingPrice > 0
+              ? `
+                <span>Mulai dari</span>
+
+                <strong>
+                  ${formatCurrency(startingPrice)}
+                </strong>
+
+                <small>/kamar/malam</small>
+              `
+              : `
+                <span>Harga belum tersedia</span>
+              `
+          }
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-dark public-unit-select"
+          data-unit-id="${escapeAttribute(id)}"
+        >
+          ${selected ? "Selected" : "Select this unit"}
+        </button>
+
+      </div>
+    </article>
+  `;
   }
 
   /* ==========================================================
@@ -3057,6 +3010,15 @@ const PublicPenginapanDetail = (() => {
         if (!pricing || Number(pricing.total) <= 0) {
           throw new Error("Total harga reservasi tidak valid.");
         }
+
+        console.log("[PRICE AUDIT]", {
+          selectedUnitId: state.selectedUnit?.id,
+          selectedUnitName: state.selectedUnit?.nama,
+          requestedUnitId: payload.unitId,
+          response: pricing,
+          total: pricing?.total,
+          grandTotal: pricing?.grandTotal,
+        });
 
         state.pricing = pricing;
 
@@ -4179,7 +4141,7 @@ const PublicPenginapanDetail = (() => {
      *
      * Nanti ambil dari Website Settings.
      */
-    const customerService = "085189378311";
+    const customerService = " 085111711199";
 
     const paymentLoginUrl = `${window.location.origin}/public/payment-login.html`;
 
